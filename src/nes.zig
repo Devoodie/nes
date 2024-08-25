@@ -19,14 +19,11 @@ pub const Cpu = struct {
     bus: *Bus,
     instruction: u24,
 
-    pub fn cycle(prev_time: *i128) void {
+    pub fn cycle(prev_time: *i128, cycles: u8) void {
         const cur_time = std.time.nanoTimestamp();
-        const difference = cur_time - prev_time.*;
+        const elapsed_time = cur_time - prev_time.*;
 
-        if (difference < 559) {
-            std.time.sleep(559 - difference);
-        }
-        prev_time.* = std.time.nanoTimestamp();
+        std.time.sleep(559 * cycles - elapsed_time);
     }
 
     pub fn logical_and(time: *i128, self: *Cpu) void {
@@ -36,6 +33,17 @@ pub const Cpu = struct {
         } else {
             switch (self.instruction & 0xF) {
                 1 => indirect: {
+                    self.bus.addr_bus = self.pc + 1;
+                    self.bus.get_mmo();
+                    const value = self.bus.data_bus;
+
+                    self.bus.addr_bus = (value + self.x_register) % 256;
+                    self.bus.get_mmo();
+
+                    self.accumulator &= self.bus.data_bus;
+
+                    self.cycle(time, 6);
+                    self.pc += 2;
                     break :indirect;
                 },
                 5 => zeropage: {
@@ -43,16 +51,17 @@ pub const Cpu = struct {
                 },
                 9 => immediate: {
                     self.bus.addr_bus = self.pc + 1;
-                    self.bus.get_mmi();
+                    self.bus.get_mmo();
 
                     const value = self.bus.data_bus;
                     self.accumulator &= value;
 
-                    for (0..2) |_| {
-                        cycle(time);
-                    }
+                    cycle(time, 2);
                     self.pc += 2;
                     break :immediate;
+                },
+                0xD => absolute: {
+                    break :absolute;
                 },
                 else => default: {
                     std.debug.print("No Addressing Mode found!\n", .{});
@@ -120,7 +129,7 @@ pub const Bus = struct {
     ppu_ptr: *Ppu,
     apu_ptr: *Apu,
 
-    pub fn get_mmi(self: *Bus) void {
+    pub fn get_mmo(self: *Bus) void {
         if (self.addr_bus <= 0x1FFF) {
             self.data_bus = self.cpu_ptr.cpu.memory[self.addr_bus % 0x800];
         } else if (self.addr_bus <= 0x3FFF) {
