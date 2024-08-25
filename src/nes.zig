@@ -32,23 +32,82 @@ pub const Cpu = struct {
         if (self.instruction & 0xF0 == 0x30) {
             switch (self.instruction & 0xF) {
                 1 => indirect: {
-                    break :indirect;
-                },
-                5 => zero_page: {
-                    break :zero_page;
-                },
-                9 => absolute_y: {
-                    break :absolute_y;
-                },
-                0xD => absolute_x: {
                     self.bus.addr_bus = self.pc + 1;
                     self.bus.get_mmo();
-                    const value: u16 = self.bus.data_bus + self.y_register;
+                    var extra_cycle = 0;
 
-                    self.bus.addr_bus = value;
+                    var addr: u16 = self.bus.data_bus;
+                    const sum: u8 = @addWithOverflow(self.bus.data_bus, self.y_register);
+                    if (sum[1] == 1) {
+                        extra_cycle = 1;
+                    }
+                    addr += self.y_register;
+
+                    self.bus.addr_bus = addr;
                     self.bus.get_mmo();
 
                     self.accumulator &= self.bus.data_bus;
+                    self.pc += 2;
+                    cycle(time, 5 + extra_cycle);
+                    break :indirect;
+                },
+                5 => zero_pagex: {
+                    self.bus.addr_bus = self.pc + 1;
+                    self.bus.get_mmo();
+
+                    const addr: u8 = (self.bus.data_bus + self.x_register) % 256;
+                    self.bus.addr_bus = addr;
+                    self.bus.get_mmo();
+
+                    self.accumulator &= self.bus.data_bus;
+                    break :zero_pagex;
+                },
+                9 => absolute_y: {
+                    self.bus.addr_bus = self.pc + 2;
+                    self.bus.get_mmo();
+                    var addr: u16 = self.bus.data_bus << 8;
+                    var extra_cycle = 0;
+
+                    self.bus.addr_bus = self.pc + 1;
+                    self.bus.get_mmo();
+                    const sum: u8 = @addWithOverflow(self.bus.data_bus, self.y_register);
+
+                    if (sum[1] == 1) {
+                        extra_cycle = 1;
+                        addr += 0x100 + sum[0];
+                    } else {
+                        addr += sum[0];
+                    }
+                    self.bus.addr_bus = addr;
+                    self.bus.get_mmo();
+                    self.accumulator &= self.bus.data_bus;
+
+                    self.pc += 3;
+                    cycle(time, 4 + extra_cycle);
+                    break :absolute_y;
+                },
+                0xD => absolute_x: {
+                    self.bus.addr_bus = self.pc + 2;
+                    self.bus.get_mmo();
+                    var addr: u16 = self.bus.data_bus << 8;
+                    var extra_cycle = 0;
+
+                    self.bus.addr_bus = self.pc + 1;
+                    self.bus.get_mmo();
+                    const sum: u8 = @addWithOverflow(self.bus.data_bus, self.x_register);
+
+                    if (sum[1] == 1) {
+                        extra_cycle = 1;
+                        addr += 0x100 + sum[0];
+                    } else {
+                        addr += sum[0];
+                    }
+                    self.bus.addr_bus = addr;
+                    self.bus.get_mmo();
+                    self.accumulator &= self.bus.data_bus;
+
+                    self.pc += 3;
+                    cycle(time, 4 + extra_cycle);
                     break :absolute_x;
                 },
                 else => default: {
@@ -61,9 +120,9 @@ pub const Cpu = struct {
                 1 => indirect: {
                     self.bus.addr_bus = self.pc + 1;
                     self.bus.get_mmo();
-                    const value = self.bus.data_bus;
+                    const addr = self.bus.data_bus;
 
-                    self.bus.addr_bus = (value + self.x_register) % 256;
+                    self.bus.addr_bus = (addr + self.x_register) % 256;
                     self.bus.get_mmo();
 
                     self.accumulator &= self.bus.data_bus;
@@ -97,13 +156,13 @@ pub const Cpu = struct {
                     self.bus.addr_bus = self.pc + 2;
                     self.bus.get_mmo();
 
-                    var value: u16 = (self.bus.data_bus << 8);
+                    var addr: u16 = self.bus.data_bus << 8;
 
                     self.bus.addr_bus = self.pc + 1;
                     self.bus.get_mmo();
 
-                    value |= self.bus.data_bus;
-                    self.bus.addr_bus = value;
+                    addr |= self.bus.data_bus;
+                    self.bus.addr_bus = addr;
                     self.bus.get_mmo();
 
                     self.accumulator &= self.bus.data_bus;
