@@ -1,16 +1,5 @@
 const std = @import("std");
 
-const address_mode = enum { 
-    immediate,
-    zero_pg,
-    zero_pgx,
-    absolute,
-    absolute_x,
-    absolute_y,
-    indirect_x,
-    indirect_y,
-};
-
 const StatusRegister = struct {
     carry: u1 = 0,
     zero: u1 = 0,
@@ -27,6 +16,7 @@ pub const Cpu = struct {
     pc: u16 = 0xFFFC,
     stack_pointer: u8 = 0xFD,
     status: StatusRegister = .{},
+    bus: *Bus,
     instruction: u24,
 
     pub fn cycle(prev_time: *i128) void {
@@ -39,12 +29,12 @@ pub const Cpu = struct {
         prev_time.* = std.time.nanoTimestamp();
     }
 
-    pub fn logical_and(time: i128, self: *Cpu, bus: *Bus) void {
-        //I know its an annd because the lowest nib % 4 == 
-        if(self.instruction & 0xF0 == 0x30){
-            switch(self.instruction & 0xF){}
+    pub fn logical_and(time: *i128, self: *Cpu) void {
+        //I know its an annd because the lowest nib % 4 == 1
+        if (self.instruction & 0xF0 == 0x30) {
+            switch (self.instruction & 0xF) {}
         } else {
-            switch(self.instruction & 0xF){
+            switch (self.instruction & 0xF) {
                 1 => indirect: {
                     break :indirect;
                 },
@@ -52,17 +42,25 @@ pub const Cpu = struct {
                     break :zeropage;
                 },
                 9 => immediate: {
-                    bus.addr_bus = self.pc + 1;
+                    self.bus.addr_bus = self.pc + 1;
+                    self.bus.get_mmi();
 
+                    const value = self.bus.data_bus;
+                    self.accumulator &= value;
+
+                    for (0..2) |_| {
+                        cycle(time);
+                    }
+                    self.pc += 2;
                     break :immediate;
                 },
                 else => default: {
                     std.debug.print("No Addressing Mode found!\n", .{});
                     break :default;
-                }
+                },
             }
         }
-}
+    }
 };
 
 pub const Ppu = struct {
@@ -77,32 +75,38 @@ pub const Ppu = struct {
     oam_dma: u8,
 
     pub fn ppu_mmo(self: *Ppu, address: u16) u8 {
-        switch(address % 8) {
-            0 => send_control: {
-                break :send_control self.control;
-            }, 
-            1 => send_mask: {
-                break :send_mask self.mask;
+        if (address == 0x4014) {
+            return self.oam_dma;
+        }
+        switch (address % 8) {
+            0 => {
+                return self.control;
             },
-            2 => send_status: {
-                break :send_status self.status;
+            1 => {
+                return self.mask;
             },
-            3 => send_oma_addr: {
-                break :send_oma_addr self.oama_addr;
+            2 => {
+                return self.status;
             },
-            4 => send_oma_data: {
-                break :send_oma_data self.oam_data;
+            3 => {
+                return self.oama_addr;
             },
-            5 => send_scroll: {
-                break :send_scroll self.scroll;
+            4 => {
+                return self.oam_data;
             },
-            6 => send_data: {
-                break :send_data self.data;
+            5 => {
+                return self.scroll;
             },
-            7 => send_oma_dma: {
-                break :send_oma_dma self.oam_dma;
-            }
-
+            6 => {
+                return self.addr;
+            },
+            7 => {
+                return self.data;
+            },
+            else => default: {
+                std.debug.print("Invalid PPU Register!\n", .{});
+                break :default;
+            },
         }
     }
 };
@@ -116,11 +120,13 @@ pub const Bus = struct {
     ppu_ptr: *Ppu,
     apu_ptr: *Apu,
 
-    pub fn get_mmi(self: *Bus) u8{
-        if(self.addr_bus <= 0x1FFF){
-            return self.cpu_ptr.cpu.memory[self.addr_bus % 0x800];
+    pub fn get_mmi(self: *Bus) void {
+        if (self.addr_bus <= 0x1FFF) {
+            self.data_bus = self.cpu_ptr.cpu.memory[self.addr_bus % 0x800];
         } else if (self.addr_bus <= 0x3FFF) {
-            return self.ppu_ptr.ppu_mmo(self.addr_bus);
+            self.data_bus = self.ppu_ptr.ppu_mmo(self.addr_bus);
+        } else if (self.addr_bus <= 0x401F) {
+            return;
         }
-}
+    }
 };
