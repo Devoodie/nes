@@ -13,6 +13,7 @@ pub const Cpu = struct {
     memory: [2048]u8 = undefined,
     accumulator: u8 = 0,
     x_register: u8 = 0,
+    y_register: u8 = 0,
     pc: u16 = 0xFFFC,
     stack_pointer: u8 = 0xFD,
     status: StatusRegister = .{},
@@ -29,7 +30,32 @@ pub const Cpu = struct {
     pub fn logical_and(time: *i128, self: *Cpu) void {
         //I know its an annd because the lowest nib % 4 == 1
         if (self.instruction & 0xF0 == 0x30) {
-            switch (self.instruction & 0xF) {}
+            switch (self.instruction & 0xF) {
+                1 => indirect: {
+                    break :indirect;
+                },
+                5 => zero_page: {
+                    break :zero_page;
+                },
+                9 => absolute_y: {
+                    break :absolute_y;
+                },
+                0xD => absolute_x: {
+                    self.bus.addr_bus = self.pc + 1;
+                    self.bus.get_mmo();
+                    const value: u16 = self.bus.data_bus + self.y_register;
+
+                    self.bus.addr_bus = value;
+                    self.bus.get_mmo();
+
+                    self.accumulator &= self.bus.data_bus;
+                    break :absolute_x;
+                },
+                else => default: {
+                    std.debug.print("No Addressing mode found (Logical And)!\n", .{});
+                    break :default;
+                },
+            }
         } else {
             switch (self.instruction & 0xF) {
                 1 => indirect: {
@@ -42,12 +68,19 @@ pub const Cpu = struct {
 
                     self.accumulator &= self.bus.data_bus;
 
-                    self.cycle(time, 6);
                     self.pc += 2;
+                    self.cycle(time, 6);
                     break :indirect;
                 },
-                5 => zeropage: {
-                    break :zeropage;
+                5 => zero_page: {
+                    self.bus.addr_bus = self.pc + 1;
+                    self.bus.get_mmo();
+
+                    self.accumulator &= self.bus.data_bus;
+
+                    self.pc += 2;
+                    cycle(time, 3);
+                    break :zero_page;
                 },
                 9 => immediate: {
                     self.bus.addr_bus = self.pc + 1;
@@ -56,15 +89,30 @@ pub const Cpu = struct {
                     const value = self.bus.data_bus;
                     self.accumulator &= value;
 
-                    cycle(time, 2);
                     self.pc += 2;
+                    cycle(time, 2);
                     break :immediate;
                 },
                 0xD => absolute: {
+                    self.bus.addr_bus = self.pc + 2;
+                    self.bus.get_mmo();
+
+                    var value: u16 = (self.bus.data_bus << 8);
+
+                    self.bus.addr_bus = self.pc + 1;
+                    self.bus.get_mmo();
+
+                    value |= self.bus.data_bus;
+                    self.bus.addr_bus = value;
+                    self.bus.get_mmo();
+
+                    self.accumulator &= self.bus.data_bus;
+                    self.pc += 3;
+                    cycle(time, 4);
                     break :absolute;
                 },
                 else => default: {
-                    std.debug.print("No Addressing Mode found!\n", .{});
+                    std.debug.print("No Addressing Mode found (Logical And)!\n", .{});
                     break :default;
                 },
             }
