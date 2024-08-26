@@ -19,6 +19,7 @@ pub const Cpu = struct {
     status: StatusRegister = .{},
     bus: *Bus,
     instruction: u24,
+    extra_cycle: u1,
 
     pub fn cycle(prev_time: *i128, cycles: u8) void {
         const cur_time = std.time.nanoTimestamp();
@@ -27,87 +28,128 @@ pub const Cpu = struct {
         std.time.sleep(559 * cycles - elapsed_time);
     }
 
-    pub fn logical_and(time: *i128, self: *Cpu) void {
+    pub fn getIndirectY(self: *Cpu) u8 {
+        self.bus.addr_bus = self.pc + 1;
+        self.bus.getMmo();
+        self.extra_cycle = 0;
+
+        var addr: u16 = self.bus.data_bus;
+        const sum: u8 = @addWithOverflow(self.bus.data_bus, self.y_register);
+        if (sum[1] == 1) {
+            self.extra_cycle = 1;
+        }
+        addr += self.y_register;
+
+        self.bus.addr_bus = addr;
+        self.bus.getMmo();
+
+        return self.bus.data_bus;
+    }
+
+    pub fn getZeroPageX(self: *Cpu) u8 {
+        self.bus.addr_bus = self.pc + 1;
+        self.bus.getMmo();
+
+        const addr: u8 = (self.bus.data_bus + self.x_register) % 256;
+        self.bus.addr_bus = addr;
+        self.bus.getMmo();
+
+        return self.bus.data_bus;
+    }
+
+    pub fn getAbsoluteIndexed(self: *Cpu, xory: u1) u8 {
+        self.bus.addr_bus = self.pc + 2;
+        self.bus.getMmo();
+        var addr: u16 = self.bus.data_bus << 8;
+        self.extra_cycle = 0;
+        var sum = undefined;
+
+        self.bus.addr_bus = self.pc + 1;
+        self.bus.getMmo();
+        if (xory == 0) {
+            sum = @addWithOverflow(self.bus.data_bus, self.x_register);
+        } else {
+            sum = @addWithOverflow(self.bus.data_bus, self.y_register);
+        }
+
+        if (sum[1] == 1) {
+            self.extra_cycle = 1;
+            addr += 0x100 + sum[0];
+        } else {
+            addr += sum[0];
+        }
+        self.bus.addr_bus = addr;
+        self.bus.getMmo();
+        return self.bus.data_bus;
+    }
+
+    pub fn getIndirectX(self: *Cpu) u8 {
+        self.bus.addr_bus = self.pc + 1;
+        self.bus.getMmo();
+        const addr = self.bus.data_bus;
+
+        self.bus.addr_bus = (addr + self.x_register) % 256;
+        self.bus.getMmo();
+
+        return self.bus.data_bus;
+    }
+
+    pub fn getZeroPage(self: *Cpu) u8 {
+        self.bus.addr_bus = self.pc + 1;
+        self.bus.getMmo();
+
+        return self.bus.data_bus;
+    }
+
+    pub fn getImmediate(self: *Cpu) u8 {
+        self.bus.addr_bus = self.pc + 1;
+        self.bus.getMmo();
+
+        return self.bus.data_bus;
+    }
+
+    pub fn getAbsolute(self: *Cpu) u8 {
+        self.bus.addr_bus = self.pc + 2;
+        self.bus.getMmo();
+
+        var addr: u16 = self.bus.data_bus << 8;
+
+        self.bus.addr_bus = self.pc + 1;
+        self.bus.getMmo();
+
+        addr |= self.bus.data_bus;
+        self.bus.addr_bus = addr;
+        self.bus.getMmo();
+
+        return self.bus.data_bus;
+    }
+
+    pub fn logicalAnd(time: *i128, self: *Cpu) void {
         //I know its an annd because the lowest nib % 4 == 1
         if (self.instruction & 0xF0 == 0x30) {
             switch (self.instruction & 0xF) {
-                1 => indirect: {
-                    self.bus.addr_bus = self.pc + 1;
-                    self.bus.get_mmo();
-                    var extra_cycle = 0;
-
-                    var addr: u16 = self.bus.data_bus;
-                    const sum: u8 = @addWithOverflow(self.bus.data_bus, self.y_register);
-                    if (sum[1] == 1) {
-                        extra_cycle = 1;
-                    }
-                    addr += self.y_register;
-
-                    self.bus.addr_bus = addr;
-                    self.bus.get_mmo();
-
-                    self.accumulator &= self.bus.data_bus;
+                1 => indirecty: {
+                    self.accumulator &= self.getIndirectY();
                     self.pc += 2;
-                    cycle(time, 5 + extra_cycle);
-                    break :indirect;
+                    cycle(time, 5 + self.extra_cycle);
+                    break :indirecty;
                 },
                 5 => zero_pagex: {
-                    self.bus.addr_bus = self.pc + 1;
-                    self.bus.get_mmo();
-
-                    const addr: u8 = (self.bus.data_bus + self.x_register) % 256;
-                    self.bus.addr_bus = addr;
-                    self.bus.get_mmo();
-
-                    self.accumulator &= self.bus.data_bus;
+                    self.accumulator &= self.getZeroPageX();
+                    self.pc += 3;
+                    cycle(time, 4);
                     break :zero_pagex;
                 },
                 9 => absolute_y: {
-                    self.bus.addr_bus = self.pc + 2;
-                    self.bus.get_mmo();
-                    var addr: u16 = self.bus.data_bus << 8;
-                    var extra_cycle = 0;
-
-                    self.bus.addr_bus = self.pc + 1;
-                    self.bus.get_mmo();
-                    const sum: u8 = @addWithOverflow(self.bus.data_bus, self.y_register);
-
-                    if (sum[1] == 1) {
-                        extra_cycle = 1;
-                        addr += 0x100 + sum[0];
-                    } else {
-                        addr += sum[0];
-                    }
-                    self.bus.addr_bus = addr;
-                    self.bus.get_mmo();
-                    self.accumulator &= self.bus.data_bus;
-
+                    self.accumulator &= self.getAbsoluteIndexed(1);
                     self.pc += 3;
-                    cycle(time, 4 + extra_cycle);
+                    cycle(time, 4 + self.extra_cycle);
                     break :absolute_y;
                 },
                 0xD => absolute_x: {
-                    self.bus.addr_bus = self.pc + 2;
-                    self.bus.get_mmo();
-                    var addr: u16 = self.bus.data_bus << 8;
-                    var extra_cycle = 0;
-
-                    self.bus.addr_bus = self.pc + 1;
-                    self.bus.get_mmo();
-                    const sum: u8 = @addWithOverflow(self.bus.data_bus, self.x_register);
-
-                    if (sum[1] == 1) {
-                        extra_cycle = 1;
-                        addr += 0x100 + sum[0];
-                    } else {
-                        addr += sum[0];
-                    }
-                    self.bus.addr_bus = addr;
-                    self.bus.get_mmo();
-                    self.accumulator &= self.bus.data_bus;
-
+                    self.accumulator &= self.getAbsoluteIndexed(0);
                     self.pc += 3;
-                    cycle(time, 4 + extra_cycle);
+                    cycle(time, 4 + self.extra_cycle);
                     break :absolute_x;
                 },
                 else => default: {
@@ -117,55 +159,29 @@ pub const Cpu = struct {
             }
         } else {
             switch (self.instruction & 0xF) {
-                1 => indirect: {
-                    self.bus.addr_bus = self.pc + 1;
-                    self.bus.get_mmo();
-                    const addr = self.bus.data_bus;
-
-                    self.bus.addr_bus = (addr + self.x_register) % 256;
-                    self.bus.get_mmo();
-
-                    self.accumulator &= self.bus.data_bus;
+                1 => indirectx: {
+                    self.accumulator &= self.getIndirectX();
 
                     self.pc += 2;
-                    self.cycle(time, 6);
-                    break :indirect;
+                    cycle(time, 6);
+                    break :indirectx;
                 },
                 5 => zero_page: {
-                    self.bus.addr_bus = self.pc + 1;
-                    self.bus.get_mmo();
-
-                    self.accumulator &= self.bus.data_bus;
+                    self.accumulator &= self.getZeroPage();
 
                     self.pc += 2;
                     cycle(time, 3);
                     break :zero_page;
                 },
                 9 => immediate: {
-                    self.bus.addr_bus = self.pc + 1;
-                    self.bus.get_mmo();
-
-                    const value = self.bus.data_bus;
-                    self.accumulator &= value;
+                    self.accumulator &= self.getImmediate();
 
                     self.pc += 2;
                     cycle(time, 2);
                     break :immediate;
                 },
                 0xD => absolute: {
-                    self.bus.addr_bus = self.pc + 2;
-                    self.bus.get_mmo();
-
-                    var addr: u16 = self.bus.data_bus << 8;
-
-                    self.bus.addr_bus = self.pc + 1;
-                    self.bus.get_mmo();
-
-                    addr |= self.bus.data_bus;
-                    self.bus.addr_bus = addr;
-                    self.bus.get_mmo();
-
-                    self.accumulator &= self.bus.data_bus;
+                    self.accumulator &= self.getAbsolute();
                     self.pc += 3;
                     cycle(time, 4);
                     break :absolute;
@@ -190,7 +206,7 @@ pub const Ppu = struct {
     data: u8,
     oam_dma: u8,
 
-    pub fn ppu_mmo(self: *Ppu, address: u16) u8 {
+    pub fn ppuMmo(self: *Ppu, address: u16) u8 {
         if (address == 0x4014) {
             return self.oam_dma;
         }
@@ -236,11 +252,11 @@ pub const Bus = struct {
     ppu_ptr: *Ppu,
     apu_ptr: *Apu,
 
-    pub fn get_mmo(self: *Bus) void {
+    pub fn getMmo(self: *Bus) void {
         if (self.addr_bus <= 0x1FFF) {
             self.data_bus = self.cpu_ptr.cpu.memory[self.addr_bus % 0x800];
         } else if (self.addr_bus <= 0x3FFF) {
-            self.data_bus = self.ppu_ptr.ppu_mmo(self.addr_bus);
+            self.data_bus = self.ppu_ptr.ppuMmo(self.addr_bus);
         } else if (self.addr_bus <= 0x401F) {
             return;
         }
