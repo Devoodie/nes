@@ -139,12 +139,54 @@ pub const Cpu = struct {
                     cycle(time, 4);
                     break :zero_pagex;
                 },
+                9 => absolutey: {
+                    self.accumulator |= self.GetAbsoluteIndexed(1);
+                    cycle(time, 4 + self.extra_cycle);
+                    break :absolutey;
+                },
+                0xD => absolutex: {
+                    self.accumulator |= self.GetAbsoluteIndexed(0);
+                    cycle(time, 4 + self.extra_cycle);
+                    break :absolutex;
+                },
                 else => default: {
                     std.debug.print("No Addresing Mode found (Logical Or)!\n", .{});
                     break :default;
                 },
             }
-        } else {}
+        } else {
+            switch (self.instruction & 0xF) {
+                1 => indirectx: {
+                    self.accumulator |= self.GetIndirectX();
+                    cycle(time, 6);
+                    break :indirectx;
+                },
+                5 => zero_page: {
+                    self.accumulator |= self.GetZeroPage();
+                    cycle(time, 3);
+                    break :zero_page;
+                },
+                9 => immediate: {
+                    self.accumulator |= self.GetImmediate();
+                    cycle(time, 2);
+                    break :immediate;
+                },
+                0xD => absolute: {
+                    self.accumulator |= self.GetAbsolute();
+                    break :absolute;
+                },
+                else => default: {
+                    std.debug.print("No Addressing Mode Found (Logical Or)\n!", .{});
+                    break :default;
+                },
+            }
+        }
+        if (self.accumulator == 0) {
+            self.status.zero = 1;
+        } else {
+            self.status.zero = 0;
+        }
+        self.status.negative = self.accumulator >> 7;
     }
 
     pub fn logicalAnd(time: i128, self: *Cpu) void {
