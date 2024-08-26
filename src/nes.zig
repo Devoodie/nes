@@ -21,14 +21,14 @@ pub const Cpu = struct {
     instruction: u24,
     extra_cycle: u1,
 
-    pub fn cycle(prev_time: *i128, cycles: u8) void {
+    pub fn cycle(prev_time: i128, cycles: u8) void {
         const cur_time = std.time.nanoTimestamp();
-        const elapsed_time = cur_time - prev_time.*;
+        const elapsed_time = cur_time - prev_time;
 
         std.time.sleep(559 * cycles - elapsed_time);
     }
 
-    pub fn getIndirectY(self: *Cpu) u8 {
+    pub fn GetIndirectY(self: *Cpu) u8 {
         self.bus.addr_bus = self.pc + 1;
         self.bus.getMmo();
         self.extra_cycle = 0;
@@ -46,7 +46,7 @@ pub const Cpu = struct {
         return self.bus.data_bus;
     }
 
-    pub fn getZeroPageX(self: *Cpu) u8 {
+    pub fn GetZeroPageX(self: *Cpu) u8 {
         self.bus.addr_bus = self.pc + 1;
         self.bus.getMmo();
 
@@ -57,7 +57,7 @@ pub const Cpu = struct {
         return self.bus.data_bus;
     }
 
-    pub fn getAbsoluteIndexed(self: *Cpu, xory: u1) u8 {
+    pub fn GetAbsoluteIndexed(self: *Cpu, xory: u1) u8 {
         self.bus.addr_bus = self.pc + 2;
         self.bus.getMmo();
         var addr: u16 = self.bus.data_bus << 8;
@@ -83,7 +83,7 @@ pub const Cpu = struct {
         return self.bus.data_bus;
     }
 
-    pub fn getIndirectX(self: *Cpu) u8 {
+    pub fn GetIndirectX(self: *Cpu) u8 {
         self.bus.addr_bus = self.pc + 1;
         self.bus.getMmo();
         const addr = self.bus.data_bus;
@@ -94,21 +94,21 @@ pub const Cpu = struct {
         return self.bus.data_bus;
     }
 
-    pub fn getZeroPage(self: *Cpu) u8 {
+    pub fn GetZeroPage(self: *Cpu) u8 {
         self.bus.addr_bus = self.pc + 1;
         self.bus.getMmo();
 
         return self.bus.data_bus;
     }
 
-    pub fn getImmediate(self: *Cpu) u8 {
+    pub fn GetImmediate(self: *Cpu) u8 {
         self.bus.addr_bus = self.pc + 1;
         self.bus.getMmo();
 
         return self.bus.data_bus;
     }
 
-    pub fn getAbsolute(self: *Cpu) u8 {
+    pub fn GetAbsolute(self: *Cpu) u8 {
         self.bus.addr_bus = self.pc + 2;
         self.bus.getMmo();
 
@@ -124,30 +124,53 @@ pub const Cpu = struct {
         return self.bus.data_bus;
     }
 
-    pub fn logicalAnd(time: *i128, self: *Cpu) void {
-        //I know its an annd because the lowest nib % 4 == 1
-        if (self.instruction & 0xF0 == 0x30) {
+    pub fn logicalOr(time: 128, self: *Cpu) void {
+        if (self.instruction & 0xF0 == 1) {
             switch (self.instruction & 0xF) {
                 1 => indirecty: {
-                    self.accumulator &= self.getIndirectY();
+                    self.accumulator |= self.GetIndirectY();
                     self.pc += 2;
                     cycle(time, 5 + self.extra_cycle);
                     break :indirecty;
                 },
                 5 => zero_pagex: {
-                    self.accumulator &= self.getZeroPageX();
+                    self.accumulator |= self.GetZeroPageX();
+                    self.pc += 2;
+                    cycle(time, 4);
+                    break :zero_pagex;
+                },
+                else => default: {
+                    std.debug.print("No Addresing Mode found (Logical Or)!\n", .{});
+                    break :default;
+                },
+            }
+        } else {}
+    }
+
+    pub fn logicalAnd(time: i128, self: *Cpu) void {
+        //I know its an annd because the lowest nib % 4 == 1
+        if (self.instruction & 0xF0 == 0x30) {
+            switch (self.instruction & 0xF) {
+                1 => indirecty: {
+                    self.accumulator &= self.GetIndirectY();
+                    self.pc += 2;
+                    cycle(time, 5 + self.extra_cycle);
+                    break :indirecty;
+                },
+                5 => zero_pagex: {
+                    self.accumulator &= self.GetZeroPageX();
                     self.pc += 3;
                     cycle(time, 4);
                     break :zero_pagex;
                 },
                 9 => absolute_y: {
-                    self.accumulator &= self.getAbsoluteIndexed(1);
+                    self.accumulator &= self.GetAbsoluteIndexed(1);
                     self.pc += 3;
                     cycle(time, 4 + self.extra_cycle);
                     break :absolute_y;
                 },
                 0xD => absolute_x: {
-                    self.accumulator &= self.getAbsoluteIndexed(0);
+                    self.accumulator &= self.GetAbsoluteIndexed(0);
                     self.pc += 3;
                     cycle(time, 4 + self.extra_cycle);
                     break :absolute_x;
@@ -160,28 +183,28 @@ pub const Cpu = struct {
         } else {
             switch (self.instruction & 0xF) {
                 1 => indirectx: {
-                    self.accumulator &= self.getIndirectX();
+                    self.accumulator &= self.GetIndirectX();
 
                     self.pc += 2;
                     cycle(time, 6);
                     break :indirectx;
                 },
                 5 => zero_page: {
-                    self.accumulator &= self.getZeroPage();
+                    self.accumulator &= self.GetZeroPage();
 
                     self.pc += 2;
                     cycle(time, 3);
                     break :zero_page;
                 },
                 9 => immediate: {
-                    self.accumulator &= self.getImmediate();
+                    self.accumulator &= self.GetImmediate();
 
                     self.pc += 2;
                     cycle(time, 2);
                     break :immediate;
                 },
                 0xD => absolute: {
-                    self.accumulator &= self.getAbsolute();
+                    self.accumulator &= self.GetAbsolute();
                     self.pc += 3;
                     cycle(time, 4);
                     break :absolute;
@@ -192,6 +215,12 @@ pub const Cpu = struct {
                 },
             }
         }
+        if (self.accumulator == 0) {
+            self.status.zero = 1;
+        } else {
+            self.status.zero = 0;
+        }
+        self.status.negative = self.accumulator >> 7;
     }
 };
 
@@ -206,7 +235,7 @@ pub const Ppu = struct {
     data: u8,
     oam_dma: u8,
 
-    pub fn ppuMmo(self: *Ppu, address: u16) u8 {
+    pub fn PpuMmo(self: *Ppu, address: u16) u8 {
         if (address == 0x4014) {
             return self.oam_dma;
         }
@@ -254,9 +283,9 @@ pub const Bus = struct {
 
     pub fn getMmo(self: *Bus) void {
         if (self.addr_bus <= 0x1FFF) {
-            self.data_bus = self.cpu_ptr.cpu.memory[self.addr_bus % 0x800];
+            self.data_bus = self.cpu_ptr.memory[self.addr_bus % 0x800];
         } else if (self.addr_bus <= 0x3FFF) {
-            self.data_bus = self.ppu_ptr.ppuMmo(self.addr_bus);
+            self.data_bus = self.ppu_ptr.PpuMmo(self.addr_bus);
         } else if (self.addr_bus <= 0x401F) {
             return;
         }
