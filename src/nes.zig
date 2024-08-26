@@ -124,7 +124,79 @@ pub const Cpu = struct {
         return self.bus.data_bus;
     }
 
-    pub fn logicalOr(time: 128, self: *Cpu) void {
+    pub fn exclusiveOr(time: i128, self: *Cpu) void {
+        if (self.instruction & 0xF0 == 5) {
+            switch (self.instruction & 0xF) {
+                1 => indirecty: {
+                    self.accumulator ^= self.GetIndirectY();
+                    self.pc += 2;
+                    cycle(time, 5 + self.extra_cycle);
+                    break :indirecty;
+                },
+                5 => zero_pagex: {
+                    self.accumulator ^= self.GetZeroPageX();
+                    self.pc += 2;
+                    cycle(time, 4);
+                    break :zero_pagex;
+                },
+                9 => absolutey: {
+                    self.accumulator ^= self.GetAbsoluteIndexed(1);
+                    self.pc += 3;
+                    cycle(time, 4 + self.extra_cycle);
+                    break :absolutey;
+                },
+                0xD => absolutex: {
+                    self.accumulator ^= self.GetAbsoluteIndexed(0);
+                    self.pc += 3;
+                    cycle(time, 4 + self.extra_cycle);
+                    break :absolutex;
+                },
+                else => default: {
+                    std.debug.print("No Addressing Mode found (Logical XOR)!\n", .{});
+                    break :default;
+                },
+            }
+        } else {
+            switch (self.instruction & 0xF) {
+                1 => indirectx: {
+                    self.accumulator ^= self.GetIndirectX();
+                    self.pc += 2;
+                    cycle(time, 6);
+                    break :indirectx;
+                },
+                5 => zero_page: {
+                    self.accumulator ^= self.GetZeroPage();
+                    self.pc += 2;
+                    cycle(time, 3);
+                    break :zero_page;
+                },
+                9 => immediate: {
+                    self.accumulator ^= self.GetImmediate();
+                    self.pc += 2;
+                    cycle(time, 2);
+                    break :immediate;
+                },
+                0xD => absolute: {
+                    self.accumulator ^= self.GetAbsolute();
+                    self.pc += 3;
+                    cycle(time, 4);
+                    break :absolute;
+                },
+                else => default: {
+                    std.debug.print("No Addressing Mode found (Logical XOR)!\n", .{});
+                    break :default;
+                },
+            }
+        }
+        if (self.accumulator == 0) {
+            self.status.zero = 1;
+        } else {
+            self.status.zero = 0;
+        }
+        self.status.negative = self.accumulator >> 7;
+    }
+
+    pub fn logicalOr(time: i128, self: *Cpu) void {
         if (self.instruction & 0xF0 == 1) {
             switch (self.instruction & 0xF) {
                 1 => indirecty: {
@@ -141,6 +213,7 @@ pub const Cpu = struct {
                 },
                 9 => absolutey: {
                     self.accumulator |= self.GetAbsoluteIndexed(1);
+                    self.pc += 3;
                     cycle(time, 4 + self.extra_cycle);
                     break :absolutey;
                 },
