@@ -124,6 +124,42 @@ pub const Cpu = struct {
         return self.bus.data_bus;
     }
 
+    pub fn addWithCarry(time: i128, self: *Cpu) void {
+    }
+
+    pub fn bitTest(time: i128, self: *Cpu) void {
+        switch (self.instruction & 0xF) {
+            4 => zero_page: {
+                const value = self.GetZeroPage();
+                const zero = self.accumulator & value;
+                self.status.negative = value >> 7;
+                self.status.overflow = value >> 6;
+                if (zero == 0) {
+                    self.status.zero = 1;
+                }
+                self.pc += 2;
+                cycle(time, 3);
+                break :zero_page;
+            },
+            0xC => absolute: {
+                const value = self.GetAbsolute();
+                const zero = self.accumulator & value;
+                self.status.negative = value >> 7;
+                self.status.overflow = value >> 6;
+                if (zero == 0) {
+                    self.status.zero = 1;
+                }
+                self.pc += 2;
+                cycle(time, 4);
+                break :absolute;
+            },
+            else => default: {
+                std.debug.print("No Addressing Mode found (Bit Test)!\n", .{});
+                break :default;
+            },
+        }
+    }
+
     pub fn exclusiveOr(time: i128, self: *Cpu) void {
         if (self.instruction & 0xF0 == 5) {
             switch (self.instruction & 0xF) {
