@@ -626,6 +626,41 @@ pub const Ppu = struct {
             },
         }
     }
+    pub fn ppuMmi(self: *Ppu, address: u16, data: u8) void {
+        if (address == 0x4014) {
+            return self.oam_dma;
+        }
+        switch (address % 8) {
+            0 => {
+                self.control = data;
+            },
+            1 => {
+                self.mask = data;
+            },
+            2 => {
+                self.status = data;
+            },
+            3 => {
+                self.oama_addr = data;
+            },
+            4 => {
+                self.oam_data = data;
+            },
+            5 => {
+                self.scroll = data;
+            },
+            6 => {
+                self.addr = data;
+            },
+            7 => {
+                self.data = data;
+            },
+            else => default: {
+                std.debug.print("Invalid PPU Register!\n", .{});
+                break :default;
+            },
+        }
+    }
 };
 
 pub const Apu = struct {};
@@ -650,7 +685,7 @@ pub const Bus = struct {
         if (self.addr_bus <= 0x1FFF) {
             self.cpu_ptr.memory[self.addr_bus % 0x800] = self.data_bus;
         } else if (self.addr_bus <= 0x3FFF) {
-            self.data_bus = self.ppu_ptr.PpuMmo(self.addr_bus);
+            self.data_bus = self.ppu_ptr.ppuMmi(self.addr_bus, self.data_bus);
         } else if (self.addr_bus <= 0x401F) {
             return;
         }
