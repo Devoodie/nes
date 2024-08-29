@@ -34,16 +34,29 @@ pub const Cpu = struct {
         self.extra_cycle = 0;
 
         var addr: u16 = self.bus.data_bus;
-        const sum: u8 = @addWithOverflow(self.bus.data_bus, self.y_register);
+        const sum = @addWithOverflow(self.bus.data_bus, self.y_register);
         if (sum[1] == 1) {
             self.extra_cycle = 1;
         }
-        addr += self.y_register;
+        addr = sum[0];
 
         self.bus.addr_bus = addr;
         self.bus.getMmo();
 
         return self.bus.data_bus;
+    }
+    pub fn setIndirectY(self: *Cpu, data: u8) void {
+        self.bus.addr_bus = self.pc + 1;
+        self.bus.getMmo();
+        self.extra_cycle = 0;
+
+        var addr: u16 = self.bus.data_bus;
+        addr += self.y_register;
+
+        self.bus.addr_bus = addr;
+        self.bus.data_bus = data;
+
+        self.bus.putMmi();
     }
 
     pub fn GetZeroPageX(self: *Cpu) u8 {
@@ -55,6 +68,16 @@ pub const Cpu = struct {
         self.bus.getMmo();
 
         return self.bus.data_bus;
+    }
+    pub fn setZeroPageX(self: *Cpu, data: u8) void {
+        self.bus.addr_bus = self.pc + 1;
+        self.bus.getMmo();
+
+        const addr: u8 = (self.bus.data_bus + self.x_register) % 256;
+        self.bus.addr_bus = addr;
+        self.bus.data_bus = data;
+
+        self.bus.putMmi();
     }
 
     pub fn GetAbsoluteIndexed(self: *Cpu, xory: u1) u8 {
@@ -82,6 +105,28 @@ pub const Cpu = struct {
         self.bus.getMmo();
         return self.bus.data_bus;
     }
+    pub fn setAbsoluteIndexed(self: *Cpu, xory: u1, data: u8) void {
+        self.bus.addr_bus = self.pc + 2;
+        self.bus.getMmo();
+        var addr: u16 = self.bus.data_bus << 8;
+        self.extra_cycle = 0;
+        var sum = undefined;
+
+        self.bus.addr_bus = self.pc + 1;
+        self.bus.getMmo();
+
+        if (xory == 0) {
+            sum = self.bus.data_bus + self.x_register;
+        } else {
+            sum = self.bus.data_bus + self.y_register;
+        }
+
+        addr += sum;
+        self.bus.addr_bus = addr;
+        self.bus.data_bus = data;
+
+        self.bus.putMmi();
+    }
 
     pub fn GetIndirectX(self: *Cpu) u8 {
         self.bus.addr_bus = self.pc + 1;
@@ -93,6 +138,16 @@ pub const Cpu = struct {
 
         return self.bus.data_bus;
     }
+    pub fn setIndirectX(self: *Cpu, data: u8) void {
+        self.bus.addr_bus = self.pc + 1;
+        self.bus.getMmo();
+        const addr = self.bus.data_bus;
+
+        self.bus.addr_bus = (addr + self.x_register) % 256;
+        self.bus.data_bus = data;
+
+        self.bus.putMmi();
+    }
 
     pub fn GetZeroPage(self: *Cpu) u8 {
         self.bus.addr_bus = self.pc + 1;
@@ -101,11 +156,25 @@ pub const Cpu = struct {
         return self.bus.data_bus;
     }
 
+    pub fn setZeroPage(self: *Cpu, data: u8) void {
+        self.bus.addr_bus = self.pc + 1;
+        self.bus.data_bus = data;
+
+        self.bus.putMmi();
+    }
+
     pub fn GetImmediate(self: *Cpu) u8 {
         self.bus.addr_bus = self.pc + 1;
         self.bus.getMmo();
 
         return self.bus.data_bus;
+    }
+
+    pub fn setImmediate(self: *Cpu, data: u8) void {
+        self.bus.addr_bus = self.pc + 1;
+        self.bus.data_bus = data;
+
+        self.bus.putMmi();
     }
 
     pub fn GetAbsolute(self: *Cpu) u8 {
@@ -122,6 +191,21 @@ pub const Cpu = struct {
         self.bus.getMmo();
 
         return self.bus.data_bus;
+    }
+    pub fn setAbsolute(self: *Cpu, data: u8) void {
+        self.bus.addr_bus = self.pc + 2;
+        self.bus.getMmo();
+
+        var addr: u16 = self.bus.data_bus << 8;
+
+        self.bus.addr_bus = self.pc + 1;
+        self.bus.getMmo();
+
+        addr |= self.bus.data_bus;
+        self.bus.addr_bus = addr;
+        self.bus.data_bus = data;
+
+        self.bus.putMmi();
     }
 
     pub fn loadAccumulator(time: i128, self: *Cpu) void {
@@ -628,7 +712,7 @@ pub const Ppu = struct {
     }
     pub fn ppuMmi(self: *Ppu, address: u16, data: u8) void {
         if (address == 0x4014) {
-            return self.oam_dma;
+            self.oam_dma = data;
         }
         switch (address % 8) {
             0 => {
