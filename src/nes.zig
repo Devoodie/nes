@@ -280,6 +280,92 @@ pub const Cpu = struct {
         }
     }
 
+    pub fn storeXRegister(time: i128, self: *Cpu) void {
+        if(self.instruction & 0xF0 == 9){
+            self.setZeroPageY(self.accumulator);
+            self.pc += 2;
+            cycle(time, 4);
+        } else {
+            switch (self.instruction & 0xF) {
+                1 => zeropage: {
+                    self.setZeroPage(self.x_register);
+                    self.pc += 2;
+                    cycle(time, 3);
+                    break :zeropage;
+                },
+                0xE => absolute: {
+                    self.setAbsolute(self.x_register);
+                    self.pc += 2;
+                    cycle(time, 4);
+                    break :absolute;
+                },
+                else => default: {
+                    std.debug.print("No Valid Addresing mode found (Store X Register!\n", .{});
+                    break :default;
+                }
+            }
+        }
+    }
+
+    pub fn storeAccumulator(time: i128, self: *Cpu) void {
+        if (self.instruction & 0xF0 == 9) {
+            switch (self.instruction & 0xF) {
+                1 => indirecty: {
+                    self.setIndirectY(self.accumulator);
+                    self.pc += 2;
+                    cycle(time, 6);
+                    break :indirecty;
+                },
+                5 => zero_pagex: {
+                    self.setZeroPageX(self.accumulator);
+                    self.pc += 2;
+                    cycle(time, 4);
+                    break :zero_pagex;
+                },
+                9 => absolutey: {
+                    self.setAbsoluteIndexed(1, self.accumulator);
+                    self.pc += 3;
+                    cycle(time, 5);
+                    break :absolutey;
+                },
+                0xD => absolutex: {
+                    self.setAbsoluteIndexed(0, self.accumulator);
+                    self.pc += 3;
+                    cycle(time, 5);
+                    break :absolutex;
+                },
+                else => default: {
+                    std.debug.print("No Addressing Mode found (Logical XOR)!\n", .{});
+                    break :default;
+                },
+            }
+        } else {
+            switch (self.instruction & 0xF) {
+                1 => indirectx: {
+                    self.setIndirectX(self.accumulator);
+                    self.pc += 2;
+                    cycle(time, 6);
+                    break :indirectx;
+                },
+                5 => zero_page: {
+                    self.setZeroPage(self.accumulator);
+                    self.pc += 2;
+                    cycle(time, 3);
+                    break :zero_page;
+                },
+                0xD => absolute: {
+                    self.pc += 3;
+                    cycle(time, 4);
+                    break :absolute;
+                },
+                else => default: {
+                    std.debug.print("No Addressing Mode found (Logical XOR)!\n", .{});
+                    break :default;
+                },
+            }
+        }
+    }
+
     pub fn addWithCarry(time: i128, self: *Cpu) void {
         if (self.instruction & 0xF0 == 7) {
             switch (self.instruction & 0xF) {
