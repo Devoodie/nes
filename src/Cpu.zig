@@ -218,12 +218,12 @@ pub const Cpu = struct {
                     const operation1 = @subWithOverflow(self.accumulator, self.GetIndirectY());
                     const difference = @subWithOverflow(operation1 , carry);
 
-                    if(carry[1] == 1 or difference[1] == 1){
-                        self.status.carry = 0;
-                    }
                     self.accumulator = difference[0];
                     if (negative != difference[0] >> 7) {
                         self.status.overflow = 1;
+                        self.status.carry = 0;
+                    } else {
+                        self.status.carry = 1;
                     }
 
                     self.pc += 2;
@@ -234,20 +234,16 @@ pub const Cpu = struct {
                     const negative: u1 = self.accumulator >> 7;
                     const carry = 1 - self.status.carry;
 
-                    const operation1 = @subWithOverflow(self.accumulator, self.GetIndirectY());
+                    const operation1 = @subWithOverflow(self.accumulator, self.GetZeroPageX());
                     const difference = @subWithOverflow(operation1 , carry);
-
-                    if(carry[1] == 1 or difference[1] == 1){
-                        self.status.carry = 0;
-                    }
- 
-                    const difference = @addWithOverflow(self.GetZeroPageX(), self.accumulator);
 
                     self.accumulator = difference[0];
                     if (negative != difference[0] >> 7) {
                         self.status.overflow = 1;
+                        self.status.carry = 0;
+                    } else {
+                        self.status.carry = 1;
                     }
-                    self.status.carry = difference[1];
 
                     self.pc += 2;
                     cycle(time, 4);
@@ -255,13 +251,18 @@ pub const Cpu = struct {
                 },
                 9 => absolutey: {
                     const negative: u1 = self.accumulator >> 7;
-                    const difference = @addWithOverflow(self.GetAbsoluteIndexed(1), self.accumulator);
+                    const carry = 1 - self.status.carry;
+
+                    const operation1 = @subWithOverflow(self.accumulator, self.GetAbsoluteIndexed(1));
+                    const difference = @subWithOverflow(operation1 , carry);
 
                     self.accumulator = difference[0];
                     if (negative != difference[0] >> 7) {
                         self.status.overflow = 1;
+                        self.status.carry = 0;
+                    } else {
+                        self.status.carry = 1;
                     }
-                    self.status.carry = difference[1];
 
                     self.pc += 3;
                     cycle(time, 4 + self.extra_cycle);
@@ -269,13 +270,19 @@ pub const Cpu = struct {
                 },
                 0xD => absolutex: {
                     const negative: u1 = self.accumulator >> 7;
-                    const difference = @addWithOverflow(self.GetAbsoluteIndexed(0), self.accumulator);
+                    const carry = 1 - self.status.carry;
+
+                    const operation1 = @subWithOverflow(self.accumulator, self.GetAbsoluteIndexed(0));
+                    const difference = @subWithOverflow(operation1 , carry);
+
 
                     self.accumulator = difference[0];
                     if (negative != difference[0] >> 7) {
                         self.status.overflow = 1;
+                        self.status.carry = 0;
+                    } else {
+                        self.status.carry = 1;
                     }
-                    self.status.carry = difference[1];
 
                     self.pc += 3;
                     cycle(time, 4 + self.extra_cycle);
@@ -290,13 +297,19 @@ pub const Cpu = struct {
             switch (self.instruction & 0xF) {
                 1 => indirectx: {
                     const negative: u1 = self.accumulator >> 7;
-                    const difference = @addWithOverflow(self.GetIndirectX(), self.accumulator);
+                    const carry = 1 - self.status.carry;
+
+                    const operation1 = @subWithOverflow(self.accumulator, self.GetIndirectX());
+                    const difference = @subWithOverflow(operation1 , carry);
+
 
                     self.accumulator = difference[0];
                     if (negative != difference[0] >> 7) {
                         self.status.overflow = 1;
+                        self.status.carry = 0;
+                    } else {
+                        self.status.carry = 1;
                     }
-                    self.status.carry = difference[1];
 
                     self.pc += 2;
                     cycle(time, 6);
@@ -304,13 +317,19 @@ pub const Cpu = struct {
                 },
                 5 => zero_page: {
                     const negative: u1 = self.accumulator >> 7;
-                    const difference = @addWithOverflow(self.GetZeroPage(), self.accumulator);
+                    const carry = 1 - self.status.carry;
+
+                    const operation1 = @subWithOverflow(self.accumulator, self.GetZeroPage());
+                    const difference = @subWithOverflow(operation1 , carry);
+
 
                     self.accumulator = difference[0];
                     if (negative != difference[0] >> 7) {
                         self.status.overflow = 1;
+                        self.status.carry = 0;
+                    } else {
+                        self.status.carry = 1;
                     }
-                    self.status.carry = difference[1];
 
                     self.pc += 2;
                     cycle(time, 3);
@@ -318,13 +337,19 @@ pub const Cpu = struct {
                 },
                 9 => immediate: {
                     const negative: u1 = self.accumulator >> 7;
-                    const difference = @addWithOverflow(self.GetImmediate(), self.accumulator);
+                    const carry = self.status.carry;
+
+                    const operation1 = @subWithOverflow(self.accumulator, self.GetImmediate());
+                    const difference = @subWithOverflow(operation1 , carry);
+
 
                     self.accumulator = difference[0];
                     if (negative != difference[0] >> 7) {
                         self.status.overflow = 1;
+                        self.status.carry = 0;
+                    } else {
+                        self.status.carry = 1;
                     }
-                    self.status.carry = difference[1];
 
                     self.pc += 2;
                     cycle(time, 2);
@@ -332,13 +357,19 @@ pub const Cpu = struct {
                 },
                 0xD => absolute: {
                     const negative: u1 = self.accumulator >> 7;
-                    const difference = @addWithOverflow(self.GetAbsolute(), self.accumulator);
+                    const carry = 1 - self.status.carry;
+
+                    const operation1 = @subWithOverflow(self.accumulator, self.GetAbsolute());
+                    const difference = @subWithOverflow(operation1 , carry);
+
 
                     self.accumulator = difference[0];
                     if (negative != difference[0] >> 7) {
                         self.status.overflow = 1;
+                        self.status.carry = 0;
+                    } else {
+                        self.status.carry = 1;
                     }
-                    self.status.carry = difference[1];
 
                     self.pc += 3;
                     cycle(time, 4);
