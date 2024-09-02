@@ -28,6 +28,18 @@ pub const Cpu = struct {
         std.time.sleep(559 * cycles - elapsed_time);
     }
 
+    pub fn stackPush(data: u8, self: *Cpu) void {
+        self.bus.addr_bus = self.stack_pointer + 0x100 - 1;
+        self.bus.data_bus = data;
+        self.bus.putMmi();
+        self.stack_pointer -= 1;
+    }
+    pub fn stackPop(self: *Cpu) void {
+        self.bus.addr_bus = self.stack_pointer + 0x100 - 1;
+        self.bus.getMmo();
+        self.pc = self.bus.data_bus;
+    }
+
     pub fn GetIndirectY(self: *Cpu) u8 {
         self.bus.addr_bus = self.pc + 1;
         self.bus.getMmo();
