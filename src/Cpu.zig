@@ -257,10 +257,20 @@ pub const Cpu = struct {
 
     pub fn jumpSubroutine(time: i128, self: *Cpu) void {
         self.stackPush(self.pc + 3);
-        self.pc = self.GetAbsolute();
+
+        self.bus.addr_bus = self.pc + 2;
+        self.bus.getMmo();
+
+        var addr: u16 = self.bus.data_bus << 8;
+
+        self.bus.addr_bus = self.pc + 1;
+        self.bus.getMmo();
+
+        addr |= self.bus.data_bus;
+
+        self.pc = addr;
 
         self.cycle(time, 6);
-        
     }
     pub fn subtractWithCarry(time: i128, self: *Cpu) void {
         if (self.instruction & 0xF0 == 0xF) {
