@@ -34,10 +34,39 @@ pub const Cpu = struct {
         self.bus.putMmi();
         self.stack_pointer -= 1;
     }
-    pub fn stackPop(self: *Cpu) void {
+
+    pub fn stackPushAddress(address: u16, self: *Cpu) void {
+        const highbyte: u8 = address >> 8;
+        const lowbyte: u8 = address & 0xFF;
+
+        self.bus.addr_bus = self.stack_pointer + 0x100 - 1;
+        self.bus.data_bus = highbyte;
+        self.bus.putMmi();
+
+        self.bus.addr_bus = self.stack_pointer + 0x100 - 2;
+        self.bus.data_bus = lowbyte;
+        self.bus.putMmi();
+        self.stack_pointer -= 2;
+    }
+    pub fn stackPop(self: *Cpu) u8 {
         self.bus.addr_bus = self.stack_pointer + 0x100 - 1;
         self.bus.getMmo();
-        self.pc = self.bus.data_bus;
+        self.stack_pointer += 1;
+        return self.bus.data_bus;
+    }
+
+    pub fn stackPopAddress(self: *Cpu) u16 {
+        var address: u16 = 0;
+        self.bus.addr_bus = self.stack_pointer + 0x100 - 1;
+        self.bus.getMmo();
+        const highbyte: u8 = self.bus.data_bus;
+
+        self.bus.addr_bus - self.stack_pointer + 0x100;
+        self.bus.getMmo();
+        const lowbyte: u8 = self.bus.data_bus;
+
+        address = (highbyte << 8) | lowbyte;
+        return address;
     }
 
     pub fn GetIndirectY(self: *Cpu) u8 {
@@ -220,6 +249,19 @@ pub const Cpu = struct {
         self.bus.putMmi();
     }
 
+    pub fn forceInterrupt(time: i128, self: *Cpu) void {
+        self.stackPushAddress(self.pc);
+        self.pc = 0xFFFF;
+        self.cycle(time, 7);
+    }
+
+    pub fn jumpSubroutine(time: i128, self: *Cpu) void {
+        self.stackPush(self.pc + 3);
+        self.pc = self.GetAbsolute();
+
+        self.cycle(time, 6);
+        
+    }
     pub fn subtractWithCarry(time: i128, self: *Cpu) void {
         if (self.instruction & 0xF0 == 0xF) {
             switch (self.instruction & 0xF) {
