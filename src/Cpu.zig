@@ -237,6 +237,7 @@ pub const Cpu = struct {
 
         return self.bus.data_bus;
     }
+
     pub fn setAbsolute(self: *Cpu, data: u8) void {
         self.bus.addr_bus = self.pc + 2;
         self.bus.getMmo();
@@ -258,18 +259,146 @@ pub const Cpu = struct {
         cycle(time, 2);
     }
 
+    pub fn compareYRegister(time: i128, self: *Cpu) void {
+        switch (self.instruction & 0xF) {
+            0 => immediate: {
+                const value = self.GetImmediate();
+                if (self.accumulator == value) {
+                    self.status.carry = 1;
+                    self.status.zero = 1;
+                } else if (self.accumulator > value) {
+                    self.status.carry = 1;
+                }
+
+                self.pc += 2;
+                cycle(time, 2);
+                break :immediate;
+            },
+            4 => zeropage: {
+                const value = self.GetZeroPage();
+                if (self.accumulator == value) {
+                    self.status.carry = 1;
+                    self.status.zero = 1;
+                } else if (self.accumulator > value) {
+                    self.status.carry = 1;
+                }
+
+                self.pc += 2;
+                cycle(time, 3);
+                break :zeropage;
+            },
+            0xC => absolute: {
+                const value = self.GetAbsolute();
+                if (self.accumulator == value) {
+                    self.status.carry = 1;
+                    self.status.zero = 1;
+                } else if (self.accumulator > value) {
+                    self.status.carry = 1;
+                }
+
+                self.pc += 3;
+                cycle(time, 4);
+                break :absolute;
+            },
+            else => default: {
+                std.debug.print("No Valid Addressing Mode Found (Compare Y Register)!\n", .{});
+                break :default;
+            },
+        }
+    }
+
+    pub fn compareXRegister(time: i128, self: *Cpu) void {
+        switch (self.instruction & 0xF) {
+            0 => immediate: {
+                const value = self.GetImmediate();
+                if (self.accumulator == value) {
+                    self.status.carry = 1;
+                    self.status.zero = 1;
+                } else if (self.accumulator > value) {
+                    self.status.carry = 1;
+                }
+
+                self.pc += 2;
+                cycle(time, 2);
+                break :immediate;
+            },
+            4 => zeropage: {
+                const value = self.GetZeroPage();
+                if (self.accumulator == value) {
+                    self.status.carry = 1;
+                    self.status.zero = 1;
+                } else if (self.accumulator > value) {
+                    self.status.carry = 1;
+                }
+
+                self.pc += 2;
+                cycle(time, 3);
+                break :zeropage;
+            },
+            0xC => absolute: {
+                const value = self.GetAbsolute();
+                if (self.accumulator == value) {
+                    self.status.carry = 1;
+                    self.status.zero = 1;
+                } else if (self.accumulator > value) {
+                    self.status.carry = 1;
+                }
+
+                self.pc += 3;
+                cycle(time, 4);
+                break :absolute;
+            },
+            else => default: {
+                std.debug.print("No Valid Addressing Mode Found (Compare X Register)!\n", .{});
+                break :default;
+            },
+        }
+    }
+
     pub fn loadYRegister(time: i128, self: *Cpu) void {
         if (self.instruction & 0xF0 == 0xA) {
-            switch (self.instruction) {
-                0xf => something: {
-                    break :something;
+            switch (self.instruction & 0xF) {
+                0 => immediate: {
+                    self.y_register = self.GetImmediate();
+                    self.pc += 1;
+                    cycle(time, 2);
+                    break :immediate;
+                },
+                4 => zeropage: {
+                    self.y_register = self.GetZeroPage();
+                    self.pc += 1;
+                    cycle(time, 3);
+                    break :zeropage;
+                },
+                0xC => absolute: {
+                    self.y_register = self.GetAbsolute();
+                    self.pc += 2;
+                    cycle(time, 4);
+                    break :absolute;
                 },
                 else => default: {
-                    std.debug.print("", .{});
+                    std.debug.print("No Valid Addressing Mode found (Load Y Register)!\n", .{});
                     break :default;
                 },
             }
-        } else {}
+        } else {
+            switch (self.instruction & 0xF) {
+                0x4 => zeropagex: {
+                    self.y_register = self.GetZeroPageX();
+                    self.pc += 1;
+                    cycle(time, 4);
+                    break :zeropagex;
+                },
+                0xC => absolutex: {
+                    self.y_register = self.GetAbsoluteIndexed(0);
+                    break :absolutex;
+                },
+                else => default: {
+                    std.debug.print("No Valid Addressing Mode found (Load Y Register)!\n", .{});
+                    break :default;
+                },
+            }
+        }
         cycle(time, 6);
     }
 
@@ -315,6 +444,7 @@ pub const Cpu = struct {
 
         self.cycle(time, 6);
     }
+
     pub fn subtractWithCarry(time: i128, self: *Cpu) void {
         if (self.instruction & 0xF0 == 0xF) {
             switch (self.instruction & 0xF) {
