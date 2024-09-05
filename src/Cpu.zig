@@ -1,5 +1,6 @@
 const component = @import("Bus.zig");
 const std = @import("std");
+
 const StatusRegister = struct {
     carry: u1 = 0,
     zero: u1 = 0,
@@ -49,6 +50,7 @@ pub const Cpu = struct {
         self.bus.putMmi();
         self.stack_pointer -= 2;
     }
+
     pub fn stackPop(self: *Cpu) u8 {
         self.bus.addr_bus = self.stack_pointer + 0x100;
         self.bus.getMmo();
@@ -354,6 +356,54 @@ pub const Cpu = struct {
             },
         }
     }
+
+    pub fn increment(time: i128, self: *Cpu) void {
+        if (self.instruction & 0xF0 == 0xF) {
+            switch (self.instruction & 0xF) {
+                6 => zeropagex: {
+                    const value = self.GetZeroPageX() + 1;
+                    self.setZeroPageX(value);
+                    self.pc += 2;
+                    cycle(time, 6);
+                    break :zeropagex;
+                },
+                0xE => absolutex: {
+                    const value = self.GetAbsoluteIndexed(0) + 1;
+                    self.setAbsoluteIndexed(0, value);
+                    self.pc += 3;
+                    cycle(time, 7);
+                    break :absolutex;
+                },
+                else => default: {
+                    std.debug.print("No Valid Addressing Mode found (Increment)!\n", .{});
+                    break :default;
+                },
+            }
+        } else {
+            switch (self.instruction & 0xF) {
+                6 => zeropage: {
+                    const value = self.GetZeroPageX() + 1;
+                    self.setZeroPage(value);
+                    self.pc += 2;
+                    cycle(time, 5);
+                    break :zeropage;
+                },
+                0xE => absolute: {
+                    const value = self.GetAbsolute();
+                    self.setAbsolute(value);
+                    self.pc += 3;
+                    cycle(time, 6);
+                    break :absolute;
+                },
+                else => default: {
+                    std.debug.print("No Valid Addressing Mode found (Increment)!\n", .{});
+                    break :default;
+                },
+            }
+        }
+    }
+
+    pub fn incrementXRegister(time: i128) void {}
 
     pub fn loadYRegister(time: i128, self: *Cpu) void {
         if (self.instruction & 0xF0 == 0xA) {
