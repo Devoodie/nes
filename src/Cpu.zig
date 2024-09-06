@@ -265,10 +265,10 @@ pub const Cpu = struct {
         switch (self.instruction & 0xF) {
             0 => immediate: {
                 const value = self.GetImmediate();
-                if (self.accumulator == value) {
+                if (self.y_register == value) {
                     self.status.carry = 1;
                     self.status.zero = 1;
-                } else if (self.accumulator > value) {
+                } else if (self.y_register > value) {
                     self.status.carry = 1;
                 }
 
@@ -278,10 +278,10 @@ pub const Cpu = struct {
             },
             4 => zeropage: {
                 const value = self.GetZeroPage();
-                if (self.accumulator == value) {
+                if (self.y_register == value) {
                     self.status.carry = 1;
                     self.status.zero = 1;
-                } else if (self.accumulator > value) {
+                } else if (self.y_register > value) {
                     self.status.carry = 1;
                 }
 
@@ -291,10 +291,10 @@ pub const Cpu = struct {
             },
             0xC => absolute: {
                 const value = self.GetAbsolute();
-                if (self.accumulator == value) {
+                if (self.y_register == value) {
                     self.status.carry = 1;
                     self.status.zero = 1;
-                } else if (self.accumulator > value) {
+                } else if (self.y_register > value) {
                     self.status.carry = 1;
                 }
 
@@ -313,10 +313,10 @@ pub const Cpu = struct {
         switch (self.instruction & 0xF) {
             0 => immediate: {
                 const value = self.GetImmediate();
-                if (self.accumulator == value) {
+                if (self.x_register == value) {
                     self.status.carry = 1;
                     self.status.zero = 1;
-                } else if (self.accumulator > value) {
+                } else if (self.x_register > value) {
                     self.status.carry = 1;
                 }
 
@@ -326,10 +326,10 @@ pub const Cpu = struct {
             },
             4 => zeropage: {
                 const value = self.GetZeroPage();
-                if (self.accumulator == value) {
+                if (self.x_register == value) {
                     self.status.carry = 1;
                     self.status.zero = 1;
-                } else if (self.accumulator > value) {
+                } else if (self.x_register > value) {
                     self.status.carry = 1;
                 }
 
@@ -339,10 +339,10 @@ pub const Cpu = struct {
             },
             0xC => absolute: {
                 const value = self.GetAbsolute();
-                if (self.accumulator == value) {
+                if (self.x_register == value) {
                     self.status.carry = 1;
                     self.status.zero = 1;
-                } else if (self.accumulator > value) {
+                } else if (self.x_register > value) {
                     self.status.carry = 1;
                 }
 
@@ -358,17 +358,18 @@ pub const Cpu = struct {
     }
 
     pub fn increment(time: i128, self: *Cpu) void {
+        var value: u8 = 0;
         if (self.instruction & 0xF0 == 0xF) {
             switch (self.instruction & 0xF) {
                 6 => zeropagex: {
-                    const value = self.GetZeroPageX() + 1;
+                    value = self.GetZeroPageX() + 1;
                     self.setZeroPageX(value);
                     self.pc += 2;
                     cycle(time, 6);
                     break :zeropagex;
                 },
                 0xE => absolutex: {
-                    const value = self.GetAbsoluteIndexed(0) + 1;
+                    value = self.GetAbsoluteIndexed(0) + 1;
                     self.setAbsoluteIndexed(0, value);
                     self.pc += 3;
                     cycle(time, 7);
@@ -382,14 +383,14 @@ pub const Cpu = struct {
         } else {
             switch (self.instruction & 0xF) {
                 6 => zeropage: {
-                    const value = self.GetZeroPageX() + 1;
+                    value = self.GetZeroPageX() + 1;
                     self.setZeroPage(value);
                     self.pc += 2;
                     cycle(time, 5);
                     break :zeropage;
                 },
                 0xE => absolute: {
-                    const value = self.GetAbsolute();
+                    value = self.GetAbsolute();
                     self.setAbsolute(value);
                     self.pc += 3;
                     cycle(time, 6);
@@ -401,9 +402,27 @@ pub const Cpu = struct {
                 },
             }
         }
+        if (value == 0) {
+                self.status.zero = 1;
+            } else {
+                self.status.zero = 0;
+            }
+            self.status.negative = value >> 7;
+}
+
+    pub fn incrementXRegister(time: i128, self: *Cpu) void {
+        self.x_register += 1;
+        self.pc += 1;
+        cycle(time, 2);
     }
 
-    pub fn incrementXRegister(time: i128) void {}
+    pub fn incrementYRegister(time: i128, self: *Cpu) void {
+        self.y_register += 1;
+        self.pc += 1;
+        cycle(time, 2);
+    }
+
+    pub fn decrement
 
     pub fn loadYRegister(time: i128, self: *Cpu) void {
         if (self.instruction & 0xF0 == 0xA) {
