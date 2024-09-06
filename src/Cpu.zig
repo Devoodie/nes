@@ -390,7 +390,7 @@ pub const Cpu = struct {
                     break :zeropage;
                 },
                 0xE => absolute: {
-                    value = self.GetAbsolute();
+                    value = self.GetAbsolute() + 1;
                     self.setAbsolute(value);
                     self.pc += 3;
                     cycle(time, 6);
@@ -403,12 +403,12 @@ pub const Cpu = struct {
             }
         }
         if (value == 0) {
-                self.status.zero = 1;
-            } else {
-                self.status.zero = 0;
-            }
-            self.status.negative = value >> 7;
-}
+            self.status.zero = 1;
+        } else {
+            self.status.zero = 0;
+        }
+        self.status.negative = value >> 7;
+    }
 
     pub fn incrementXRegister(time: i128, self: *Cpu) void {
         self.x_register += 1;
@@ -422,7 +422,58 @@ pub const Cpu = struct {
         cycle(time, 2);
     }
 
-    pub fn decrement
+    pub fn decrement(time: i128, self: *Cpu) void {
+        var value: u8 = 0;
+        if (self.instruction & 0xF0 == 0xD0) {
+            switch (self.instruction & 0xF) {
+                6 => zeropagex: {
+                    value = self.GetZeroPageX() - 1;
+                    self.setZeroPageX(value);
+                    self.pc += 2;
+                    cycle(time, 6);
+                    break :zeropagex;
+                },
+                0xE => absolutex: {
+                    value = self.GetAbsoluteIndexed(0) - 1;
+                    self.setAbsoluteIndexed(0, value);
+                    self.pc += 3;
+                    cycle(time, 7);
+                    break :absolutex;
+                },
+                else => default: {
+                    std.debug.print("No Valid Addressing Mode found (Increment)!\n", .{});
+                    break :default;
+                },
+            }
+        } else {
+            switch (self.instruction & 0xF) {
+                6 => zeropage: {
+                    value = self.GetZeroPageX() - 1;
+                    self.setZeroPage(value);
+                    self.pc += 2;
+                    cycle(time, 5);
+                    break :zeropage;
+                },
+                0xE => absolute: {
+                    value = self.GetAbsolute() - 1;
+                    self.setAbsolute(value);
+                    self.pc += 3;
+                    cycle(time, 6);
+                    break :absolute;
+                },
+                else => default: {
+                    std.debug.print("No Valid Addressing Mode found (Increment)!\n", .{});
+                    break :default;
+                },
+            }
+        }
+        if (value == 0) {
+            self.status.zero = 1;
+        } else {
+            self.status.zero = 0;
+        }
+        self.status.negative = value >> 7;
+    }
 
     pub fn loadYRegister(time: i128, self: *Cpu) void {
         if (self.instruction & 0xF0 == 0xA) {
