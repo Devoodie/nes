@@ -359,7 +359,7 @@ pub const Cpu = struct {
 
     pub fn increment(time: i128, self: *Cpu) void {
         var value: u8 = 0;
-        if (self.instruction & 0xF0 == 0xF) {
+        if (self.instruction & 0xF0 == 0xF0) {
             switch (self.instruction & 0xF) {
                 6 => zeropagex: {
                     value = self.GetZeroPageX() + 1;
@@ -476,7 +476,7 @@ pub const Cpu = struct {
     }
 
     pub fn loadYRegister(time: i128, self: *Cpu) void {
-        if (self.instruction & 0xF0 == 0xA) {
+        if (self.instruction & 0xF0 == 0xA0) {
             switch (self.instruction & 0xF) {
                 0 => immediate: {
                     self.y_register = self.GetImmediate();
@@ -566,7 +566,7 @@ pub const Cpu = struct {
     }
 
     pub fn subtractWithCarry(time: i128, self: *Cpu) void {
-        if (self.instruction & 0xF0 == 0xF) {
+        if (self.instruction & 0xF0 == 0xF0) {
             switch (self.instruction & 0xF) {
                 1 => indirecty: {
                     const negative: u1 = self.accumulator >> 7;
@@ -742,7 +742,7 @@ pub const Cpu = struct {
     }
 
     pub fn compareAccumulator(time: i128, self: *Cpu) void {
-        if (self.instruction & 0xF0 == 5) {
+        if (self.instruction & 0xF0 == 0x50) {
             switch (self.instruction & 0xF) {
                 1 => indirecty: {
                     const value = self.GetIndirectY();
@@ -857,7 +857,7 @@ pub const Cpu = struct {
     }
 
     pub fn loadAccumulator(time: i128, self: *Cpu) void {
-        if (self.instruction & 0xF0 == 0xB) {
+        if (self.instruction & 0xF0 == 0xB0) {
             switch (self.instruction & 0xF) {
                 1 => indirecty: {
                     self.accumulator = self.GetIndirectY();
@@ -929,7 +929,7 @@ pub const Cpu = struct {
     }
 
     pub fn storeXRegister(time: i128, self: *Cpu) void {
-        if (self.instruction & 0xF0 == 9) {
+        if (self.instruction & 0xF0 == 0x90) {
             self.setZeroPageY(self.accumulator);
             self.pc += 2;
             cycle(time, 4);
@@ -956,7 +956,7 @@ pub const Cpu = struct {
     }
 
     pub fn storeAccumulator(time: i128, self: *Cpu) void {
-        if (self.instruction & 0xF0 == 9) {
+        if (self.instruction & 0xF0 == 0x90) {
             switch (self.instruction & 0xF) {
                 1 => indirecty: {
                     self.setIndirectY(self.accumulator);
@@ -1015,7 +1015,7 @@ pub const Cpu = struct {
     }
 
     pub fn addWithCarry(time: i128, self: *Cpu) void {
-        if (self.instruction & 0xF0 == 7) {
+        if (self.instruction & 0xF0 == 0x70) {
             switch (self.instruction & 0xF) {
                 1 => indirecty: {
                     const negative: u1 = self.accumulator >> 7;
@@ -1215,7 +1215,7 @@ pub const Cpu = struct {
     }
 
     pub fn exclusiveOr(time: i128, self: *Cpu) void {
-        if (self.instruction & 0xF0 == 5) {
+        if (self.instruction & 0xF0 == 0x50) {
             switch (self.instruction & 0xF) {
                 1 => indirecty: {
                     self.accumulator ^= self.GetIndirectY();
@@ -1287,7 +1287,7 @@ pub const Cpu = struct {
     }
 
     pub fn logicalOr(time: i128, self: *Cpu) void {
-        if (self.instruction & 0xF0 == 1) {
+        if (self.instruction & 0xF0 == 0x10) {
             switch (self.instruction & 0xF) {
                 1 => indirecty: {
                     self.accumulator |= self.GetIndirectY();
