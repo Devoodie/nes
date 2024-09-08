@@ -256,7 +256,13 @@ pub const Cpu = struct {
         self.bus.putMmi();
     }
 
-    pub fn accumulaltorToY(time: i128, self: *Cpu) void {
+    pub fn jump(time: i128, self: *Cpu) void {
+        if(self.instruction & 0xF == 0x60){
+            self.pc = self.GetIndirectY
+        }
+    }
+
+    pub fn accumulatorToY(time: i128, self: *Cpu) void {
         self.y_register = self.accumulator;
         if (self.y_register == 0) {
             self.status.zero = 1;
