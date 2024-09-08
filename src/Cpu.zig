@@ -256,6 +256,28 @@ pub const Cpu = struct {
         self.bus.putMmi();
     }
 
+    pub fn pushStatus(time: i128, self: *Cpu) void {
+        var status = 0;
+
+        status |= self.status.negative;
+        status << 1;
+        status |= self.status.overflow;
+        status << 1;
+        status |= self.status.break_inter;
+        status << 2;
+        status |= self.status.decimal;
+        status << 1;
+        status |= self.status.interrupt_dsble;
+        status << 1;
+        status |= self.status.zero;
+        status << 1;
+        status |= self.status.carry;
+        self.pc += 1;
+
+        self.stackPush(status);
+        cycle(time, 3);
+    }
+
     pub fn nop(time: i128, self: *Cpu) void {
         self.pc += 1;
         cycle(time, 2);
@@ -526,8 +548,9 @@ pub const Cpu = struct {
         const status = self.stackPopAddress();
         self.status.negative = status >> 7;
         self.status.overflow = (status >> 6) & 0b1;
+        self.status.break_inter = (status >> 5);
         self.status.decimal = (status >> 4) & 0b1;
-        self.status.interrupt = (status >> 3) & 0b1;
+        self.status.interrupt_dsble = (status >> 3) & 0b1;
         self.status.zero = (status >> 2) & 0b1;
         self.status.carry = status & 0b1;
         self.pc += 1;
