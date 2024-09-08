@@ -256,6 +256,46 @@ pub const Cpu = struct {
         self.bus.putMmi();
     }
 
+    pub fn accumulaltorToY(time: i128, self: *Cpu) void {
+        self.y_register = self.accumulator;
+        if (self.y_register == 0) {
+            self.status.zero = 1;
+        } else {
+            self.status.zero = 0;
+        }
+        self.status.negative = self.y_register >> 7;
+
+        self.pc += 1;
+        cycle(time, 2);
+    }
+
+    pub fn pushAccumulator(time: i128, self: *Cpu) void {
+        self.stackPush(self.accumulator);
+        self.pc += 1;
+        cycle(time, 3);
+    }
+
+    pub fn pullAccumulator(time: i128, self: *Cpu) void {
+        self.accumulator = self.stackPop();
+        self.pc += 1;
+        cycle(time, 4);
+    }
+
+    pub fn pullStatus(time: i128, self: *Cpu) void {
+        const status = self.stackPop();
+
+        self.status.negative = status >> 7;
+        self.status.overflow = (status >> 6) & 0b1;
+        self.status.break_inter = (status >> 5);
+        self.status.decimal = (status >> 4) & 0b1;
+        self.status.interrupt_dsble = (status >> 3) & 0b1;
+        self.status.zero = (status >> 2) & 0b1;
+        self.status.carry = status & 0b1;
+
+        self.pc += 1;
+        cycle(time, 3);
+    }
+
     pub fn pushStatus(time: i128, self: *Cpu) void {
         var status = 0;
 
