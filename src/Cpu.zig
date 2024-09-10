@@ -76,7 +76,7 @@ pub const Cpu = struct {
         self.bus.addr_bus = self.pc + 1;
         self.bus.getMmo();
         self.extra_cycle = 0;
-// get low order bytes
+        // get low order bytes
         const sum = @addWithOverflow(self.bus.data_bus, self.y_register);
         if (sum[1] == 1) {
             self.extra_cycle = 1;
@@ -88,7 +88,7 @@ pub const Cpu = struct {
 
         const high_bytes: u16 = (self.bus.data_bus + sum[1]) << 8;
         addr |= high_bytes;
-        
+
         self.bus.addr_bus = addr;
         self.bus.getMmo();
 
@@ -112,7 +112,7 @@ pub const Cpu = struct {
 
         const high_bytes: u16 = (self.bus.data_bus + sum[1]) << 8;
         addr |= high_bytes;
-        
+
         self.bus.addr_bus = addr;
         self.bus.data_bus = data;
         self.bus.putMmi();
@@ -289,8 +289,29 @@ pub const Cpu = struct {
     }
 
     pub fn jump(time: i128, self: *Cpu) void {
-        if(self.instruction & 0xF == 0x60){
-            self.pc = self.GetIndirectY;
+        if (self.instruction & 0xF == 0x60) {
+            self.bus.addr_bus = self.pc + 2;
+            self.bus.getMmo();
+
+            const low_byte = self.bus.data_bus;
+
+            self.bus.addr_bus = self.pc + 1;
+            self.bus.getMmo();
+
+            self.bus.addr_bus = low_byte + (self.bus.data_bus << 8);
+            self.bus.getMmo();
+
+            var addr = self.bus.data_bus << 8;
+
+            self.bus.addr_bus += 1;
+            self.bus.getMmo();
+
+            addr |= self.bus.data_bus;
+            self.pc = addr;
+            cycle(time, 5);
+        } else {
+            self.pc = self.GetAbsolute();
+            cycle(time, 3);
         }
     }
 
