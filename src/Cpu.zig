@@ -76,14 +76,19 @@ pub const Cpu = struct {
         self.bus.addr_bus = self.pc + 1;
         self.bus.getMmo();
         self.extra_cycle = 0;
-
-        var addr: u16 = self.bus.data_bus;
+// get low order bytes
         const sum = @addWithOverflow(self.bus.data_bus, self.y_register);
         if (sum[1] == 1) {
             self.extra_cycle = 1;
         }
-        addr = sum[0];
+        var addr: u16 = sum[0];
 
+        self.bus.addr_bus = addr + 1;
+        self.bus.getMmo();
+
+        const high_bytes: u16 = (self.bus.data_bus + sum[1]) << 8;
+        addr |= high_bytes;
+        
         self.bus.addr_bus = addr;
         self.bus.getMmo();
 
@@ -95,12 +100,21 @@ pub const Cpu = struct {
         self.bus.getMmo();
         self.extra_cycle = 0;
 
-        var addr: u16 = self.bus.data_bus;
-        addr += self.y_register;
+        // get low order bytes
+        const sum = @addWithOverflow(self.bus.data_bus, self.y_register);
+        if (sum[1] == 1) {
+            self.extra_cycle = 1;
+        }
+        var addr: u16 = sum[0];
 
+        self.bus.addr_bus = addr + 1;
+        self.bus.getMmo();
+
+        const high_bytes: u16 = (self.bus.data_bus + sum[1]) << 8;
+        addr |= high_bytes;
+        
         self.bus.addr_bus = addr;
         self.bus.data_bus = data;
-
         self.bus.putMmi();
     }
 
@@ -177,9 +191,18 @@ pub const Cpu = struct {
     pub fn GetIndirectX(self: *Cpu) u8 {
         self.bus.addr_bus = self.pc + 1;
         self.bus.getMmo();
-        const addr = self.bus.data_bus;
 
-        self.bus.addr_bus = (addr + self.x_register) % 256;
+        self.bus.addr_bus = (self.bus.data_bus + self.x_register) % 256;
+        self.bus.getMmo();
+
+        const low_bytes = self.bus.data_bus;
+
+        //high bytes
+        self.bus.addr_bus += 1;
+        self.bus.getMmo();
+
+        self.bus.addr_bus = low_bytes;
+        self.bus.addr_bus |= self.bus.data_bus << 8;
         self.bus.getMmo();
 
         return self.bus.data_bus;
@@ -188,11 +211,20 @@ pub const Cpu = struct {
     pub fn setIndirectX(self: *Cpu, data: u8) void {
         self.bus.addr_bus = self.pc + 1;
         self.bus.getMmo();
-        const addr = self.bus.data_bus;
 
-        self.bus.addr_bus = (addr + self.x_register) % 256;
+        self.bus.addr_bus = (self.bus.data_bus + self.x_register) % 256;
+        self.bus.getMmo();
+
+        const low_bytes = self.bus.data_bus;
+
+        //high bytes
+        self.bus.addr_bus += 1;
+        self.bus.getMmo();
+
+        self.bus.addr_bus = low_bytes;
+        self.bus.addr_bus |= self.bus.data_bus << 8;
+
         self.bus.data_bus = data;
-
         self.bus.putMmi();
     }
 
@@ -258,7 +290,7 @@ pub const Cpu = struct {
 
     pub fn jump(time: i128, self: *Cpu) void {
         if(self.instruction & 0xF == 0x60){
-            self.pc = self.GetIndirectY
+            self.pc = self.GetIndirectY;
         }
     }
 
