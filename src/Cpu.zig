@@ -354,6 +354,32 @@ pub const Cpu = struct {
         cycle(time, 2);
     }
 
+    pub fn stackPointerToX(time: i128, self: *Cpu) void {
+        self.x_register = self.stack_pointer;
+        if (self.x_register == 0) {
+            self.status.zero = 1;
+        } else {
+            self.status.zero = 0;
+        }
+        self.status.negative = self.x_register >> 7;
+
+        self.pc += 1;
+        cycle(time, 2);
+    }
+
+    pub fn xToStackPointer(time: i128, self: *Cpu) void {
+        self.stack_pointer = self.x_register;
+        if (self.stack_pointer == 0) {
+            self.status.zero = 1;
+        } else {
+            self.status.zero = 0;
+        }
+        self.status.negative = self.stack_pointer >> 7;
+
+        self.pc += 1;
+        cycle(time, 2);
+    }
+
     pub fn accumulatorToY(time: i128, self: *Cpu) void {
         self.y_register = self.accumulator;
         if (self.y_register == 0) {
