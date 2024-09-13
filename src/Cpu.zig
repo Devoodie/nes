@@ -1201,6 +1201,96 @@ pub const Cpu = struct {
         }
     }
 
+    pub fn arithmeticShiftLeft(time: i128, self: *Cpu) void {
+        if (self.instruction & 0xF0 == 0x10) {
+            switch (self.instruction & 0xF) {
+                6 => zeropagex: {
+                    const value = @shlWithOverflow(self.GetZeroPageX(), 1);
+                    self.setZeroPageX(value[0]);
+
+                    self.status.carry = value[1];
+                    if (value[0] == 0) {
+                        self.status.zero = 1;
+                    }
+                    self.status.negative = value[0] >> 7;
+
+                    self.pc += 2;
+                    cycle(time, 6);
+
+                    break :zeropagex;
+                },
+                0xE => absolutex: {
+                    const value = @shlWithOverflow(self.GetAbsoluteIndexed(0), 1);
+                    self.setAbsoluteIndexed(0, value[0]);
+
+                    self.status.carry = value[1];
+                    if (value[0] == 0) {
+                        self.status.zero = 1;
+                    }
+                    self.status.negative = value[0] >> 7;
+
+                    self.pc += 3;
+                    cycle(time, 7);
+                    break :absolutex;
+                },
+                else => default: {
+                    std.debug.print("No Addressing Mode found (Arithmetic Shift Left)!\n", .{});
+                    break :default;
+                },
+            }
+        } else {
+            switch (self.instruction & 0xF) {
+                6 => zeropage: {
+                    const value = @shlWithOverflow(self.GetZeroPage(), 1);
+                    self.setZeroPage(value[0]);
+
+                    self.status.carry = value[1];
+                    if (value[0] == 0) {
+                        self.status.zero = 1;
+                    }
+                    self.status.negative = value[0] >> 7;
+
+                    self.pc += 2;
+                    cycle(time, 5);
+                    break :zeropage;
+                },
+                0xA => accumulator: {
+                    const value = @shlWithOverflow(self.accumulator, 1);
+                    self.accumulator = value[0];
+
+                    self.status.carry = value[1];
+                    if (self.accumulator == 0) {
+                        self.status.zero = 1;
+                    }
+                    self.status.negative = self.accumulator >> 7;
+
+                    self.pc += 1;
+                    cycle(time, 2);
+                    break :accumulator;
+                },
+                0xE => absolute: {
+                    const value = @shlWithOverflow(self.GetAbsolute(), 1);
+                    self.setAbsolute(value[0]);
+
+                    self.status.carry = value[1];
+                    if (value[0] == 0) {
+                        self.status.zero = 1;
+                    }
+                    self.status.negative = value[0] >> 7;
+
+                    self.pc += 3;
+                    cycle(time, 6);
+
+                    break :absolute;
+                },
+                else => default: {
+                    std.debug.print("No Addressing Mode found (Arithmetic Shift Left)!\n", .{});
+                    break :default;
+                },
+            }
+        }
+    }
+
     pub fn addWithCarry(time: i128, self: *Cpu) void {
         if (self.instruction & 0xF0 == 0x70) {
             switch (self.instruction & 0xF) {
