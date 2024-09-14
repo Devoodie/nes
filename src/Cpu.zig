@@ -938,7 +938,11 @@ pub const Cpu = struct {
                         self.status.zero = 1;
                     } else if (self.accumulator > value) {
                         self.status.carry = 1;
+                        self.status.zero = 0;
+                    } else {
+                        self.status.zero = 0;
                     }
+
                     self.pc += 2;
                     cycle(time, 5 + self.extra_cycle);
                     break :indirecty;
@@ -1195,6 +1199,54 @@ pub const Cpu = struct {
                 },
                 else => default: {
                     std.debug.print("No Addressing Mode found (Logical XOR)!\n", .{});
+                    break :default;
+                },
+            }
+        }
+    }
+
+    pub fn logicalShiftRight(time: i128, self: *Cpu) void {
+        if (self.instruction & 0xF0 == 0x50) {
+            switch (self.instruction & 0xF) {
+                6 => zeropagex: {
+                    const value = self.GetZeroPageX();
+                    const result = value >> 1;
+                    self.setZeroPageX(result);
+
+                    self.status.carry = value >> 7;
+                    if (result == 0) {
+                        self.status.zero = 1;
+                    } else {
+                        self.status.zero = 0;
+                    }
+                    self.status.negative = result >> 7;
+
+                    self.pc += 2;
+                    cycle(time, 6);
+
+                    break :zeropagex;
+                },
+                0xE => absolutex: {
+                    break :absolutex;
+                },
+                else => default: {
+                    std.debug.print("No Addressing Mode found (Arithmetic Shift Left)!\n", .{});
+                    break :default;
+                },
+            }
+        } else {
+            switch (self.instruction & 0xF) {
+                6 => zeropage: {
+                    break :zeropage;
+                },
+                0xA => accumulator: {
+                    break :accumulator;
+                },
+                0xE => absolute: {
+                    break :absolute;
+                },
+                else => default: {
+                    std.debug.print("No Addressing Mode found (Arithmetic Shift Left)!\n", .{});
                     break :default;
                 },
             }
