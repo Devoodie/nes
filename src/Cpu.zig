@@ -456,7 +456,11 @@ pub const Cpu = struct {
                     self.status.zero = 1;
                 } else if (self.y_register > value) {
                     self.status.carry = 1;
+                    self.status.zero = 0;
+                } else {
+                    self.status.zero = 0;
                 }
+                self.status.negative = value >> 7;
 
                 self.pc += 2;
                 cycle(time, 2);
@@ -469,7 +473,11 @@ pub const Cpu = struct {
                     self.status.zero = 1;
                 } else if (self.y_register > value) {
                     self.status.carry = 1;
+                    self.status.zero = 0;
+                } else {
+                    self.status.zero = 0;
                 }
+                self.status.negative = value >> 7;
 
                 self.pc += 2;
                 cycle(time, 3);
@@ -482,7 +490,11 @@ pub const Cpu = struct {
                     self.status.zero = 1;
                 } else if (self.y_register > value) {
                     self.status.carry = 1;
+                    self.status.zero = 0;
+                } else {
+                    self.status.zero = 0;
                 }
+                self.status.negative = value >> 7;
 
                 self.pc += 3;
                 cycle(time, 4);
@@ -504,7 +516,11 @@ pub const Cpu = struct {
                     self.status.zero = 1;
                 } else if (self.x_register > value) {
                     self.status.carry = 1;
+                    self.status.zero = 0;
+                } else {
+                    self.status.zero = 0;
                 }
+                self.status.negative = value >> 7;
 
                 self.pc += 2;
                 cycle(time, 2);
@@ -517,7 +533,11 @@ pub const Cpu = struct {
                     self.status.zero = 1;
                 } else if (self.x_register > value) {
                     self.status.carry = 1;
+                    self.status.zero = 0;
+                } else {
+                    self.status.zero = 0;
                 }
+                self.status.negative = value >> 7;
 
                 self.pc += 2;
                 cycle(time, 3);
@@ -530,7 +550,11 @@ pub const Cpu = struct {
                     self.status.zero = 1;
                 } else if (self.x_register > value) {
                     self.status.carry = 1;
+                    self.status.zero = 0;
+                } else {
+                    self.status.zero = 0;
                 }
+                self.status.negative = value >> 7;
 
                 self.pc += 3;
                 cycle(time, 4);
@@ -598,12 +622,26 @@ pub const Cpu = struct {
 
     pub fn incrementXRegister(time: i128, self: *Cpu) void {
         self.x_register += 1;
+        if (self.x_register == 0) {
+            self.status.zero = 1;
+        } else {
+            self.status.zero = 0;
+        }
+        self.status.negative = self.x_register >> 7;
+
         self.pc += 1;
         cycle(time, 2);
     }
 
     pub fn incrementYRegister(time: i128, self: *Cpu) void {
         self.y_register += 1;
+        if (self.y_register == 0) {
+            self.status.zero = 1;
+        } else {
+            self.status.zero = 0;
+        }
+        self.status.negative = self.y_register >> 7;
+
         self.pc += 1;
         cycle(time, 2);
     }
@@ -697,6 +735,7 @@ pub const Cpu = struct {
                 },
                 0xC => absolutex: {
                     self.y_register = self.GetAbsoluteIndexed(0);
+                    cycle(time, 4 + self.extra_cycle);
                     break :absolutex;
                 },
                 else => default: {
@@ -705,7 +744,12 @@ pub const Cpu = struct {
                 },
             }
         }
-        cycle(time, 6);
+        if (self.y_register == 0) {
+            self.status.zero = 1;
+        } else {
+            self.status.zero = 0;
+        }
+        self.status.negative = self.y_register >> 7;
     }
 
     pub fn returnInterrupt(time: i128, self: *Cpu) void {
@@ -768,6 +812,7 @@ pub const Cpu = struct {
                         self.status.carry = 0;
                     } else {
                         self.status.carry = 1;
+                        self.status.overflow = 0;
                     }
 
                     self.pc += 2;
@@ -787,6 +832,7 @@ pub const Cpu = struct {
                         self.status.carry = 0;
                     } else {
                         self.status.carry = 1;
+                        self.status.overflow = 0;
                     }
 
                     self.pc += 2;
@@ -806,6 +852,7 @@ pub const Cpu = struct {
                         self.status.carry = 0;
                     } else {
                         self.status.carry = 1;
+                        self.status.overflow = 0;
                     }
 
                     self.pc += 3;
@@ -825,6 +872,7 @@ pub const Cpu = struct {
                         self.status.carry = 0;
                     } else {
                         self.status.carry = 1;
+                        self.status.overflow = 0;
                     }
 
                     self.pc += 3;
@@ -851,6 +899,7 @@ pub const Cpu = struct {
                         self.status.carry = 0;
                     } else {
                         self.status.carry = 1;
+                        self.status.overflow = 0;
                     }
 
                     self.pc += 2;
@@ -870,6 +919,7 @@ pub const Cpu = struct {
                         self.status.carry = 0;
                     } else {
                         self.status.carry = 1;
+                        self.status.overflow = 0;
                     }
 
                     self.pc += 2;
@@ -889,6 +939,7 @@ pub const Cpu = struct {
                         self.status.carry = 0;
                     } else {
                         self.status.carry = 1;
+                        self.status.overflow = 0;
                     }
 
                     self.pc += 2;
@@ -908,6 +959,7 @@ pub const Cpu = struct {
                         self.status.carry = 0;
                     } else {
                         self.status.carry = 1;
+                        self.status.overflow = 0;
                     }
 
                     self.pc += 3;
@@ -954,7 +1006,11 @@ pub const Cpu = struct {
                         self.status.zero = 1;
                     } else if (self.accumulator > value) {
                         self.status.carry = 1;
+                        self.status.zero = 0;
+                    } else {
+                        self.status.zero = 0;
                     }
+
                     self.pc += 2;
                     cycle(time, 4);
                     break :zero_pagex;
@@ -966,7 +1022,11 @@ pub const Cpu = struct {
                         self.status.zero = 1;
                     } else if (self.accumulator > value) {
                         self.status.carry = 1;
+                        self.status.zero = 0;
+                    } else {
+                        self.status.zero = 0;
                     }
+
                     self.pc += 3;
                     cycle(time, 4 + self.extra_cycle);
                     break :absolutey;
@@ -978,7 +1038,11 @@ pub const Cpu = struct {
                         self.status.zero = 1;
                     } else if (self.accumulator > value) {
                         self.status.carry = 1;
+                        self.status.zero = 0;
+                    } else {
+                        self.status.zero = 0;
                     }
+
                     self.pc += 3;
                     cycle(time, 4 + self.extra_cycle);
                     break :absolutex;
@@ -997,7 +1061,11 @@ pub const Cpu = struct {
                         self.status.zero = 1;
                     } else if (self.accumulator > value) {
                         self.status.carry = 1;
+                        self.status.zero = 0;
+                    } else {
+                        self.status.zero = 0;
                     }
+
                     self.pc += 2;
                     cycle(time, 6);
                     break :indirectx;
@@ -1009,7 +1077,11 @@ pub const Cpu = struct {
                         self.status.zero = 1;
                     } else if (self.accumulator > value) {
                         self.status.carry = 1;
+                        self.status.zero = 0;
+                    } else {
+                        self.status.zero = 0;
                     }
+
                     self.pc += 2;
                     cycle(time, 3);
                     break :zero_page;
@@ -1021,7 +1093,11 @@ pub const Cpu = struct {
                         self.status.zero = 1;
                     } else if (self.accumulator > value) {
                         self.status.carry = 1;
+                        self.status.zero = 0;
+                    } else {
+                        self.status.zero = 0;
                     }
+
                     self.pc += 2;
                     cycle(time, 2);
                     break :immediate;
@@ -1033,7 +1109,11 @@ pub const Cpu = struct {
                         self.status.zero = 1;
                     } else if (self.accumulator > value) {
                         self.status.carry = 1;
+                        self.status.zero = 0;
+                    } else {
+                        self.status.zero = 0;
                     }
+
                     self.pc += 3;
                     cycle(time, 4);
                     break :absolute;
@@ -1263,6 +1343,8 @@ pub const Cpu = struct {
                     self.status.carry = value[1];
                     if (value[0] == 0) {
                         self.status.zero = 1;
+                    } else {
+                        self.status.zero = 0;
                     }
                     self.status.negative = value[0] >> 7;
 
@@ -1278,6 +1360,8 @@ pub const Cpu = struct {
                     self.status.carry = value[1];
                     if (value[0] == 0) {
                         self.status.zero = 1;
+                    } else {
+                        self.status.zero = 0;
                     }
                     self.status.negative = value[0] >> 7;
 
@@ -1299,6 +1383,8 @@ pub const Cpu = struct {
                     self.status.carry = value[1];
                     if (value[0] == 0) {
                         self.status.zero = 1;
+                    } else {
+                        self.status.zero = 0;
                     }
                     self.status.negative = value[0] >> 7;
 
@@ -1313,6 +1399,8 @@ pub const Cpu = struct {
                     self.status.carry = value[1];
                     if (self.accumulator == 0) {
                         self.status.zero = 1;
+                    } else {
+                        self.status.zero = 0;
                     }
                     self.status.negative = self.accumulator >> 7;
 
@@ -1327,12 +1415,13 @@ pub const Cpu = struct {
                     self.status.carry = value[1];
                     if (value[0] == 0) {
                         self.status.zero = 1;
+                    } else {
+                        self.status.zero = 0;
                     }
                     self.status.negative = value[0] >> 7;
 
                     self.pc += 3;
                     cycle(time, 6);
-
                     break :absolute;
                 },
                 else => default: {
@@ -1353,6 +1442,8 @@ pub const Cpu = struct {
 
                     if (carry[1] == 1 or sum[1] == 1) {
                         self.status.carry = 1;
+                    } else {
+                        self.status.carry = 0;
                     }
                     self.accumulator = sum[0];
                     if (negative != sum[0] >> 7) {
@@ -1370,12 +1461,14 @@ pub const Cpu = struct {
 
                     if (carry[1] == 1 or sum[1] == 1) {
                         self.status.carry = 1;
+                    } else {
+                        self.status.carry = 0;
                     }
+
                     self.accumulator = sum[0];
                     if (negative != sum[0] >> 7) {
                         self.status.overflow = 1;
                     }
-                    self.status.carry = sum[1];
 
                     self.pc += 2;
                     cycle(time, 4);
@@ -1388,12 +1481,15 @@ pub const Cpu = struct {
 
                     if (carry[1] == 1 or sum[1] == 1) {
                         self.status.carry = 1;
+                    } else {
+                        self.status.carry = 0;
                     }
                     self.accumulator = sum[0];
                     if (negative != sum[0] >> 7) {
                         self.status.overflow = 1;
+                    } else {
+                        self.status.carry = 0;
                     }
-                    self.status.carry = sum[1];
 
                     self.pc += 3;
                     cycle(time, 4 + self.extra_cycle);
@@ -1406,12 +1502,13 @@ pub const Cpu = struct {
 
                     if (carry[1] == 1 or sum[1] == 1) {
                         self.status.carry = 1;
+                    } else {
+                        self.status.carry = 0;
                     }
                     self.accumulator = sum[0];
                     if (negative != sum[0] >> 7) {
                         self.status.overflow = 1;
                     }
-                    self.status.carry = sum[1];
 
                     self.pc += 3;
                     cycle(time, 4 + self.extra_cycle);
@@ -1431,12 +1528,16 @@ pub const Cpu = struct {
 
                     if (carry[1] == 1 or sum[1] == 1) {
                         self.status.carry = 1;
+                    } else {
+                        self.status.carry = 0;
                     }
+
                     self.accumulator = sum[0];
                     if (negative != sum[0] >> 7) {
                         self.status.overflow = 1;
+                    } else {
+                        self.status.overflow = 0;
                     }
-                    self.status.carry = sum[1];
 
                     self.pc += 2;
                     cycle(time, 6);
@@ -1449,12 +1550,16 @@ pub const Cpu = struct {
 
                     if (carry[1] == 1 or sum[1] == 1) {
                         self.status.carry = 1;
+                    } else {
+                        self.status.carry = 0;
                     }
+
                     self.accumulator = sum[0];
                     if (negative != sum[0] >> 7) {
                         self.status.overflow = 1;
+                    } else {
+                        self.status.overflow = 0;
                     }
-                    self.status.carry = sum[1];
 
                     self.pc += 2;
                     cycle(time, 3);
@@ -1467,12 +1572,15 @@ pub const Cpu = struct {
 
                     if (carry[1] == 1 or sum[1] == 1) {
                         self.status.carry = 1;
+                    } else {
+                        self.status.carry = 0;
                     }
                     self.accumulator = sum[0];
                     if (negative != sum[0] >> 7) {
                         self.status.overflow = 1;
+                    } else {
+                        self.status.overflow = 0;
                     }
-                    self.status.carry = sum[1];
 
                     self.pc += 2;
                     cycle(time, 2);
@@ -1485,12 +1593,15 @@ pub const Cpu = struct {
 
                     if (carry[1] == 1 or sum[1] == 1) {
                         self.status.carry = 1;
+                    } else {
+                        self.status.carry = 0;
                     }
                     self.accumulator = sum[0];
                     if (negative != sum[0] >> 7) {
                         self.status.overflow = 1;
+                    } else {
+                        self.status.overflow = 0;
                     }
-                    self.status.carry = sum[1];
 
                     self.pc += 3;
                     cycle(time, 4);
