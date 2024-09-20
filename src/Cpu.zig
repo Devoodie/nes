@@ -1286,20 +1286,15 @@ pub const Cpu = struct {
     }
 
     pub fn logicalShiftRight(time: i128, self: *Cpu) void {
+        var result: u8 = 0;
         if (self.instruction & 0xF0 == 0x50) {
             switch (self.instruction & 0xF) {
                 6 => zeropagex: {
                     const value = self.GetZeroPageX();
-                    const result = value >> 1;
+                    result = value >> 1;
                     self.setZeroPageX(result);
 
-                    self.status.carry = value >> 7;
-                    if (result == 0) {
-                        self.status.zero = 1;
-                    } else {
-                        self.status.zero = 0;
-                    }
-                    self.status.negative = result >> 7;
+                    self.status.carry = value & 0b1;
 
                     self.pc += 2;
                     cycle(time, 6);
@@ -1307,6 +1302,15 @@ pub const Cpu = struct {
                     break :zeropagex;
                 },
                 0xE => absolutex: {
+                    const value = self.GetAbsoluteIndexed(0);
+                    result = value >> 1;
+                    self.setAbsoluteIndexed(0, result);
+
+                    self.status.carry = value & 0b1;
+
+                    self.pc += 3;
+                    cycle(time, 7);
+
                     break :absolutex;
                 },
                 else => default: {
@@ -1317,12 +1321,36 @@ pub const Cpu = struct {
         } else {
             switch (self.instruction & 0xF) {
                 6 => zeropage: {
+                    const value = self.GetZeroPage();
+                    result = value >> 1;
+                    self.setZeroPage(result);
+
+                    self.status.carry = value & 0b1;
+
+                    self.pc += 2;
+                    cycle(time, 5);
+
                     break :zeropage;
                 },
                 0xA => accumulator: {
+                    self.status.carry = self.accumulator & 0b1;
+                    result = self.accumulator >> 1;
+                    self.accumulator = result;
+
+                    self.pc += 1;
+                    cycle(time, 2);
                     break :accumulator;
                 },
                 0xE => absolute: {
+                    const value = self.GetAbsolute();
+                    result = value >> 1;
+                    self.setAbsolute(result);
+
+                    self.status.carry = value & 0b1;
+
+                    self.pc += 3;
+                    cycle(time, 6);
+
                     break :absolute;
                 },
                 else => default: {
@@ -1331,6 +1359,12 @@ pub const Cpu = struct {
                 },
             }
         }
+        if (result == 0) {
+            self.status.zero = 1;
+        } else {
+            self.status.zero = 0;
+        }
+        self.status.negative = result >> 7;
     }
 
     pub fn arithmeticShiftLeft(time: i128, self: *Cpu) void {
