@@ -1367,6 +1367,98 @@ pub const Cpu = struct {
         self.status.negative = result >> 7;
     }
 
+    pub fn rotateRight(time: i128, self: *Cpu) void {
+        var result: u8 = 0;
+        if (self.instruction & 0xF0 == 0x50) {
+            switch (self.instruction & 0xF) {
+                6 => zeropagex: {
+                    const value = self.GetZeroPageX();
+                    result = value >> 1;
+                    result |= self.status.carry << 7;
+
+                    self.status.carry = value & 0b1;
+
+                    self.setZeroPageX(result);
+
+                    self.pc += 2;
+                    cycle(time, 6);
+
+                    break :zeropagex;
+                },
+                0xE => absolutex: {
+                    const value = self.GetAbsoluteIndexed(0);
+                    result = value >> 1;
+                    result |= self.status.carry << 7;
+
+                    self.status.carry = value & 0b1;
+
+                    self.setAbsoluteIndexed(0, result);
+
+                    self.pc += 3;
+                    cycle(time, 7);
+
+                    break :absolutex;
+                },
+                else => default: {
+                    std.debug.print("No Addressing Mode found (Arithmetic Shift Left)!\n", .{});
+                    break :default;
+                },
+            }
+        } else {
+            switch (self.instruction & 0xF) {
+                6 => zeropage: {
+                    const value = self.GetZeroPage();
+                    result = value >> 1;
+                    result |= self.status.carry << 7;
+
+                    self.status.carry = value & 0b1;
+
+                    self.setZeroPage(result);
+
+                    self.pc += 2;
+                    cycle(time, 5);
+
+                    break :zeropage;
+                },
+                0xA => accumulator: {
+                    const carry = self.status.carry;
+                    self.status.carry = self.accumulator & 0b1;
+                    result = self.accumulator >> 1;
+                    result |= carry << 7;
+                    self.accumulator = result;
+
+                    self.pc += 1;
+                    cycle(time, 2);
+                    break :accumulator;
+                },
+                0xE => absolute: {
+                    const value = self.GetAbsolute();
+                    result = value >> 1;
+                    result |= self.status.carry << 7;
+
+                    self.status.carry = value & 0b1;
+
+                    self.setAbsolute(result);
+
+                    self.pc += 3;
+                    cycle(time, 6);
+
+                    break :absolute;
+                },
+                else => default: {
+                    std.debug.print("No Addressing Mode found (Arithmetic Shift Left)!\n", .{});
+                    break :default;
+                },
+            }
+        }
+        if (result == 0) {
+            self.status.zero = 1;
+        } else {
+            self.status.zero = 0;
+        }
+        self.status.negative = result >> 7;
+    }
+
     pub fn arithmeticShiftLeft(time: i128, self: *Cpu) void {
         if (self.instruction & 0xF0 == 0x10) {
             switch (self.instruction & 0xF) {
