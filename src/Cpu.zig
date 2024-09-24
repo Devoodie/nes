@@ -338,7 +338,7 @@ pub const Cpu = struct {
         }
     }
 
-    pub fn xRegToAccumulator(time: i128, self: *Cpu) void {
+    pub fn xToAccumulator(time: i128, self: *Cpu) void {
         self.accumulator = self.x_register;
         if (self.accumulator == 0) {
             self.status.zero = 1;
@@ -351,7 +351,7 @@ pub const Cpu = struct {
         cycle(time, 2);
     }
 
-    pub fn yRegToAccumulator(time: i128, self: *Cpu) void {
+    pub fn yToAccumulator(time: i128, self: *Cpu) void {
         self.accumulator = self.y_register;
         if (self.accumulator == 0) {
             self.status.zero = 1;
@@ -720,6 +720,34 @@ pub const Cpu = struct {
             self.status.zero = 0;
         }
         self.status.negative = value >> 7;
+    }
+
+    pub fn decrementY(time: i128, self: *Cpu) void {
+        self.y_register -= 1;
+
+        if (self.y_register == 0) {
+            self.status.zero = 1;
+        } else {
+            self.status.zero = 0;
+        }
+        self.status.negative = self.y_register >> 7;
+
+        self.pc += 1;
+        cycle(time, 2);
+    }
+
+    pub fn decrementX(time: i128, self: *Cpu) void {
+        self.x_register -= 1;
+
+        if (self.x_register == 0) {
+            self.status.zero = 1;
+        } else {
+            self.status.zero = 0;
+        }
+        self.status.negative = self.x_register >> 7;
+
+        self.pc += 1;
+        cycle(time, 2);
     }
 
     pub fn loadXRegister(time: i128, self: *Cpu) void {
