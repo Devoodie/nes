@@ -118,6 +118,28 @@ pub const Cpu = struct {
         self.bus.putMmi();
     }
 
+    pub fn GetZeroPageY(self: *Cpu) u8 {
+        self.bus.addr_bus = self.pc + 1;
+        self.bus.getMmo();
+
+        const addr: u8 = (self.bus.data_bus + self.y_register) % 256;
+        self.bus.addr_bus = addr;
+        self.bus.getMmo();
+
+        return self.bus.data_bus;
+    }
+
+    pub fn setZeroPageY(self: *Cpu, data: u8) void {
+        self.bus.addr_bus = self.pc + 1;
+        self.bus.getMmo();
+
+        const addr: u8 = (self.bus.data_bus + self.y_register) % 256;
+        self.bus.addr_bus = addr;
+        self.bus.data_bus = data;
+
+        self.bus.putMmi();
+    }
+
     pub fn GetZeroPageX(self: *Cpu) u8 {
         self.bus.addr_bus = self.pc + 1;
         self.bus.getMmo();
@@ -128,6 +150,7 @@ pub const Cpu = struct {
 
         return self.bus.data_bus;
     }
+
     pub fn setZeroPageX(self: *Cpu, data: u8) void {
         self.bus.addr_bus = self.pc + 1;
         self.bus.getMmo();
@@ -699,6 +722,59 @@ pub const Cpu = struct {
         self.status.negative = value >> 7;
     }
 
+    pub fn loadXRegister(time: i128, self: *Cpu) void {
+        if (self.instruction & 0xF0 == 0xA0) {
+            switch (self.instruction & 0xF) {
+                2 => immediate: {
+                    self.x_register = self.GetImmediate();
+                    self.pc += 1;
+                    cycle(time, 2);
+                    break :immediate;
+                },
+                6 => zeropage: {
+                    self.x_register = self.GetZeroPage();
+                    self.pc += 1;
+                    cycle(time, 3);
+                    break :zeropage;
+                },
+                0xE => absolute: {
+                    self.x_register = self.GetAbsolute();
+                    self.pc += 2;
+                    cycle(time, 4);
+                    break :absolute;
+                },
+                else => default: {
+                    std.debug.print("No Valid Addressing Mode found (Load Y Register)!\n", .{});
+                    break :default;
+                },
+            }
+        } else {
+            switch (self.instruction & 0xF) {
+                0x6 => zeropagey: {
+                    self.y_register = self.GetZeroPageY();
+                    self.pc += 1;
+                    cycle(time, 4);
+                    break :zeropagey;
+                },
+                0xE => absolutey: {
+                    self.y_register = self.GetAbsoluteIndexed(1);
+                    cycle(time, 4 + self.extra_cycle);
+                    break :absolutey;
+                },
+                else => default: {
+                    std.debug.print("No Valid Addressing Mode found (Load Y Register)!\n", .{});
+                    break :default;
+                },
+            }
+        }
+        if (self.y_register == 0) {
+            self.status.zero = 1;
+        } else {
+            self.status.zero = 0;
+        }
+        self.status.negative = self.y_register >> 7;
+    }
+
     pub fn loadYRegister(time: i128, self: *Cpu) void {
         if (self.instruction & 0xF0 == 0xA0) {
             switch (self.instruction & 0xF) {
@@ -1199,9 +1275,36 @@ pub const Cpu = struct {
         }
     }
 
+    pub fn storeYRegister(time: i128, self: *Cpu) void {
+        if (self.instruction & 0xF0 == 0x90) {
+            self.setZeroPageX(self.y_register);
+            self.pc += 2;
+            cycle(time, 4);
+        } else {
+            switch (self.instruction & 0xF) {
+                4 => zeropage: {
+                    self.setZeroPage(self.y_register);
+                    self.pc += 2;
+                    cycle(time, 3);
+                    break :zeropage;
+                },
+                0xC => absolute: {
+                    self.setAbsolute(self.y_register);
+                    self.pc += 3;
+                    cycle(time, 4);
+                    break :absolute;
+                },
+                else => default: {
+                    std.debug.print("No Valid Addresing mode found (Store Y Register!\n", .{});
+                    break :default;
+                },
+            }
+        }
+    }
+
     pub fn storeXRegister(time: i128, self: *Cpu) void {
         if (self.instruction & 0xF0 == 0x90) {
-            self.setZeroPageY(self.accumulator);
+            self.setZeroPageY(self.x_register);
             self.pc += 2;
             cycle(time, 4);
         } else {
@@ -1214,7 +1317,7 @@ pub const Cpu = struct {
                 },
                 0xE => absolute: {
                     self.setAbsolute(self.x_register);
-                    self.pc += 2;
+                    self.pc += 3;
                     cycle(time, 4);
                     break :absolute;
                 },
