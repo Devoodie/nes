@@ -311,6 +311,28 @@ pub const Cpu = struct {
         self.bus.putMmi();
     }
 
+    pub fn branchRelative(self: *Cpu) void {
+        const low_byte: u8 = self.pc & 0xFF;
+        const offset: u8 = self.GetImmediate();
+        const negative: u1 = offset >> 1;
+        var value = offset & 0b1111111;
+
+        if (negative == 1) {
+            value = ~(value);
+            const difference = @subWithOverflow(low_byte, @as(u8, value));
+            self.extra_cycle = difference[1];
+            self.pc &= 0xFF00;
+            self.pc |= difference[0];
+            self.pc -= (self.extra_cycle << 8);
+        } else {
+            const sum = @addWithOverflow(low_byte, @as(u8, offset));
+            self.extra_cycle = sum[1];
+            self.pc &= 0xFF00;
+            self.pc |= sum[0];
+            self.pc += (self.extra_cycle << 8);
+        }
+    }
+
     pub fn jump(time: i128, self: *Cpu) void {
         if (self.instruction & 0xF == 0x60) {
             self.bus.addr_bus = self.pc + 2;
@@ -588,6 +610,118 @@ pub const Cpu = struct {
                 break :default;
             },
         }
+    }
+
+    pub fn branchNoCarry(time: i128, self: *Cpu) void {
+        var success: u1 = undefined;
+        self.extra_cycle = 0;
+
+        if (self.status.carry == 0) {
+            self.branchRelative();
+            success = 1;
+        } else {
+            success = 0;
+        }
+        self.pc += 2;
+        cycle(time, 2 + success + self.extra_cycle);
+    }
+
+    pub fn branchOnCarry(time: i128, self: *Cpu) void {
+        var success: u1 = undefined;
+        self.extra_cycle = 0;
+
+        if (self.status.carry == 1) {
+            self.branchRelative();
+            success = 1;
+        } else {
+            success = 0;
+        }
+        self.pc += 2;
+        cycle(time, 2 + success + self.extra_cycle);
+    }
+
+    pub fn branchOnZero(time: i128, self: *Cpu) void {
+        var success: u1 = undefined;
+        self.extra_cycle = 0;
+
+        if (self.status.zero == 1) {
+            self.branchRelative();
+            success = 1;
+        } else {
+            success = 0;
+        }
+        self.pc += 2;
+        cycle(time, 2 + success + self.extra_cycle);
+    }
+
+    pub fn branchNoZero(time: i128, self: *Cpu) void {
+        var success: u1 = undefined;
+        self.extra_cycle = 0;
+
+        if (self.status.zero == 0) {
+            self.branchRelative();
+            success = 1;
+        } else {
+            success = 0;
+        }
+        self.pc += 2;
+        cycle(time, 2 + success + self.extra_cycle);
+    }
+
+    pub fn branchNoNegative(time: i128, self: *Cpu) void {
+        var success: u1 = undefined;
+        self.extra_cycle = 0;
+
+        if (self.status.negative == 0) {
+            self.branchRelative();
+            success = 1;
+        } else {
+            success = 0;
+        }
+        self.pc += 2;
+        cycle(time, 2 + success + self.extra_cycle);
+    }
+
+    pub fn branchOnNegative(time: i128, self: *Cpu) void {
+        var success: u1 = undefined;
+        self.extra_cycle = 0;
+
+        if (self.status.negative == 1) {
+            self.branchRelative();
+            success = 1;
+        } else {
+            success = 0;
+        }
+        self.pc += 2;
+        cycle(time, 2 + success + self.extra_cycle);
+    }
+
+    pub fn branchNoOverflow(time: i128, self: *Cpu) void {
+        var success: u1 = undefined;
+        self.extra_cycle = 0;
+
+        if (self.status.overflow == 0) {
+            self.branchRelative();
+            success = 1;
+        } else {
+            success = 0;
+        }
+        self.pc += 2;
+        cycle(time, 2 + success + self.extra_cycle);
+    }
+
+    pub fn branchOnOverflow(time: i128, self: *Cpu) void {
+        var success: u1 = undefined;
+        self.extra_cycle = 0;
+
+        if (self.status.overflow == 1) {
+            self.branchRelative();
+            success = 1;
+        } else {
+            success = 0;
+        }
+        self.pc += 2;
+        cycle(time, 2 + success + self.extra_cycle);
     }
 
     pub fn increment(time: i128, self: *Cpu) void {
