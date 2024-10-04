@@ -318,7 +318,7 @@ pub const Cpu = struct {
         var value = offset & 0b1111111;
 
         if (negative == 1) {
-            value = ~(value);
+            value = ~(value) + 1;
             const difference = @subWithOverflow(low_byte, @as(u8, value));
             self.extra_cycle = difference[1];
             self.pc &= 0xFF00;
@@ -2104,6 +2104,20 @@ pub const Cpu = struct {
             self.status.negative = self.accumulator >> 7;
         }
     }
+
+    pub fn clearCarry(time: i128, self: *Cpu) void {}
+
+    pub fn clearDecimal(time: i128, self: *Cpu) void {}
+
+    pub fn clearInterrupt(time: i128, self: *Cpu) void {}
+
+    pub fn clearOverflow(time: i128, self: *Cpu) void {}
+
+    pub fn setCarry(time: i128, self: *Cpu) void {}
+
+    pub fn setDecimal(time: i128, self: *Cpu) void {}
+
+    pub fn setInterrupt(time: i128, self: *Cpu) void {}
 
     pub fn bitTest(time: i128, self: *Cpu) void {
         switch (self.instruction & 0xF) {
