@@ -19,9 +19,9 @@ pub const Cpu = struct {
     pc: u16 = 0xFFFC,
     stack_pointer: u8 = 0xFD,
     status: StatusRegister = .{},
-    bus: *component.Bus,
-    instruction: u24,
-    extra_cycle: u1,
+    bus: *component.Bus = undefined,
+    instruction: u8 = undefined,
+    extra_cycle: u1 = undefined,
 
     pub fn cycle(prev_time: i128, cycles: u8) void {
         const cur_time = std.time.nanoTimestamp();
@@ -253,6 +253,9 @@ pub const Cpu = struct {
 
     pub fn GetZeroPage(self: *Cpu) u8 {
         self.bus.addr_bus = self.pc + 1;
+        self.bus.getMmo();
+
+        self.bus.addr_bus = self.bus.data_bus;
         self.bus.getMmo();
 
         return self.bus.data_bus;

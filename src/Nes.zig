@@ -8,17 +8,12 @@ pub const Nes = struct {
     Bus: bus.Bus,
     Cpu: cpu.Cpu,
 
-    pub fn init() Nes {
-        const Bus: bus.Bus = .{};
-        const Ppu: ppu.Ppu = .{};
-        const Cpu: cpu.Cpu = .{
-            .memory = [2048]u8{0} ** 2048,
-            .bus = &Bus,
+    pub fn init(self: *Nes) void {
+        self.Cpu = .{
+            .memory = [_]u8{0} ** 2048,
+            .bus = &self.Bus,
         };
-        return .{
-            .Ppu = Ppu,
-            .Bus = Bus,
-            .Cpu = Cpu,
-        };
+        self.Bus.cpu_ptr = &self.Cpu;
+        self.Bus.ppu_ptr = &self.Ppu;
     }
 };

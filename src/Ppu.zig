@@ -1,15 +1,15 @@
 const std = @import("std");
 
 pub const Ppu = struct {
-    control: u8,
-    mask: u8,
-    status: u3,
-    oama_addr: u8,
-    oam_data: u8,
-    scroll: u8,
-    addr: u8,
-    data: u8,
-    oam_dma: u8,
+    control: u8 = 0,
+    mask: u8 = 0,
+    status: u3 = 0,
+    oama_addr: u8 = 0,
+    oam_data: u8 = 0,
+    scroll: u8 = 0,
+    addr: u8 = 0,
+    data: u8 = 0,
+    oam_dma: u8 = 0,
 
     pub fn PpuMmo(self: *Ppu, address: u16) u8 {
         if (address == 0x4014) {
@@ -40,9 +40,9 @@ pub const Ppu = struct {
             7 => {
                 return self.data;
             },
-            else => default: {
+            else => {
                 std.debug.print("Invalid PPU Register!\n", .{});
-                break :default;
+                return 0;
             },
         }
     }
