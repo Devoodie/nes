@@ -122,7 +122,7 @@ pub const Cpu = struct {
         self.bus.addr_bus = self.pc + 1;
         self.bus.getMmo();
 
-        const addr: u8 = (self.bus.data_bus + self.y_register) % 256;
+        const addr: u8 = self.bus.data_bus +% self.y_register;
         self.bus.addr_bus = addr;
         self.bus.getMmo();
 
