@@ -94,4 +94,20 @@ test "Absolute Indexed Addressing" {
     std.debug.print("{d} provided by Absolute Y!\n", .{nes.Cpu.GetAbsoluteIndexed(1)});
 }
 
-test "Relative Addressing!" {}
+test "Indirect Indexed Addressing!" {
+    var nes: components.Nes = .{ .Cpu = .{}, .Ppu = .{}, .Bus = .{} };
+
+    nes.init();
+
+    nes.Cpu.pc = 0;
+    nes.Cpu.x_register = 8;
+    nes.Cpu.y_register = 8;
+    nes.Cpu.memory[1] = 0x1;
+    nes.Cpu.memory[9] = 0xA7;
+    nes.Cpu.memory[10] = 0xF;
+
+    nes.Cpu.setIndirectX(240);
+    std.debug.print("{d} provided by Absolute X!\n", .{nes.Cpu.GetIndirectX()});
+    try std.testing.expect(nes.Cpu.GetAbsoluteIndexed(0) == nes.Cpu.memory[0xFAF % 0x800]);
+    // implement Indirect Y Addressing Mode!
+}

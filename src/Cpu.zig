@@ -227,7 +227,7 @@ pub const Cpu = struct {
         self.bus.addr_bus = self.pc + 1;
         self.bus.getMmo();
 
-        self.bus.addr_bus = (self.bus.data_bus + self.x_register) % 256;
+        self.bus.addr_bus = self.bus.data_bus +% self.x_register;
         self.bus.getMmo();
 
         const low_bytes = self.bus.data_bus;
@@ -236,8 +236,10 @@ pub const Cpu = struct {
         self.bus.addr_bus += 1;
         self.bus.getMmo();
 
-        self.bus.addr_bus = low_bytes;
-        self.bus.addr_bus |= self.bus.data_bus << 8;
+        self.bus.addr_bus = self.bus.data_bus;
+        self.bus.addr_bus <<= 8;
+        self.bus.addr_bus |= low_bytes;
+
         self.bus.getMmo();
 
         return self.bus.data_bus;
@@ -247,7 +249,7 @@ pub const Cpu = struct {
         self.bus.addr_bus = self.pc + 1;
         self.bus.getMmo();
 
-        self.bus.addr_bus = (self.bus.data_bus + self.x_register) % 256;
+        self.bus.addr_bus = self.bus.data_bus +% self.x_register;
         self.bus.getMmo();
 
         const low_bytes = self.bus.data_bus;
@@ -256,8 +258,9 @@ pub const Cpu = struct {
         self.bus.addr_bus += 1;
         self.bus.getMmo();
 
-        self.bus.addr_bus = low_bytes;
-        self.bus.addr_bus |= self.bus.data_bus << 8;
+        self.bus.addr_bus = self.bus.data_bus;
+        self.bus.addr_bus <<= 8;
+        self.bus.addr_bus |= low_bytes;
 
         self.bus.data_bus = data;
         self.bus.putMmi();
