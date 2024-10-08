@@ -3,7 +3,7 @@ const std = @import("std");
 pub const Ppu = struct {
     control: u8 = 0,
     mask: u8 = 0,
-    status: u3 = 0,
+    status: u8 = 0,
     oama_addr: u8 = 0,
     oam_data: u8 = 0,
     scroll: u8 = 0,
@@ -58,7 +58,8 @@ pub const Ppu = struct {
                 self.mask = data;
             },
             2 => {
-                self.status = data;
+                //   self.status = data;
+                std.debug.print("Data\n", .{});
             },
             3 => {
                 self.oama_addr = data;

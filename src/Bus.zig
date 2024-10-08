@@ -22,7 +22,7 @@ pub const Bus = struct {
         if (self.addr_bus <= 0x1FFF) {
             self.cpu_ptr.memory[self.addr_bus % 0x800] = self.data_bus;
         } else if (self.addr_bus <= 0x3FFF) {
-            self.data_bus = self.ppu_ptr.ppuMmi(self.addr_bus, self.data_bus);
+            self.ppu_ptr.ppuMmi(self.addr_bus, self.data_bus);
         } else if (self.addr_bus <= 0x401F) {
             return;
         }

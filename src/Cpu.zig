@@ -107,7 +107,7 @@ pub const Cpu = struct {
         }
         var addr: u16 = sum[0];
 
-        self.bus.addr_bus = addr + 1;
+        self.bus.addr_bus = addr + 0;
         self.bus.getMmo();
 
         const high_bytes: u16 = (self.bus.data_bus + sum[1]) << 8;
@@ -133,7 +133,7 @@ pub const Cpu = struct {
         self.bus.addr_bus = self.pc + 1;
         self.bus.getMmo();
 
-        const addr: u8 = (self.bus.data_bus + self.y_register) % 256;
+        const addr: u8 = self.bus.data_bus +% self.y_register;
         self.bus.addr_bus = addr;
         self.bus.data_bus = data;
 
@@ -144,7 +144,7 @@ pub const Cpu = struct {
         self.bus.addr_bus = self.pc + 1;
         self.bus.getMmo();
 
-        const addr: u8 = (self.bus.data_bus + self.x_register) % 256;
+        const addr: u8 = self.bus.data_bus +% self.x_register;
         self.bus.addr_bus = addr;
         self.bus.getMmo();
 
@@ -155,7 +155,7 @@ pub const Cpu = struct {
         self.bus.addr_bus = self.pc + 1;
         self.bus.getMmo();
 
-        const addr: u8 = (self.bus.data_bus + self.x_register) % 256;
+        const addr: u8 = self.bus.data_bus +% self.x_register;
         self.bus.addr_bus = addr;
         self.bus.data_bus = data;
 
@@ -163,23 +163,26 @@ pub const Cpu = struct {
     }
 
     pub fn GetAbsoluteIndexed(self: *Cpu, xory: u1) u8 {
-        self.bus.addr_bus = self.pc + 2;
-        self.bus.getMmo();
-        var addr: u16 = self.bus.data_bus << 8;
-        self.extra_cycle = 0;
-        var sum = undefined;
-
         self.bus.addr_bus = self.pc + 1;
         self.bus.getMmo();
+        var addr: u16 = self.bus.data_bus;
+        addr <<= 8;
+        self.extra_cycle = 0;
+        var addend: u8 = undefined;
+
+        self.bus.addr_bus = self.pc + 2;
+        self.bus.getMmo();
         if (xory == 0) {
-            sum = @addWithOverflow(self.bus.data_bus, self.x_register);
+            addend = self.x_register;
         } else {
-            sum = @addWithOverflow(self.bus.data_bus, self.y_register);
+            addend = self.y_register;
         }
+        const sum = @addWithOverflow(self.bus.data_bus, addend);
 
         if (sum[1] == 1) {
             self.extra_cycle = 1;
-            addr += 0x100 + sum[0];
+            addr += 0x100;
+            addr += sum[0];
         } else {
             addr += sum[0];
         }
@@ -189,22 +192,31 @@ pub const Cpu = struct {
     }
 
     pub fn setAbsoluteIndexed(self: *Cpu, xory: u1, data: u8) void {
-        self.bus.addr_bus = self.pc + 2;
-        self.bus.getMmo();
-        var addr: u16 = self.bus.data_bus << 8;
-        self.extra_cycle = 0;
-        var sum = undefined;
-
         self.bus.addr_bus = self.pc + 1;
+        self.bus.getMmo();
+        var addr: u16 = self.bus.data_bus;
+        addr <<= 8;
+        self.extra_cycle = 0;
+        var addend: u8 = undefined;
+
+        self.bus.addr_bus = self.pc + 2;
         self.bus.getMmo();
 
         if (xory == 0) {
-            sum = self.bus.data_bus + self.x_register;
+            addend = self.x_register;
         } else {
-            sum = self.bus.data_bus + self.y_register;
+            addend = self.y_register;
+        }
+        const sum = @addWithOverflow(self.bus.data_bus, addend);
+
+        if (sum[1] == 1) {
+            self.extra_cycle = 1;
+            addr += 0x100;
+            addr += sum[0];
+        } else {
+            addr += sum[0];
         }
 
-        addr += sum;
         self.bus.addr_bus = addr;
         self.bus.data_bus = data;
 
@@ -283,12 +295,14 @@ pub const Cpu = struct {
     }
 
     pub fn GetAbsolute(self: *Cpu) u8 {
-        self.bus.addr_bus = self.pc + 2;
+        self.bus.addr_bus = self.pc + 1;
         self.bus.getMmo();
 
-        var addr: u16 = self.bus.data_bus << 8;
+        var addr: u16 = self.bus.data_bus;
 
-        self.bus.addr_bus = self.pc + 1;
+        addr <<= 8;
+
+        self.bus.addr_bus = self.pc + 2;
         self.bus.getMmo();
 
         addr |= self.bus.data_bus;
@@ -299,15 +313,18 @@ pub const Cpu = struct {
     }
 
     pub fn setAbsolute(self: *Cpu, data: u8) void {
-        self.bus.addr_bus = self.pc + 2;
-        self.bus.getMmo();
-
-        var addr: u16 = self.bus.data_bus << 8;
-
         self.bus.addr_bus = self.pc + 1;
         self.bus.getMmo();
 
+        var addr: u16 = self.bus.data_bus;
+
+        addr <<= 8;
+
+        self.bus.addr_bus = self.pc + 2;
+        self.bus.getMmo();
+
         addr |= self.bus.data_bus;
+
         self.bus.addr_bus = addr;
         self.bus.data_bus = data;
 
