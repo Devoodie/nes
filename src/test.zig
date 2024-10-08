@@ -103,11 +103,16 @@ test "Indirect Indexed Addressing!" {
     nes.Cpu.x_register = 8;
     nes.Cpu.y_register = 8;
     nes.Cpu.memory[1] = 0x1;
-    nes.Cpu.memory[9] = 0xA7;
+    nes.Cpu.memory[9] = 0xAF;
     nes.Cpu.memory[10] = 0xF;
 
     nes.Cpu.setIndirectX(240);
-    std.debug.print("{d} provided by Absolute X!\n", .{nes.Cpu.GetIndirectX()});
-    try std.testing.expect(nes.Cpu.GetAbsoluteIndexed(0) == nes.Cpu.memory[0xFAF % 0x800]);
+    std.debug.print("{d} provided by Indirect Indexed X!\n", .{nes.Cpu.GetIndirectX()});
+    try std.testing.expect(nes.Cpu.GetIndirectX() == nes.Cpu.memory[0xFAF % 0x800]);
     // implement Indirect Y Addressing Mode!
+    //
+
+    nes.Cpu.setIndirectY(241);
+    std.debug.print("{d} provided by Indirect Indexed Y!\n", .{nes.Cpu.GetIndirectY()});
+    try std.testing.expect(nes.Cpu.GetIndirectY() == nes.Cpu.memory[0xFAF % 0x800]);
 }

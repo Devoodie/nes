@@ -81,12 +81,16 @@ pub const Cpu = struct {
         if (sum[1] == 1) {
             self.extra_cycle = 1;
         }
-        var addr: u16 = sum[0];
+        const buffer = sum[0];
 
-        self.bus.addr_bus = addr + 1;
+        self.bus.addr_bus = buffer;
+        self.bus.getMmo();
+        var addr: u16 = self.bus.data_bus;
+
+        self.bus.addr_bus += 1;
         self.bus.getMmo();
 
-        const high_bytes: u16 = (self.bus.data_bus + sum[1]) << 8;
+        const high_bytes: u16 = @as(u16, @intCast(self.bus.data_bus + sum[1])) << 8;
         addr |= high_bytes;
 
         self.bus.addr_bus = addr;
@@ -110,7 +114,7 @@ pub const Cpu = struct {
         self.bus.addr_bus = addr + 0;
         self.bus.getMmo();
 
-        const high_bytes: u16 = (self.bus.data_bus + sum[1]) << 8;
+        const high_bytes: u16 = @as(u16, @intCast(self.bus.data_bus + sum[1])) << 8;
         addr |= high_bytes;
 
         self.bus.addr_bus = addr;
