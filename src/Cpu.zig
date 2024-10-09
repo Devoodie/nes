@@ -24,10 +24,12 @@ pub const Cpu = struct {
     extra_cycle: u1 = undefined,
 
     pub fn cycle(prev_time: i128, cycles: u8) void {
-        const cur_time = std.time.nanoTimestamp();
-        const elapsed_time = cur_time - prev_time;
+        const wait_time: i128 = 559 * @as(i128, @intCast(cycles));
+        const goal_time = wait_time + prev_time;
 
-        std.time.sleep(559 * cycles - elapsed_time);
+        while (std.time.nanoTimestamp() <= goal_time) {
+            continue;
+        }
     }
 
     pub fn stackPush(data: u8, self: *Cpu) void {
@@ -360,8 +362,8 @@ pub const Cpu = struct {
         }
     }
 
-    pub fn jump(time: i128, self: *Cpu) void {
-        if (self.instruction & 0xF == 0x60) {
+    pub fn jump(self: *Cpu, time: i128) void {
+        if (self.instruction & 0xF0 == 0x60) {
             self.bus.addr_bus = self.pc + 2;
             self.bus.getMmo();
 
@@ -370,16 +372,9 @@ pub const Cpu = struct {
             self.bus.addr_bus = self.pc + 1;
             self.bus.getMmo();
 
-            self.bus.addr_bus = low_byte + (self.bus.data_bus << 8);
-            self.bus.getMmo();
-
-            var addr = self.bus.data_bus << 8;
-
-            self.bus.addr_bus += 1;
-            self.bus.getMmo();
-
-            addr |= self.bus.data_bus;
-            self.pc = addr;
+            self.pc = self.bus.data_bus;
+            self.pc <<= 8;
+            self.pc += low_byte;
             cycle(time, 5);
         } else {
             self.pc = self.GetAbsolute();
@@ -387,7 +382,7 @@ pub const Cpu = struct {
         }
     }
 
-    pub fn xToAccumulator(time: i128, self: *Cpu) void {
+    pub fn xToAccumulator(self: *Cpu, time: i128) void {
         self.accumulator = self.x_register;
         if (self.accumulator == 0) {
             self.status.zero = 1;
@@ -400,7 +395,7 @@ pub const Cpu = struct {
         cycle(time, 2);
     }
 
-    pub fn yToAccumulator(time: i128, self: *Cpu) void {
+    pub fn yToAccumulator(self: *Cpu, time: i128) void {
         self.accumulator = self.y_register;
         if (self.accumulator == 0) {
             self.status.zero = 1;
@@ -413,7 +408,7 @@ pub const Cpu = struct {
         cycle(time, 2);
     }
 
-    pub fn accumulatorToX(time: i128, self: *Cpu) void {
+    pub fn accumulatorToX(self: *Cpu, time: i128) void {
         self.x_register = self.accumulator;
         if (self.x_register == 0) {
             self.status.zero = 1;
@@ -426,7 +421,7 @@ pub const Cpu = struct {
         cycle(time, 2);
     }
 
-    pub fn stackPointerToX(time: i128, self: *Cpu) void {
+    pub fn stackPointerToX(self: *Cpu, time: i128) void {
         self.x_register = self.stack_pointer;
         if (self.x_register == 0) {
             self.status.zero = 1;
@@ -439,7 +434,7 @@ pub const Cpu = struct {
         cycle(time, 2);
     }
 
-    pub fn xToStackPointer(time: i128, self: *Cpu) void {
+    pub fn xToStackPointer(self: *Cpu, time: i128) void {
         self.stack_pointer = self.x_register;
         if (self.stack_pointer == 0) {
             self.status.zero = 1;
@@ -452,7 +447,7 @@ pub const Cpu = struct {
         cycle(time, 2);
     }
 
-    pub fn accumulatorToY(time: i128, self: *Cpu) void {
+    pub fn accumulatorToY(self: *Cpu, time: i128) void {
         self.y_register = self.accumulator;
         if (self.y_register == 0) {
             self.status.zero = 1;
@@ -465,19 +460,19 @@ pub const Cpu = struct {
         cycle(time, 2);
     }
 
-    pub fn pushAccumulator(time: i128, self: *Cpu) void {
+    pub fn pushAccumulator(self: *Cpu, time: i128) void {
         self.stackPush(self.accumulator);
         self.pc += 1;
         cycle(time, 3);
     }
 
-    pub fn pullAccumulator(time: i128, self: *Cpu) void {
+    pub fn pullAccumulator(self: *Cpu, time: i128) void {
         self.accumulator = self.stackPop();
         self.pc += 1;
         cycle(time, 4);
     }
 
-    pub fn pullStatus(time: i128, self: *Cpu) void {
+    pub fn pullStatus(self: *Cpu, time: i128) void {
         const status = self.stackPop();
 
         self.status.negative = status >> 7;
@@ -492,7 +487,7 @@ pub const Cpu = struct {
         cycle(time, 4);
     }
 
-    pub fn pushStatus(time: i128, self: *Cpu) void {
+    pub fn pushStatus(self: *Cpu, time: i128) void {
         var status = 0;
 
         status |= self.status.negative;
@@ -514,12 +509,12 @@ pub const Cpu = struct {
         cycle(time, 3);
     }
 
-    pub fn nop(time: i128, self: *Cpu) void {
+    pub fn nop(self: *Cpu, time: i128) void {
         self.pc += 1;
         cycle(time, 2);
     }
 
-    pub fn compareYRegister(time: i128, self: *Cpu) void {
+    pub fn compareYRegister(self: *Cpu, time: i128) void {
         switch (self.instruction & 0xF) {
             0 => immediate: {
                 const value = self.GetImmediate();
@@ -579,7 +574,7 @@ pub const Cpu = struct {
         }
     }
 
-    pub fn compareXRegister(time: i128, self: *Cpu) void {
+    pub fn compareXRegister(self: *Cpu, time: i128) void {
         switch (self.instruction & 0xF) {
             0 => immediate: {
                 const value = self.GetImmediate();
@@ -639,7 +634,7 @@ pub const Cpu = struct {
         }
     }
 
-    pub fn branchNoCarry(time: i128, self: *Cpu) void {
+    pub fn branchNoCarry(self: *Cpu, time: i128) void {
         var success: u1 = undefined;
         self.extra_cycle = 0;
 
@@ -653,7 +648,7 @@ pub const Cpu = struct {
         cycle(time, 2 + success + self.extra_cycle);
     }
 
-    pub fn branchOnCarry(time: i128, self: *Cpu) void {
+    pub fn branchOnCarry(self: *Cpu, time: i128) void {
         var success: u1 = undefined;
         self.extra_cycle = 0;
 
@@ -667,7 +662,7 @@ pub const Cpu = struct {
         cycle(time, 2 + success + self.extra_cycle);
     }
 
-    pub fn branchOnZero(time: i128, self: *Cpu) void {
+    pub fn branchOnZero(self: *Cpu, time: i128) void {
         var success: u1 = undefined;
         self.extra_cycle = 0;
 
@@ -681,7 +676,7 @@ pub const Cpu = struct {
         cycle(time, 2 + success + self.extra_cycle);
     }
 
-    pub fn branchNoZero(time: i128, self: *Cpu) void {
+    pub fn branchNoZero(self: *Cpu, time: i128) void {
         var success: u1 = undefined;
         self.extra_cycle = 0;
 
@@ -695,7 +690,7 @@ pub const Cpu = struct {
         cycle(time, 2 + success + self.extra_cycle);
     }
 
-    pub fn branchNoNegative(time: i128, self: *Cpu) void {
+    pub fn branchNoNegative(self: *Cpu, time: i128) void {
         var success: u1 = undefined;
         self.extra_cycle = 0;
 
@@ -709,7 +704,7 @@ pub const Cpu = struct {
         cycle(time, 2 + success + self.extra_cycle);
     }
 
-    pub fn branchOnNegative(time: i128, self: *Cpu) void {
+    pub fn branchOnNegative(self: *Cpu, time: i128) void {
         var success: u1 = undefined;
         self.extra_cycle = 0;
 
@@ -723,7 +718,7 @@ pub const Cpu = struct {
         cycle(time, 2 + success + self.extra_cycle);
     }
 
-    pub fn branchNoOverflow(time: i128, self: *Cpu) void {
+    pub fn branchNoOverflow(self: *Cpu, time: i128) void {
         var success: u1 = undefined;
         self.extra_cycle = 0;
 
@@ -737,7 +732,7 @@ pub const Cpu = struct {
         cycle(time, 2 + success + self.extra_cycle);
     }
 
-    pub fn branchOnOverflow(time: i128, self: *Cpu) void {
+    pub fn branchOnOverflow(self: *Cpu, time: i128) void {
         var success: u1 = undefined;
         self.extra_cycle = 0;
 
@@ -751,7 +746,7 @@ pub const Cpu = struct {
         cycle(time, 2 + success + self.extra_cycle);
     }
 
-    pub fn increment(time: i128, self: *Cpu) void {
+    pub fn increment(self: *Cpu, time: i128) void {
         var value: u8 = 0;
         if (self.instruction & 0xF0 == 0xF0) {
             switch (self.instruction & 0xF) {
@@ -804,7 +799,7 @@ pub const Cpu = struct {
         self.status.negative = value >> 7;
     }
 
-    pub fn incrementXRegister(time: i128, self: *Cpu) void {
+    pub fn incrementXRegister(self: *Cpu, time: i128) void {
         self.x_register += 1;
         if (self.x_register == 0) {
             self.status.zero = 1;
@@ -817,7 +812,7 @@ pub const Cpu = struct {
         cycle(time, 2);
     }
 
-    pub fn incrementYRegister(time: i128, self: *Cpu) void {
+    pub fn incrementYRegister(self: *Cpu, time: i128) void {
         self.y_register += 1;
         if (self.y_register == 0) {
             self.status.zero = 1;
@@ -830,7 +825,7 @@ pub const Cpu = struct {
         cycle(time, 2);
     }
 
-    pub fn decrement(time: i128, self: *Cpu) void {
+    pub fn decrement(self: *Cpu, time: i128) void {
         var value: u8 = 0;
         if (self.instruction & 0xF0 == 0xD0) {
             switch (self.instruction & 0xF) {
@@ -883,7 +878,7 @@ pub const Cpu = struct {
         self.status.negative = value >> 7;
     }
 
-    pub fn decrementY(time: i128, self: *Cpu) void {
+    pub fn decrementY(self: *Cpu, time: i128) void {
         self.y_register -= 1;
 
         if (self.y_register == 0) {
@@ -897,7 +892,7 @@ pub const Cpu = struct {
         cycle(time, 2);
     }
 
-    pub fn decrementX(time: i128, self: *Cpu) void {
+    pub fn decrementX(self: *Cpu, time: i128) void {
         self.x_register -= 1;
 
         if (self.x_register == 0) {
@@ -911,7 +906,7 @@ pub const Cpu = struct {
         cycle(time, 2);
     }
 
-    pub fn loadXRegister(time: i128, self: *Cpu) void {
+    pub fn loadXRegister(self: *Cpu, time: i128) void {
         if (self.instruction & 0xF0 == 0xA0) {
             switch (self.instruction & 0xF) {
                 2 => immediate: {
@@ -965,7 +960,7 @@ pub const Cpu = struct {
         self.status.negative = self.y_register >> 7;
     }
 
-    pub fn loadYRegister(time: i128, self: *Cpu) void {
+    pub fn loadYRegister(self: *Cpu, time: i128) void {
         if (self.instruction & 0xF0 == 0xA0) {
             switch (self.instruction & 0xF) {
                 0 => immediate: {
@@ -1019,7 +1014,7 @@ pub const Cpu = struct {
         self.status.negative = self.y_register >> 7;
     }
 
-    pub fn returnInterrupt(time: i128, self: *Cpu) void {
+    pub fn returnInterrupt(self: *Cpu, time: i128) void {
         const status = self.stackPopAddress();
         self.status.negative = status >> 7;
         self.status.overflow = (status >> 6) & 0b1;
@@ -1033,19 +1028,19 @@ pub const Cpu = struct {
         cycle(time, 6);
     }
 
-    pub fn returnSubroutine(time: i128, self: *Cpu) void {
+    pub fn returnSubroutine(self: *Cpu, time: i128) void {
         self.pc = self.stackPopAddress() + 1;
         cycle(time, 6);
     }
 
-    pub fn forceInterrupt(time: i128, self: *Cpu) void {
+    pub fn forceInterrupt(self: *Cpu, time: i128) void {
         self.stackPushAddress(self.pc + 1);
         self.status.break_inter = 1;
         self.pc = 0xFFFF;
         self.cycle(time, 7);
     }
 
-    pub fn jumpSubroutine(time: i128, self: *Cpu) void {
+    pub fn jumpSubroutine(self: *Cpu, time: i128) void {
         self.stackPush(self.pc + 3 - 1);
 
         self.bus.addr_bus = self.pc + 2;
@@ -1063,7 +1058,7 @@ pub const Cpu = struct {
         self.cycle(time, 6);
     }
 
-    pub fn subtractWithCarry(time: i128, self: *Cpu) void {
+    pub fn subtractWithCarry(self: *Cpu, time: i128) void {
         if (self.instruction & 0xF0 == 0xF0) {
             switch (self.instruction & 0xF) {
                 1 => indirecty: {
@@ -1247,7 +1242,7 @@ pub const Cpu = struct {
         self.status.negative = self.accumulator >> 7;
     }
 
-    pub fn compareAccumulator(time: i128, self: *Cpu) void {
+    pub fn compareAccumulator(self: *Cpu, time: i128) void {
         if (self.instruction & 0xF0 == 0x50) {
             switch (self.instruction & 0xF) {
                 1 => indirecty: {
@@ -1394,7 +1389,7 @@ pub const Cpu = struct {
         }
     }
 
-    pub fn loadAccumulator(time: i128, self: *Cpu) void {
+    pub fn loadAccumulator(self: *Cpu, time: i128) void {
         if (self.instruction & 0xF0 == 0xB0) {
             switch (self.instruction & 0xF) {
                 1 => indirecty: {
@@ -1466,7 +1461,7 @@ pub const Cpu = struct {
         }
     }
 
-    pub fn storeYRegister(time: i128, self: *Cpu) void {
+    pub fn storeYRegister(self: *Cpu, time: i128) void {
         if (self.instruction & 0xF0 == 0x90) {
             self.setZeroPageX(self.y_register);
             self.pc += 2;
@@ -1493,7 +1488,7 @@ pub const Cpu = struct {
         }
     }
 
-    pub fn storeXRegister(time: i128, self: *Cpu) void {
+    pub fn storeXRegister(self: *Cpu, time: i128) void {
         if (self.instruction & 0xF0 == 0x90) {
             self.setZeroPageY(self.x_register);
             self.pc += 2;
@@ -1520,7 +1515,7 @@ pub const Cpu = struct {
         }
     }
 
-    pub fn storeAccumulator(time: i128, self: *Cpu) void {
+    pub fn storeAccumulator(self: *Cpu, time: i128) void {
         if (self.instruction & 0xF0 == 0x90) {
             switch (self.instruction & 0xF) {
                 1 => indirecty: {
@@ -1579,7 +1574,7 @@ pub const Cpu = struct {
         }
     }
 
-    pub fn logicalShiftRight(time: i128, self: *Cpu) void {
+    pub fn logicalShiftRight(self: *Cpu, time: i128) void {
         var result: u8 = 0;
         if (self.instruction & 0xF0 == 0x50) {
             switch (self.instruction & 0xF) {
@@ -1661,7 +1656,7 @@ pub const Cpu = struct {
         self.status.negative = result >> 7;
     }
 
-    pub fn rotateLeft(time: i128, self: *Cpu) void {
+    pub fn rotateLeft(self: *Cpu, time: i128) void {
         var result: u8 = 0;
         if (self.instruction & 0xF0 == 0x50) {
             switch (self.instruction & 0xF) {
@@ -1754,7 +1749,7 @@ pub const Cpu = struct {
         self.status.negative = result >> 7;
     }
 
-    pub fn rotateRight(time: i128, self: *Cpu) void {
+    pub fn rotateRight(self: *Cpu, time: i128) void {
         var result: u8 = 0;
         if (self.instruction & 0xF0 == 0x50) {
             switch (self.instruction & 0xF) {
@@ -1846,7 +1841,7 @@ pub const Cpu = struct {
         self.status.negative = result >> 7;
     }
 
-    pub fn arithmeticShiftLeft(time: i128, self: *Cpu) void {
+    pub fn arithmeticShiftLeft(self: *Cpu, time: i128) void {
         if (self.instruction & 0xF0 == 0x10) {
             switch (self.instruction & 0xF) {
                 6 => zeropagex: {
@@ -1945,7 +1940,7 @@ pub const Cpu = struct {
         }
     }
 
-    pub fn addWithCarry(time: i128, self: *Cpu) void {
+    pub fn addWithCarry(self: *Cpu, time: i128) void {
         if (self.instruction & 0xF0 == 0x70) {
             switch (self.instruction & 0xF) {
                 1 => indirecty: {
@@ -2134,49 +2129,49 @@ pub const Cpu = struct {
         }
     }
 
-    pub fn clearCarry(time: i128, self: *Cpu) void {
+    pub fn clearCarry(self: *Cpu, time: i128) void {
         self.status.carry = 0;
         self.pc += 1;
         cycle(time, 2);
     }
 
-    pub fn clearDecimal(time: i128, self: *Cpu) void {
+    pub fn clearDecimal(self: *Cpu, time: i128) void {
         self.status.decimal = 0;
         self.pc += 1;
         cycle(time, 2);
     }
 
-    pub fn clearInterrupt(time: i128, self: *Cpu) void {
+    pub fn clearInterrupt(self: *Cpu, time: i128) void {
         self.status.interrupt_dsble = 0;
         self.pc += 1;
         cycle(time, 2);
     }
 
-    pub fn clearOverflow(time: i128, self: *Cpu) void {
+    pub fn clearOverflow(self: *Cpu, time: i128) void {
         self.status.overflow = 0;
         self.pc += 1;
         cycle(time, 2);
     }
 
-    pub fn setCarry(time: i128, self: *Cpu) void {
+    pub fn setCarry(self: *Cpu, time: i128) void {
         self.status.carry = 1;
         self.pc += 1;
         cycle(time, 2);
     }
 
-    pub fn setDecimal(time: i128, self: *Cpu) void {
+    pub fn setDecimal(self: *Cpu, time: i128) void {
         self.status.decimal = 1;
         self.pc += 1;
         cycle(time, 2);
     }
 
-    pub fn setInterrupt(time: i128, self: *Cpu) void {
+    pub fn setInterrupt(self: *Cpu, time: i128) void {
         self.status.interrupt_dsble = 1;
         self.pc += 1;
         cycle(time, 2);
     }
 
-    pub fn bitTest(time: i128, self: *Cpu) void {
+    pub fn bitTest(self: *Cpu, time: i128) void {
         switch (self.instruction & 0xF) {
             4 => zero_page: {
                 const value = self.GetZeroPage() & self.accumulator;
@@ -2215,7 +2210,7 @@ pub const Cpu = struct {
         }
     }
 
-    pub fn exclusiveOr(time: i128, self: *Cpu) void {
+    pub fn exclusiveOr(self: *Cpu, time: i128) void {
         if (self.instruction & 0xF0 == 0x50) {
             switch (self.instruction & 0xF) {
                 1 => indirecty: {
@@ -2295,7 +2290,7 @@ pub const Cpu = struct {
         self.status.negative = self.accumulator >> 7;
     }
 
-    pub fn logicalOr(time: i128, self: *Cpu) void {
+    pub fn logicalOr(self: *Cpu, time: i128) void {
         if (self.instruction & 0xF0 == 0x10) {
             switch (self.instruction & 0xF) {
                 1 => indirecty: {
@@ -2375,7 +2370,7 @@ pub const Cpu = struct {
         self.status.negative = self.accumulator >> 7;
     }
 
-    pub fn logicalAnd(time: i128, self: *Cpu) void {
+    pub fn logicalAnd(self: *Cpu, time: i128) void {
         //I know its an annd because the lowest nib % 4 == 1
         if (self.instruction & 0xF0 == 0x30) {
             switch (self.instruction & 0xF) {

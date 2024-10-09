@@ -94,7 +94,7 @@ test "Absolute Indexed Addressing" {
     std.debug.print("{d} provided by Absolute Y!\n", .{nes.Cpu.GetAbsoluteIndexed(1)});
 }
 
-test "Indirect Indexed Addressing!" {
+test "Indirect Indexed Addressing" {
     var nes: components.Nes = .{ .Cpu = .{}, .Ppu = .{}, .Bus = .{} };
 
     nes.init();
@@ -115,4 +115,34 @@ test "Indirect Indexed Addressing!" {
     nes.Cpu.setIndirectY(241);
     std.debug.print("{d} provided by Indirect Indexed Y!\n", .{nes.Cpu.GetIndirectY()});
     try std.testing.expect(nes.Cpu.GetIndirectY() == nes.Cpu.memory[0xFAF % 0x800]);
+}
+
+test "Jump Addressing" {
+    var nes: components.Nes = .{ .Cpu = .{}, .Ppu = .{}, .Bus = .{} };
+
+    nes.init();
+
+    nes.Cpu.pc = 0;
+    nes.Cpu.memory[1] = 0xF;
+    nes.Cpu.memory[2] = 0xAF;
+    nes.Cpu.instruction = 0x6C;
+
+    nes.Cpu.jump(std.time.nanoTimestamp());
+    std.debug.print("Jumped to 0x{X}!\n", .{nes.Cpu.pc});
+    try std.testing.expect(nes.Cpu.pc == 0xFAF);
+}
+
+test "Branch Relative Addressing" {
+    var nes: components.Nes = .{ .Cpu = .{}, .Ppu = .{}, .Bus = .{} };
+
+    nes.init();
+
+    nes.Cpu.pc = 0;
+    nes.Cpu.memory[1] = 0xF;
+    nes.Cpu.memory[2] = 0xAF;
+    nes.Cpu.instruction = 0x6C;
+
+    nes.Cpu.jump(std.time.nanoTimestamp());
+    std.debug.print("Branched to 0x{X}!\n", .{nes.Cpu.pc});
+    try std.testing.expect(nes.Cpu.pc == 0xFAF);
 }
