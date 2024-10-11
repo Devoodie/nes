@@ -145,3 +145,20 @@ test "Branch Relative Addressing" {
     std.debug.print("Branched to {d}!\n", .{nes.Cpu.pc});
     try std.testing.expect(nes.Cpu.pc == 130);
 }
+
+test "Multi-Bit Add With Carry" {
+    var nes: components.Nes = .{ .Cpu = .{}, .Ppu = .{}, .Bus = .{} };
+
+    nes.init();
+
+    nes.Cpu.pc = 0;
+    nes.Cpu.status.carry = 1;
+    nes.Cpu.accumulator = 254;
+    nes.Cpu.memory[1] = 1;
+    nes.Cpu.instruction = 0x69;
+
+    nes.Cpu.addWithCarry(std.time.nanoTimestamp());
+    std.debug.print("Sum is {d}!\n", .{nes.Cpu.accumulator});
+    try std.testing.expect(nes.Cpu.accumulator == 0);
+    try std.testing.expect(nes.Cpu.status.carry == 1);
+}

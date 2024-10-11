@@ -1948,7 +1948,7 @@ pub const Cpu = struct {
         if (self.instruction & 0xF0 == 0x70) {
             switch (self.instruction & 0xF) {
                 1 => indirecty: {
-                    const negative: u1 = self.accumulator >> 7;
+                    const negative: u1 = @truncate(self.accumulator >> 7);
                     const carry = @addWithOverflow(self.accumulator, self.status.carry);
                     const sum = @addWithOverflow(self.GetIndirectY(), carry[0]);
 
@@ -1963,11 +1963,11 @@ pub const Cpu = struct {
                     }
 
                     self.pc += 2;
-                    cycle(time, 5 + self.extra_cycle);
+                    cycle(time, @as(u8, self.extra_cycle) + 5);
                     break :indirecty;
                 },
                 5 => zero_pagex: {
-                    const negative: u1 = self.accumulator >> 7;
+                    const negative: u1 = @truncate(self.accumulator >> 7);
                     const carry = @addWithOverflow(self.accumulator, self.status.carry);
                     const sum = @addWithOverflow(self.GetIndirectY(), carry[0]);
 
@@ -1987,7 +1987,7 @@ pub const Cpu = struct {
                     break :zero_pagex;
                 },
                 9 => absolutey: {
-                    const negative: u1 = self.accumulator >> 7;
+                    const negative: u1 = @truncate(self.accumulator >> 7);
                     const carry = @addWithOverflow(self.accumulator, self.status.carry);
                     const sum = @addWithOverflow(self.GetIndirectY(), carry[0]);
 
@@ -2004,11 +2004,11 @@ pub const Cpu = struct {
                     }
 
                     self.pc += 3;
-                    cycle(time, 4 + self.extra_cycle);
+                    cycle(time, 4 + @as(u8, self.extra_cycle));
                     break :absolutey;
                 },
                 0xD => absolutex: {
-                    const negative: u1 = self.accumulator >> 7;
+                    const negative: u1 = @truncate(self.accumulator >> 7);
                     const carry = @addWithOverflow(self.accumulator, self.status.carry);
                     const sum = @addWithOverflow(self.GetIndirectY(), carry[0]);
 
@@ -2023,7 +2023,7 @@ pub const Cpu = struct {
                     }
 
                     self.pc += 3;
-                    cycle(time, 4 + self.extra_cycle);
+                    cycle(time, 4 + @as(u8, self.extra_cycle));
                     break :absolutex;
                 },
                 else => default: {
@@ -2034,7 +2034,7 @@ pub const Cpu = struct {
         } else {
             switch (self.instruction & 0xF) {
                 1 => indirectx: {
-                    const negative: u1 = self.accumulator >> 7;
+                    const negative: u1 = @truncate(self.accumulator >> 7);
                     const carry = @addWithOverflow(self.accumulator, self.status.carry);
                     const sum = @addWithOverflow(self.GetIndirectY(), carry[0]);
 
@@ -2056,7 +2056,7 @@ pub const Cpu = struct {
                     break :indirectx;
                 },
                 5 => zero_page: {
-                    const negative: u1 = self.accumulator >> 7;
+                    const negative: u1 = @truncate(self.accumulator >> 7);
                     const carry = @addWithOverflow(self.accumulator, self.status.carry);
                     const sum = @addWithOverflow(self.GetIndirectY(), carry[0]);
 
@@ -2078,7 +2078,7 @@ pub const Cpu = struct {
                     break :zero_page;
                 },
                 9 => immediate: {
-                    const negative: u1 = self.accumulator >> 7;
+                    const negative: u1 = @truncate(self.accumulator >> 7);
                     const carry = @addWithOverflow(self.accumulator, self.status.carry);
                     const sum = @addWithOverflow(self.GetIndirectY(), carry[0]);
 
@@ -2099,7 +2099,7 @@ pub const Cpu = struct {
                     break :immediate;
                 },
                 0xD => absolute: {
-                    const negative: u1 = self.accumulator >> 7;
+                    const negative: u1 = @truncate(self.accumulator >> 7);
                     const carry = @addWithOverflow(self.accumulator, self.status.carry);
                     const sum = @addWithOverflow(self.GetIndirectY(), carry[0]);
 
@@ -2129,7 +2129,7 @@ pub const Cpu = struct {
             } else {
                 self.status.zero = 0;
             }
-            self.status.negative = self.accumulator >> 7;
+            self.status.negative = @intCast(self.accumulator >> 7);
         }
     }
 
