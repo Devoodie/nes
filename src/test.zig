@@ -133,6 +133,7 @@ test "Jump Addressing" {
 }
 
 test "Branch Relative Addressing" {
+    std.debug.print("Branch Addressing!\n", .{});
     var nes: components.Nes = .{ .Cpu = .{}, .Ppu = .{}, .Bus = .{} };
 
     nes.init();
@@ -146,7 +147,8 @@ test "Branch Relative Addressing" {
     try std.testing.expect(nes.Cpu.pc == 130);
 }
 
-test "Multi-Bit Add With Carry" {
+test "Multi-Byte Add With Carry" {
+    std.debug.print("Add With Carry!\n", .{});
     var nes: components.Nes = .{ .Cpu = .{}, .Ppu = .{}, .Bus = .{} };
 
     nes.init();
@@ -161,4 +163,26 @@ test "Multi-Bit Add With Carry" {
     std.debug.print("Sum is {d}!\n", .{nes.Cpu.accumulator});
     try std.testing.expect(nes.Cpu.accumulator == 0);
     try std.testing.expect(nes.Cpu.status.carry == 1);
+    try std.testing.expect(nes.Cpu.status.overflow == 1);
+    try std.testing.expect(nes.Cpu.status.zero == 1);
+    try std.testing.expect(nes.Cpu.status.negative == 0);
+}
+
+test "Multi-Byte" {
+    std.debug.print("Subtract With Carry!\n", .{});
+    var nes: components.Nes = .{ .Cpu = .{}, .Ppu = .{}, .Bus = .{} };
+
+    nes.init();
+
+    nes.Cpu.pc = 0;
+    nes.Cpu.status.carry = 1;
+    nes.Cpu.accumulator = 254;
+    nes.Cpu.memory[1] = 1;
+    nes.Cpu.instruction = 0x69;
+
+    nes.Cpu.addWithCarry(std.time.nanoTimestamp());
+    std.debug.print("Sum is {d}!\n", .{nes.Cpu.accumulator});
+    try std.testing.expect(nes.Cpu.accumulator == 0);
+    try std.testing.expect(nes.Cpu.status.carry == 1);
+
 }
