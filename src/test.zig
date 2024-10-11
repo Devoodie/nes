@@ -137,12 +137,11 @@ test "Branch Relative Addressing" {
 
     nes.init();
 
-    nes.Cpu.pc = 0;
-    nes.Cpu.memory[1] = 0xF;
-    nes.Cpu.memory[2] = 0xAF;
-    nes.Cpu.instruction = 0x6C;
+    nes.Cpu.pc = 256;
+    nes.Cpu.memory[257] = 0b10000000;
 
-    nes.Cpu.jump(std.time.nanoTimestamp());
-    std.debug.print("Branched to 0x{X}!\n", .{nes.Cpu.pc});
-    try std.testing.expect(nes.Cpu.pc == 0xFAF);
+    nes.Cpu.status.zero = 0;
+    nes.Cpu.branchNoZero(std.time.nanoTimestamp());
+    std.debug.print("Branched to {d}!\n", .{nes.Cpu.pc});
+    try std.testing.expect(nes.Cpu.pc == 130);
 }

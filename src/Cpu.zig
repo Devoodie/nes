@@ -341,24 +341,27 @@ pub const Cpu = struct {
     }
 
     pub fn branchRelative(self: *Cpu) void {
-        const low_byte: u8 = self.pc & 0xFF;
+        const low_byte: u8 = @as(u8, @truncate(self.pc)) & 0xFF;
         const offset: u8 = self.GetImmediate();
-        const negative: u1 = offset >> 1;
-        var value = offset & 0b1111111;
+        const signed_value: u7 = @intCast(offset & 0b1111111);
+        var unsigned_value: u8 = undefined;
 
-        if (negative == 1) {
-            value = ~(value) + 1;
-            const difference = @subWithOverflow(low_byte, @as(u8, value));
+        if (offset >> 7 == 1) {
+            unsigned_value = ~(signed_value);
+            unsigned_value += 1;
+            const difference = @subWithOverflow(low_byte, @as(u8, unsigned_value));
             self.extra_cycle = difference[1];
             self.pc &= 0xFF00;
             self.pc |= difference[0];
-            self.pc -= (self.extra_cycle << 8);
+            std.debug.print("{d}\n", .{difference[0]});
+
+            self.pc -= @as(u16, @intCast(self.extra_cycle)) << 8;
         } else {
-            const sum = @addWithOverflow(low_byte, @as(u8, offset));
+            const sum = @addWithOverflow(low_byte, @as(u8, signed_value));
             self.extra_cycle = sum[1];
             self.pc &= 0xFF00;
             self.pc |= sum[0];
-            self.pc += (self.extra_cycle << 8);
+            self.pc += @as(u16, @intCast(self.extra_cycle)) << 8;
         }
     }
 
@@ -687,7 +690,8 @@ pub const Cpu = struct {
             success = 0;
         }
         self.pc += 2;
-        cycle(time, 2 + success + self.extra_cycle);
+        const cycles = 2 + @as(u8, @intCast(success)) + self.extra_cycle;
+        cycle(time, cycles);
     }
 
     pub fn branchNoNegative(self: *Cpu, time: i128) void {
