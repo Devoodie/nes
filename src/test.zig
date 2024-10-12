@@ -168,21 +168,23 @@ test "Multi-Byte Add With Carry" {
     try std.testing.expect(nes.Cpu.status.negative == 0);
 }
 
-test "Multi-Byte" {
+test "Multi-Byte Subtraction" {
     std.debug.print("Subtract With Carry!\n", .{});
     var nes: components.Nes = .{ .Cpu = .{}, .Ppu = .{}, .Bus = .{} };
 
     nes.init();
 
     nes.Cpu.pc = 0;
-    nes.Cpu.status.carry = 1;
-    nes.Cpu.accumulator = 254;
+    nes.Cpu.status.carry = 0;
+    nes.Cpu.accumulator = 1;
     nes.Cpu.memory[1] = 1;
-    nes.Cpu.instruction = 0x69;
+    nes.Cpu.instruction = 0xE9;
 
-    nes.Cpu.addWithCarry(std.time.nanoTimestamp());
-    std.debug.print("Sum is {d}!\n", .{nes.Cpu.accumulator});
-    try std.testing.expect(nes.Cpu.accumulator == 0);
-    try std.testing.expect(nes.Cpu.status.carry == 1);
-
+    nes.Cpu.subtractWithCarry(std.time.nanoTimestamp());
+    std.debug.print("Difference is {d}!\n", .{nes.Cpu.accumulator});
+    try std.testing.expect(nes.Cpu.accumulator == 255);
+    try std.testing.expect(nes.Cpu.status.carry == 0);
+    try std.testing.expect(nes.Cpu.status.negative == 1);
+    try std.testing.expect(nes.Cpu.status.zero == 0);
+    try std.testing.expect(nes.Cpu.status.overflow == 1);
 }

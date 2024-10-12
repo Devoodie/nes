@@ -1066,83 +1066,95 @@ pub const Cpu = struct {
         if (self.instruction & 0xF0 == 0xF0) {
             switch (self.instruction & 0xF) {
                 1 => indirecty: {
-                    const negative: u1 = self.accumulator >> 7;
+                    const negative: u1 = @intCast(self.accumulator >> 7);
                     const carry = 1 - self.status.carry;
 
                     const operation1 = @subWithOverflow(self.accumulator, self.GetIndirectY());
-                    const difference = @subWithOverflow(operation1, carry);
+                    const difference = @subWithOverflow(operation1[0], carry);
 
                     self.accumulator = difference[0];
-                    if (negative != difference[0] >> 7) {
-                        self.status.overflow = 1;
+                    if (operation1[1] == 1 or difference[1] == 1) {
                         self.status.carry = 0;
                     } else {
                         self.status.carry = 1;
+                    }
+                    if (negative != difference[0] >> 7) {
+                        self.status.overflow = 1;
+                    } else {
                         self.status.overflow = 0;
                     }
 
                     self.pc += 2;
-                    cycle(time, 5 + self.extra_cycle);
+                    cycle(time, 5 + @as(u8, self.extra_cycle));
                     break :indirecty;
                 },
                 5 => zero_pagex: {
-                    const negative: u1 = self.accumulator >> 7;
+                    const negative: u1 = @intCast(self.accumulator >> 7);
                     const carry = 1 - self.status.carry;
 
                     const operation1 = @subWithOverflow(self.accumulator, self.GetZeroPageX());
-                    const difference = @subWithOverflow(operation1, carry);
+                    const difference = @subWithOverflow(operation1[0], carry);
 
                     self.accumulator = difference[0];
-                    if (negative != difference[0] >> 7) {
-                        self.status.overflow = 1;
+                    if (operation1[1] == 1 or difference[1] == 1) {
                         self.status.carry = 0;
                     } else {
                         self.status.carry = 1;
+                    }
+                    if (negative != difference[0] >> 7) {
+                        self.status.overflow = 1;
+                    } else {
                         self.status.overflow = 0;
                     }
-
                     self.pc += 2;
                     cycle(time, 4);
                     break :zero_pagex;
                 },
                 9 => absolutey: {
-                    const negative: u1 = self.accumulator >> 7;
+                    const negative: u1 = @intCast(self.accumulator >> 7);
                     const carry = 1 - self.status.carry;
 
                     const operation1 = @subWithOverflow(self.accumulator, self.GetAbsoluteIndexed(1));
-                    const difference = @subWithOverflow(operation1, carry);
+                    const difference = @subWithOverflow(operation1[0], carry);
 
                     self.accumulator = difference[0];
-                    if (negative != difference[0] >> 7) {
-                        self.status.overflow = 1;
+                    if (operation1[1] == 1 or difference[1] == 1) {
                         self.status.carry = 0;
                     } else {
                         self.status.carry = 1;
+                    }
+                    if (negative != difference[0] >> 7) {
+                        self.status.overflow = 1;
+                    } else {
                         self.status.overflow = 0;
                     }
 
                     self.pc += 3;
-                    cycle(time, 4 + self.extra_cycle);
+                    cycle(time, 4 + @as(u8, self.extra_cycle));
                     break :absolutey;
                 },
                 0xD => absolutex: {
-                    const negative: u1 = self.accumulator >> 7;
+                    const negative: u1 = @intCast(self.accumulator >> 7);
                     const carry = 1 - self.status.carry;
 
                     const operation1 = @subWithOverflow(self.accumulator, self.GetAbsoluteIndexed(0));
-                    const difference = @subWithOverflow(operation1, carry);
+                    const difference = @subWithOverflow(operation1[0], carry);
 
                     self.accumulator = difference[0];
-                    if (negative != difference[0] >> 7) {
-                        self.status.overflow = 1;
+                    if (operation1[1] == 1 or difference[1] == 1) {
                         self.status.carry = 0;
                     } else {
                         self.status.carry = 1;
+                    }
+
+                    if (negative != difference[0] >> 7) {
+                        self.status.overflow = 1;
+                    } else {
                         self.status.overflow = 0;
                     }
 
                     self.pc += 3;
-                    cycle(time, 4 + self.extra_cycle);
+                    cycle(time, 4 + @as(u8, self.extra_cycle));
                     break :absolutex;
                 },
                 else => default: {
@@ -1153,18 +1165,22 @@ pub const Cpu = struct {
         } else {
             switch (self.instruction & 0xF) {
                 1 => indirectx: {
-                    const negative: u1 = self.accumulator >> 7;
+                    const negative: u1 = @intCast(self.accumulator >> 7);
                     const carry = 1 - self.status.carry;
 
                     const operation1 = @subWithOverflow(self.accumulator, self.GetIndirectX());
-                    const difference = @subWithOverflow(operation1, carry);
+                    const difference = @subWithOverflow(operation1[0], carry);
 
                     self.accumulator = difference[0];
-                    if (negative != difference[0] >> 7) {
-                        self.status.overflow = 1;
+                    if (operation1[1] == 1 or difference[1] == 1) {
                         self.status.carry = 0;
                     } else {
                         self.status.carry = 1;
+                    }
+
+                    if (negative != difference[0] >> 7) {
+                        self.status.overflow = 1;
+                    } else {
                         self.status.overflow = 0;
                     }
 
@@ -1173,58 +1189,66 @@ pub const Cpu = struct {
                     break :indirectx;
                 },
                 5 => zero_page: {
-                    const negative: u1 = self.accumulator >> 7;
+                    const negative: u1 = @intCast(self.accumulator >> 7);
                     const carry = 1 - self.status.carry;
 
                     const operation1 = @subWithOverflow(self.accumulator, self.GetZeroPage());
-                    const difference = @subWithOverflow(operation1, carry);
+                    const difference = @subWithOverflow(operation1[0], carry);
 
                     self.accumulator = difference[0];
-                    if (negative != difference[0] >> 7) {
-                        self.status.overflow = 1;
+                    if (operation1[1] == 1 or difference[1] == 1) {
                         self.status.carry = 0;
                     } else {
                         self.status.carry = 1;
-                        self.status.overflow = 0;
                     }
 
+                    if (negative != difference[0] >> 7) {
+                        self.status.overflow = 1;
+                    } else {
+                        self.status.carry = 1;
+                    }
                     self.pc += 2;
                     cycle(time, 3);
                     break :zero_page;
                 },
                 9 => immediate: {
-                    const negative: u1 = self.accumulator >> 7;
-                    const carry = self.status.carry;
+                    const negative: u1 = @intCast(self.accumulator >> 7);
+                    const carry = 1 - self.status.carry;
 
                     const operation1 = @subWithOverflow(self.accumulator, self.GetImmediate());
-                    const difference = @subWithOverflow(operation1, carry);
+                    const difference = @subWithOverflow(operation1[0], carry);
 
                     self.accumulator = difference[0];
-                    if (negative != difference[0] >> 7) {
-                        self.status.overflow = 1;
+                    if (operation1[1] == 1 or difference[1] == 1) {
                         self.status.carry = 0;
                     } else {
                         self.status.carry = 1;
+                    }
+                    if (negative != difference[0] >> 7) {
+                        self.status.overflow = 1;
+                    } else {
                         self.status.overflow = 0;
                     }
-
                     self.pc += 2;
                     cycle(time, 2);
                     break :immediate;
                 },
                 0xD => absolute: {
-                    const negative: u1 = self.accumulator >> 7;
+                    const negative: u1 = @intCast(self.accumulator >> 7);
                     const carry = 1 - self.status.carry;
 
                     const operation1 = @subWithOverflow(self.accumulator, self.GetAbsolute());
-                    const difference = @subWithOverflow(operation1, carry);
+                    const difference = @subWithOverflow(operation1[0], carry);
 
                     self.accumulator = difference[0];
-                    if (negative != difference[0] >> 7) {
-                        self.status.overflow = 1;
+                    if (operation1[1] == 1 or difference[1] == 1) {
                         self.status.carry = 0;
                     } else {
                         self.status.carry = 1;
+                    }
+                    if (negative != difference[0] >> 7) {
+                        self.status.overflow = 1;
+                    } else {
                         self.status.overflow = 0;
                     }
 
@@ -1243,7 +1267,7 @@ pub const Cpu = struct {
         } else {
             self.status.zero = 0;
         }
-        self.status.negative = self.accumulator >> 7;
+        self.status.negative = @intCast(self.accumulator >> 7);
     }
 
     pub fn compareAccumulator(self: *Cpu, time: i128) void {
