@@ -2,11 +2,9 @@ const std = @import("std");
 const components = @import("Nes.zig");
 
 pub fn main() !void {
-    // Prints to stderr (it's a shortcut based on `std.io.getStdErr()`)
     std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
-
-    //    var nes: components.Nes = components.Nes.init();
-
+    var nes: components.Nes = .{ .Cpu = .{}, .Ppu = .{}, .Bus = .{} };
+    nes.init();
 }
 
 test "simple test" {

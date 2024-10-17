@@ -10,18 +10,13 @@ pub const Ppu = struct {
     addr: u8 = 0,
     data: u8 = 0,
     oam_dma: u8 = 0,
+    memory: [10240]u8 = undefined,
 
     pub fn PpuMmo(self: *Ppu, address: u16) u8 {
         if (address == 0x4014) {
             return self.oam_dma;
         }
         switch (address % 8) {
-            0 => {
-                return self.control;
-            },
-            1 => {
-                return self.mask;
-            },
             2 => {
                 return self.status;
             },
@@ -30,12 +25,6 @@ pub const Ppu = struct {
             },
             4 => {
                 return self.oam_data;
-            },
-            5 => {
-                return self.scroll;
-            },
-            6 => {
-                return self.addr;
             },
             7 => {
                 return self.data;
@@ -56,10 +45,6 @@ pub const Ppu = struct {
             },
             1 => {
                 self.mask = data;
-            },
-            2 => {
-                //   self.status = data;
-                std.debug.print("Data\n", .{});
             },
             3 => {
                 self.oama_addr = data;

@@ -15,5 +15,8 @@ pub const Nes = struct {
         };
         self.Bus.cpu_ptr = &self.Cpu;
         self.Bus.ppu_ptr = &self.Ppu;
+        self.Ppu = .{
+            .memory = [_]u8{0} ** 10240,
+        };
     }
 };
