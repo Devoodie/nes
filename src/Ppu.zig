@@ -4,13 +4,14 @@ pub const Ppu = struct {
     control: u8 = 0,
     mask: u8 = 0,
     status: u8 = 0,
-    oama_addr: u8 = 0,
+    oam_addr: u16 = 0,
     oam_data: u8 = 0,
     scroll: u8 = 0,
     addr: u8 = 0,
     data: u8 = 0,
     oam_dma: u8 = 0,
     memory: [10240]u8 = undefined,
+    write_reg: u1 = 0,
 
     pub fn PpuMmo(self: *Ppu, address: u16) u8 {
         if (address == 0x4014) {
@@ -21,7 +22,7 @@ pub const Ppu = struct {
                 return self.status;
             },
             3 => {
-                return self.oama_addr;
+                return self.oam_addr;
             },
             4 => {
                 return self.oam_data;
@@ -51,9 +52,11 @@ pub const Ppu = struct {
             },
             4 => {
                 self.oam_data = data;
+                self.oam_addr += 1;
             },
             5 => {
                 self.scroll = data;
+                self.write_reg +%= 1;
             },
             6 => {
                 self.addr = data;
