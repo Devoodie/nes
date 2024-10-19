@@ -10,7 +10,7 @@ pub const Ppu = struct {
     addr: u8 = 0,
     data: u8 = 0,
     oam_dma: u8 = 0,
-    memory: [10240]u8 = undefined,
+    memory: [16384]u8 = undefined,
     write_reg: u1 = 0,
 
     pub fn PpuMmo(self: *Ppu, address: u16) u8 {
