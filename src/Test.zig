@@ -189,14 +189,13 @@ test "Multi-Byte Subtraction" {
     try std.testing.expect(nes.Cpu.status.overflow == 1);
 }
 
-test "Write VRAM Address" {
+test "Read/Write PPU" {
     std.debug.print("Write VRAM address!\n", .{});
     var nes: components.Nes = .{ .Cpu = .{}, .Ppu = .{}, .Bus = .{} };
 
     nes.init();
-
     nes.Cpu.pc = 0;
-    nes.Cpu.accumulator = 0x3F;
+    nes.Cpu.accumulator = 0x20;
     nes.Cpu.memory[1] = 0x20;
     nes.Cpu.memory[2] = 0x06;
     nes.Cpu.instruction = 0x8D;
@@ -204,9 +203,18 @@ test "Write VRAM Address" {
     nes.Cpu.memory[3] = 0x8D;
     nes.Cpu.memory[4] = 0x20;
     nes.Cpu.memory[5] = 0x06;
-    nes.Cpu.accumulator = 0xFF;
-    nes.Cpu.storeAccumulator(std.time.nanoTimestamp());
+    nes.Cpu.accumulator = 0x00;
 
+    nes.Cpu.storeAccumulator(std.time.nanoTimestamp());
     std.debug.print("VRAM address is {X}!\n", .{nes.Ppu.addr});
     try std.testing.expect(nes.Ppu.addr == 0x3FFF);
+
+    nes.Cpu.accumulator = 240;
+    nes.Cpu.pc = 0;
+    nes.Cpu.memory[1] = 0x20;
+    nes.Cpu.memory[2] - 0x07;
+    nes.Cpu.storeAccumulator(std.time.nanoTimestamp());
+    nes.Cpu.pc = 0;
+    nes.Ppu.addr -= 1;
+    nes.Cpu.loadAccumulator(std.time.nanoTimestamp());
 }
