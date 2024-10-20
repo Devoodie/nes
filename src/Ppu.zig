@@ -11,10 +11,11 @@ pub const Ppu = struct {
     oam_dma: u8 = 0,
     memory: [2048]u8 = undefined,
     read_buffer: u8 = 0,
-    addr: u14 = 0,
+    addr: u16 = 0,
     write_reg: u1 = 0,
-    nametable_mirroring: u1,
+    nametable_mirroring: u1 = 0,
     oam: [64]u32 = undefined,
+    temp_vram: u16 = 0,
 
     pub fn PpuMmo(self: *Ppu, address: u16) u8 {
         if (address == 0x4014) {
@@ -22,6 +23,7 @@ pub const Ppu = struct {
         }
         switch (address % 8) {
             2 => {
+                self.write_reg = 0;
                 return self.status;
             },
             3 => {
@@ -62,7 +64,7 @@ pub const Ppu = struct {
                 self.write_reg +%= 1;
             },
             6 => {
-                self.addr = data;
+                self.writeAddress(data);
             },
             7 => {
                 self.writeData(data);
@@ -98,6 +100,24 @@ pub const Ppu = struct {
         return value;
     }
 
+    pub fn writeAddress(self: *Ppu, addr: u8) void {
+        if (self.write_reg == 1) {
+            //low
+            self.addr &= 0xFF00;
+            self.addr |= addr;
+            self.write_reg +%= 1;
+            self.temp_vram |= addr;
+        } else {
+            //high
+            self.addr = 0x00FF;
+            const high: u16 = @as(u16, addr) << 8;
+            self.addr |= high;
+            self.write_reg +%= 1;
+            self.temp_vram = self.addr;
+            self.temp_vram &= 0b1011111111111111;
+        }
+    }
+
     pub fn GetPpuBus(self: *Ppu) u8 {
         if (self.addr <= 0xFFF) {
             //pattern table 0
@@ -111,12 +131,12 @@ pub const Ppu = struct {
             return self.memory[index];
         } else if (self.addr <= 0x27FF) {
             //name table 1
-            const offset: u12 = self.nametable_mirroring * 1023;
+            const offset: u12 = @as(u12, self.nametable_mirroring) * 1023;
             const index = (self.addr & 0x7FF) % 1024;
             return self.memory[index + offset];
         } else if (self.addr <= 0x2BFF) {
             //nametable 2
-            const offset: u12 = self.nametable_mirroring * 1023;
+            const offset: u12 = @as(u12, self.nametable_mirroring) * 1023;
             const index = self.addr & 0x7FF;
             return self.memory[index - offset];
         } else if (self.addr <= 0x2FFF) {
@@ -127,15 +147,14 @@ pub const Ppu = struct {
             //pallete RAM
             return 1;
         }
+        return 1;
     }
 
     pub fn setPpuBus(self: *Ppu, data: u8) void {
         if (self.addr <= 0xFFF) {
             //pattern table 0
-            return 1;
         } else if (self.addr <= 0x1FFF) {
             //pattern table 1
-            return 1;
         } else if (self.addr <= 0x23BF) {
             //name table 0
             const index = self.addr & 0x7FF;
@@ -156,7 +175,6 @@ pub const Ppu = struct {
             self.memory[index] = data;
         } else if (self.addr >= 0x3EFF) {
             //pallete RAM
-            return 1;
         }
     }
 };

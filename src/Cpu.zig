@@ -1590,6 +1590,7 @@ pub const Cpu = struct {
                     break :zero_page;
                 },
                 0xD => absolute: {
+                    self.setAbsolute(self.accumulator);
                     self.pc += 3;
                     cycle(time, 4);
                     break :absolute;
