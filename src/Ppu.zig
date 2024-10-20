@@ -91,25 +91,29 @@ pub const Ppu = struct {
     }
 
     pub fn GetPpuBus(self: *Ppu) u8 {
-        if (self.addr < 0xFFF) {
+        if (self.addr <= 0xFFF) {
             //pattern table 0
             return 1;
-        } else if (self.addr < 0x1FFF) {
+        } else if (self.addr <= 0x1FFF) {
             //pattern table 1
             return 1;
-        } else if (self.addr < 0x23BF) {
+        } else if (self.addr <= 0x23BF) {
             //name table 0
-            return 1;
-        } else if (self.addr < 0x27FF) {
+            const index = self.addr & 0x7FF;
+            return self.memory[index % 1024];
+        } else if (self.addr <= 0x27FF) {
             //name table 1
+            const index = self.addr & 0x7FF; 
             return 1;
-        } else if (self.addr < 0x2BFF) {
+        } else if (self.addr <= 0x2BFF) {
             //nametable 2
+            const index = self.addr & 0x7FF ;
             return 1;
-        } else if (self.addr < 0x2FFF) {
+        } else if (self.addr <= 0x2FFF) {
             //nametable 3
+            const index = self.addr & 0x7FF; 
             return 1;
-        } else if (self.addr > 0x3EFF) {
+        } else if (self.addr >= 0x3EFF) {
             //pallete RAM
             return 1;
         }
