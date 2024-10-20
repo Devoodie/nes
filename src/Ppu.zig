@@ -128,7 +128,8 @@ pub const Ppu = struct {
             return 1;
         }
     }
-    pub fn setPpuBus(self: *Ppu) void {
+
+    pub fn setPpuBus(self: *Ppu, data: u8) void {
         if (self.addr <= 0xFFF) {
             //pattern table 0
             return 1;
@@ -138,21 +139,21 @@ pub const Ppu = struct {
         } else if (self.addr <= 0x23BF) {
             //name table 0
             const index = self.addr & 0x7FF;
-            return self.memory[index];
+            self.memory[index] = data;
         } else if (self.addr <= 0x27FF) {
             //name table 1
             const offset: u12 = self.nametable_mirroring * 1023;
             const index = (self.addr & 0x7FF) % 1024;
-            return self.memory[index + offset];
+            self.memory[index + offset] = data;
         } else if (self.addr <= 0x2BFF) {
             //nametable 2
             const offset: u12 = self.nametable_mirroring * 1023;
             const index = self.addr & 0x7FF;
-            return self.memory[index - offset];
+            self.memory[index - offset] = data;
         } else if (self.addr <= 0x2FFF) {
             //nametable 3
             const index = self.addr & 0x7FF;
-            return self.memory[index];
+            self.memory[index] = data;
         } else if (self.addr >= 0x3EFF) {
             //pallete RAM
             return 1;
