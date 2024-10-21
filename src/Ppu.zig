@@ -16,6 +16,7 @@ pub const Ppu = struct {
     nametable_mirroring: u1 = 0,
     oam: [64]u32 = undefined,
     temp_vram: u16 = 0,
+    fine_x: u3 = 0,
 
     pub fn PpuMmo(self: *Ppu, address: u16) u8 {
         if (address == 0x4014) {
@@ -76,7 +77,7 @@ pub const Ppu = struct {
         }
     }
     pub fn writeData(self: *Ppu, data: u8) void {
-        self.data = data;
+        self.setPpuBus(data);
 
         const status = (self.status & 0b00000100) >> 3;
         if (status == 0) {
@@ -87,9 +88,7 @@ pub const Ppu = struct {
     }
 
     pub fn ReadData(self: *Ppu) u8 {
-        //add logic for retrieving ppubus
         const value = self.read_buffer;
-        std.debug.print("Previous value: {d}\n",.{value});
         self.read_buffer = self.GetPpuBus();
 
         const status = (self.status & 0b00000100) >> 3;
@@ -162,12 +161,12 @@ pub const Ppu = struct {
             self.memory[index] = data;
         } else if (self.addr <= 0x27FF) {
             //name table 1
-            const offset: u12 = self.nametable_mirroring * 1023;
+            const offset: u12 = @as(u12, self.nametable_mirroring) * 1023;
             const index = (self.addr & 0x7FF) % 1024;
             self.memory[index + offset] = data;
         } else if (self.addr <= 0x2BFF) {
             //nametable 2
-            const offset: u12 = self.nametable_mirroring * 1023;
+            const offset: u12 = @as(u12, self.nametable_mirroring) * 1023;
             const index = self.addr & 0x7FF;
             self.memory[index - offset] = data;
         } else if (self.addr <= 0x2FFF) {

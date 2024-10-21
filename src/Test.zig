@@ -193,6 +193,7 @@ test "Read/Write PPU" {
     std.debug.print("Write VRAM address!\n", .{});
     var nes: components.Nes = .{ .Cpu = .{}, .Ppu = .{}, .Bus = .{} };
 
+    //vram write test
     nes.init();
     nes.Cpu.pc = 0;
     nes.Cpu.accumulator = 0x20;
@@ -208,6 +209,7 @@ test "Read/Write PPU" {
     std.debug.print("VRAM address is {X}!\n", .{nes.Ppu.addr});
     try std.testing.expect(nes.Ppu.addr == 0x2000);
 
+    //read delay test
     nes.Cpu.accumulator = 240;
     nes.Cpu.pc = 0;
     nes.Cpu.memory[1] = 0x20;
@@ -224,4 +226,11 @@ test "Read/Write PPU" {
     nes.Cpu.pc = 0;
     nes.Cpu.loadAccumulator(std.time.nanoTimestamp());
     try std.testing.expect(nes.Cpu.accumulator == 240);
+
+    //write test
+    nes.Cpu.pc = 0;
+    nes.Cpu.instruction = 0x8D;
+    nes.Cpu.storeAccumulator(std.time.nanoTimestamp());
+    std.debug.print("{d} at Cpu address 0x2002!\n", .{nes.Ppu.memory[2]});
+    try std.testing.expect(nes.Ppu.memory[2] == 240);
 }
