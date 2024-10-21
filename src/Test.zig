@@ -200,21 +200,27 @@ test "Read/Write PPU" {
     nes.Cpu.memory[2] = 0x06;
     nes.Cpu.instruction = 0x8D;
     nes.Cpu.storeAccumulator(std.time.nanoTimestamp());
-    nes.Cpu.memory[3] = 0x8D;
-    nes.Cpu.memory[4] = 0x20;
-    nes.Cpu.memory[5] = 0x06;
-    nes.Cpu.accumulator = 0x00;
+
+    nes.Cpu.pc = 0;
+    nes.Cpu.accumulator = 0;
 
     nes.Cpu.storeAccumulator(std.time.nanoTimestamp());
     std.debug.print("VRAM address is {X}!\n", .{nes.Ppu.addr});
-    try std.testing.expect(nes.Ppu.addr == 0x3FFF);
+    try std.testing.expect(nes.Ppu.addr == 0x2000);
 
     nes.Cpu.accumulator = 240;
     nes.Cpu.pc = 0;
     nes.Cpu.memory[1] = 0x20;
-    nes.Cpu.memory[2] - 0x07;
+    nes.Cpu.memory[2] = 0x07;
     nes.Cpu.storeAccumulator(std.time.nanoTimestamp());
+
     nes.Cpu.pc = 0;
     nes.Ppu.addr -= 1;
     nes.Cpu.loadAccumulator(std.time.nanoTimestamp());
+
+    try std.testing.expect(nes.Cpu.accumulator == 0);
+
+    nes.Cpu.pc = 0;
+    nes.Cpu.loadAccumulator(std.time.nanoTimestamp());
+    try std.testing.expect(nes.Cpu.accumulator == 240);
 }

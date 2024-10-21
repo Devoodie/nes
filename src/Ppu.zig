@@ -109,7 +109,7 @@ pub const Ppu = struct {
             self.temp_vram |= addr;
         } else {
             //high
-            self.addr = 0x00FF;
+            self.addr &= 0x00FF;
             const high: u16 = @as(u16, addr) << 8;
             self.addr |= high;
             self.write_reg +%= 1;

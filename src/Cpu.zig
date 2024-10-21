@@ -1423,7 +1423,7 @@ pub const Cpu = struct {
                 1 => indirecty: {
                     self.accumulator = self.GetIndirectY();
                     self.pc += 2;
-                    cycle(time, 5 + self.extra_cycle);
+                    cycle(time, 5 + @as(u8, self.extra_cycle));
                     break :indirecty;
                 },
                 5 => zero_pagex: {
@@ -1435,13 +1435,13 @@ pub const Cpu = struct {
                 9 => absolutey: {
                     self.accumulator = self.GetAbsoluteIndexed(1);
                     self.pc += 3;
-                    cycle(time, 4 + self.extra_cycle);
+                    cycle(time, 4 + @as(u8, self.extra_cycle));
                     break :absolutey;
                 },
                 0xD => absolutex: {
                     self.accumulator = self.GetAbsoluteIndexed(0);
                     self.pc += 3;
-                    cycle(time, 4 + self.extra_cycle);
+                    cycle(time, 4 + @as(u8, self.extra_cycle));
                     break :absolutex;
                 },
                 else => default: {
@@ -1485,7 +1485,7 @@ pub const Cpu = struct {
             } else {
                 self.status.zero = 0;
             }
-            self.status.negative = self.accumulator >> 7;
+            self.status.negative = @intCast(self.accumulator >> 7);
         }
     }
 
