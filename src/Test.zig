@@ -216,6 +216,7 @@ test "Read/Write PPU" {
 
     nes.Cpu.pc = 0;
     nes.Ppu.addr -= 1;
+    nes.Cpu.instruction = 0xAD;
     nes.Cpu.loadAccumulator(std.time.nanoTimestamp());
 
     try std.testing.expect(nes.Cpu.accumulator == 0);

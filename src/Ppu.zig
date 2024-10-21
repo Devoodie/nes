@@ -89,6 +89,7 @@ pub const Ppu = struct {
     pub fn ReadData(self: *Ppu) u8 {
         //add logic for retrieving ppubus
         const value = self.read_buffer;
+        std.debug.print("Previous value: {d}\n",.{value});
         self.read_buffer = self.GetPpuBus();
 
         const status = (self.status & 0b00000100) >> 3;
