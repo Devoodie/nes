@@ -234,3 +234,29 @@ test "Read/Write PPU" {
     std.debug.print("{d} at Cpu address 0x2002!\n", .{nes.Ppu.memory[2]});
     try std.testing.expect(nes.Ppu.memory[2] == 240);
 }
+
+test "Read/Write Scroll" {
+    std.debug.print("Write VRAM address!\n", .{});
+    var nes: components.Nes = .{ .Cpu = .{}, .Ppu = .{}, .Bus = .{} };
+
+    //vram write test
+    nes.init();
+    nes.Cpu.pc = 0;
+    nes.Cpu.accumulator = 0b00000010;
+    nes.Cpu.memory[1] = 0x20;
+    nes.Cpu.memory[2] = 0x00;
+    nes.Cpu.instruction = 0x8D;
+    nes.Cpu.storeAccumulator(std.time.nanoTimestamp());
+
+    nes.Cpu.pc = 0;
+    nes.Cpu.accumulator =  0b01111101;
+    nes.Cpu.memory[1] = 0x20;
+    nes.Cpu.memory[2] = 0x05;
+    nes.Cpu.storeAccumulator(std.time.nanoTimestamp());
+
+    nes.Cpu.pc = 0;
+    nes.Cpu.accumulator = 0b01011110;
+    nes.Cpu.memory[1] = 0x20;
+    nes.Cpu.memory[2] = 0x05;
+    nes.Cpu.storeAccumulator(std.time.nanoTimestamp());
+}
