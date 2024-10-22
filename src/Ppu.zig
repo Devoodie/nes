@@ -49,7 +49,8 @@ pub const Ppu = struct {
         switch (address % 8) {
             0 => {
                 self.control = data;
-                const xyscroll = @as(u16, data) & 0b11 >> 10;
+                const xyscroll = @as(u16, data) & 0b11 << 10;
+                self.temp_addr |= xyscroll;
             },
             1 => {
                 self.mask = data;
