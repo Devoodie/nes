@@ -256,11 +256,15 @@ test "Read/Write Scroll" {
     std.debug.print("Temp Vram is: {X}!\n", .{nes.Ppu.temp_addr});
 
     try std.testing.expect(nes.Ppu.temp_addr == 0b0000100000001111);
-    try std.testing.expect(nes.Ppu.fine_x == 101);
+    try std.testing.expect(nes.Ppu.fine_x == 0b101);
 
     nes.Cpu.pc = 0;
     nes.Cpu.accumulator = 0b01011110;
     nes.Cpu.memory[1] = 0x20;
     nes.Cpu.memory[2] = 0x05;
     nes.Cpu.storeAccumulator(std.time.nanoTimestamp());
+
+    std.debug.print("Scroll is: {X}", .{nes.Ppu.cur_addr});
+    
+    try std.testing.expect(nes.Ppu.temp_addr == 0b110100101101111);
 }

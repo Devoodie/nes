@@ -134,9 +134,10 @@ pub const Ppu = struct {
             std.debug.print("The low comes out to: {X}!\n", .{low});
             self.temp_addr &= 0xFF00;
             self.temp_addr |= low;
-            self.fine_x = @truncate(self.data & 0b00000111);
+            self.fine_x = @truncate(data & 0b00000111);
+            std.debug.print("The Fine x scroll is: {d}!\n", .{self.fine_x});
         }
-        self.write_reg += 1;
+        self.write_reg +%= 1;
     }
 
     pub fn GetPpuBus(self: *Ppu) u8 {
