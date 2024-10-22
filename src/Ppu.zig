@@ -103,18 +103,17 @@ pub const Ppu = struct {
     pub fn writeAddress(self: *Ppu, addr: u8) void {
         if (self.write_reg == 1) {
             //low
-            self.addr &= 0xFF00;
-            self.addr |= addr;
-            self.write_reg +%= 1;
+            self.temp_vram &= 0xFF00;
             self.temp_vram |= addr;
+            self.addr = self.temp_vram;
+            self.write_reg +%= 1;
         } else {
             //high
-            self.addr &= 0x00FF;
+            self.temp_vram &= 0x00FF;
             const high: u16 = @as(u16, addr) << 8;
-            self.addr |= high;
-            self.write_reg +%= 1;
-            self.temp_vram = self.addr;
+            self.temp_vram |= high;
             self.temp_vram &= 0b1011111111111111;
+            self.write_reg +%= 1;
         }
     }
 
