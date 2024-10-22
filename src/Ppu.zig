@@ -49,10 +49,9 @@ pub const Ppu = struct {
         switch (address % 8) {
             0 => {
                 self.control = data;
-                const xyscroll = @as(u16, data) & 0b11 << 10;
-                self.temp_addr |= xyscroll;
-            },
-            1 => {
+                var xyscroll: u16 = @as(u16, data) & 0b11;
+                xyscroll <<= 10;
+                self.temp_addr |= xyscroll; }, 1 => {
                 self.mask = data;
             },
             3 => {
@@ -63,8 +62,7 @@ pub const Ppu = struct {
                 self.oam_addr += 1;
             },
             5 => {
-                self.scroll = data;
-                self.write_reg +%= 1;
+                self.writeScroll(data);
             },
             6 => {
                 self.writeAddress(data);
@@ -127,15 +125,18 @@ pub const Ppu = struct {
             self.temp_addr &= 0b0000110000011111;
             self.temp_addr |= low << 2;
             self.temp_addr |= mid << 2;
-            self.temp_addr |= high << 12;
+            self.temp_addr |= @as(u16, high) << 12;
 
             self.cur_addr = self.temp_addr;
         } else {
-            const low: u5 = @as(u5, data & 0b11111000 >> 3);
+            var low: u8 = data & 0b11111000;
+            low >>= 3;
+            std.debug.print("The low comes out to: {X}!\n", .{low});
             self.temp_addr &= 0xFF00;
             self.temp_addr |= low;
             self.fine_x = @truncate(self.data & 0b00000111);
         }
+        self.write_reg += 1;
     }
 
     pub fn GetPpuBus(self: *Ppu) u8 {
