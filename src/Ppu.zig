@@ -56,7 +56,7 @@ pub const Ppu = struct {
             },
             4 => oam_data: {
                 self.oam[self.oam_addr] = data;
-                self.oam_addr += 1;
+                self.oam_addr +%= 1;
                 break :oam_data;
             },
             5 => scroll: {
@@ -69,7 +69,7 @@ pub const Ppu = struct {
             },
             7 => data: {
                 self.writeData(data);
-                break: data;
+                break :data;
             },
             else => default: {
                 std.debug.print("Invalid PPU Register!\n", .{});

@@ -24,23 +24,24 @@ pub const Bus = struct {
             self.cpu_ptr.memory[self.addr_bus % 0x800] = self.data_bus;
         } else if (self.addr_bus <= 0x3FFF) {
             self.ppu_ptr.ppuMmi(self.addr_bus, self.data_bus);
-        } else if(self.addr_bus == 0x4014) {
+        } else if (self.addr_bus == 0x4014) {
             self.oam_dma();
-        }else if (self.addr_bus <= 0x401F) {
+        } else if (self.addr_bus <= 0x401F) {
             return;
         }
     }
 
     pub fn oam_dma(self: *Bus) void {
-            const addr_buffer = self.addr_bus;
-            const dma_addr: u16 = @as(u16, self.data_bus) << 8;
-            
-            for (&self.ppu_ptr.oam, 0..256) |*attribute, i| {
-                self.addr_bus = dma_addr + @as(u16, @intCast(i));
-                self.getMmo();
-                attribute.* = self.data_bus;
-            }
+        const addr_buffer = self.addr_bus;
+        const dma_addr: u16 = @as(u16, self.data_bus) << 8;
+        self.ppu_ptr.oam_addr = 0;
 
-            self.addr_bus = addr_buffer;
+        for (0..256) |i| {
+            self.addr_bus = dma_addr + @as(u16, @intCast(i));
+            self.getMmo();
+            self.ppu_ptr.ppuMmi(0x2004, self.data_bus);
+        }
+
+        self.addr_bus = addr_buffer;
     }
 };
