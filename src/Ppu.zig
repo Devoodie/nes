@@ -14,7 +14,7 @@ pub const Ppu = struct {
     cur_addr: u16 = 0,
     write_reg: u1 = 0,
     nametable_mirroring: u1 = 0,
-    oam: [64]u32 = undefined,
+    oam: [256]u8 = undefined,
     temp_addr: u16 = 0,
     fine_x: u3 = 0,
 
@@ -47,30 +47,37 @@ pub const Ppu = struct {
             self.oam_dma = data;
         }
         switch (address % 8) {
-            0 => {
+            0 => control: {
                 self.control = data;
                 var xyscroll: u16 = @as(u16, data) & 0b11;
                 xyscroll <<= 10;
                 self.temp_addr |= xyscroll;
+                break :control;
             },
-            1 => {
+            1 => mask: {
                 self.mask = data;
+                break :mask;
             },
-            3 => {
+            3 => oam_addr: {
                 self.oam_addr = data;
+                break :oam_addr;
             },
-            4 => {
+            4 => oam_data: {
                 self.oam_data = data;
                 self.oam_addr += 1;
+                break :oam_data;
             },
-            5 => {
+            5 => scroll: {
                 self.writeScroll(data);
+                break :scroll;
             },
-            6 => {
+            6 => addr: {
                 self.writeAddress(data);
+                break :addr;
             },
-            7 => {
+            7 => data: {
                 self.writeData(data);
+                break: data;
             },
             else => default: {
                 std.debug.print("Invalid PPU Register!\n", .{});

@@ -1,5 +1,4 @@
-const std = @import("std");
-const cpu = @import("Cpu.zig");
+const std = @import("std"); const cpu = @import("Cpu.zig");
 const ppu = @import("Ppu.zig");
 const bus = @import("Bus.zig");
 
@@ -17,7 +16,7 @@ pub const Nes = struct {
         self.Bus.ppu_ptr = &self.Ppu;
         self.Ppu = .{
             .memory = [_]u8{0} ** 2048,
-            .oam = [_]u32{0} ** 64,
+            .oam = [_]u8{0} ** 256,
         };
     }
 };
