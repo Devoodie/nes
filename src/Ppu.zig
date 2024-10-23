@@ -5,10 +5,8 @@ pub const Ppu = struct {
     mask: u8 = 0,
     status: u8 = 0,
     oam_addr: u8 = 0,
-    oam_data: u8 = 0,
     scroll: u8 = 0,
     data: u8 = 0,
-    oam_dma: u8 = 0,
     memory: [2048]u8 = undefined,
     read_buffer: u8 = 0,
     cur_addr: u16 = 0,
@@ -19,9 +17,6 @@ pub const Ppu = struct {
     fine_x: u3 = 0,
 
     pub fn PpuMmo(self: *Ppu, address: u16) u8 {
-        if (address == 0x4014) {
-            return self.oam_dma;
-        }
         switch (address % 8) {
             2 => {
                 self.write_reg = 0;
@@ -31,7 +26,7 @@ pub const Ppu = struct {
                 return self.oam_addr;
             },
             4 => {
-                return self.oam_data;
+                return self.oam[self.oam_addr];
             },
             7 => {
                 return self.ReadData();
@@ -43,9 +38,6 @@ pub const Ppu = struct {
         }
     }
     pub fn ppuMmi(self: *Ppu, address: u16, data: u8) void {
-        if (address == 0x4014) {
-            self.oam_dma = data;
-        }
         switch (address % 8) {
             0 => control: {
                 self.control = data;
@@ -63,7 +55,7 @@ pub const Ppu = struct {
                 break :oam_addr;
             },
             4 => oam_data: {
-                self.oam_data = data;
+                self.oam[self.oam_addr] = data;
                 self.oam_addr += 1;
                 break :oam_data;
             },
