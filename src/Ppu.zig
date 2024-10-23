@@ -51,7 +51,9 @@ pub const Ppu = struct {
                 self.control = data;
                 var xyscroll: u16 = @as(u16, data) & 0b11;
                 xyscroll <<= 10;
-                self.temp_addr |= xyscroll; }, 1 => {
+                self.temp_addr |= xyscroll;
+            },
+            1 => {
                 self.mask = data;
             },
             3 => {
@@ -118,14 +120,14 @@ pub const Ppu = struct {
     }
     pub fn writeScroll(self: *Ppu, data: u8) void {
         if (self.write_reg == 1) {
-            const low: u8 = data & 0b00111000;
-            const mid: u8 = data & 0b11000000;
-            const high: u8 = data & 0b111;
+            const low: u16 = data & 0b00111000;
+            const mid: u16 = data & 0b11000000;
+            const high: u16 = data & 0b111;
 
             self.temp_addr &= 0b0000110000011111;
             self.temp_addr |= low << 2;
             self.temp_addr |= mid << 2;
-            self.temp_addr |= @as(u16, high) << 12;
+            self.temp_addr |= high << 12;
 
             self.cur_addr = self.temp_addr;
         } else {

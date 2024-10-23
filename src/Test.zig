@@ -249,7 +249,7 @@ test "Read/Write Scroll" {
     nes.Cpu.storeAccumulator(std.time.nanoTimestamp());
 
     nes.Cpu.pc = 0;
-    nes.Cpu.accumulator =  0b01111101;
+    nes.Cpu.accumulator = 0b01111101;
     nes.Cpu.memory[1] = 0x20;
     nes.Cpu.memory[2] = 0x05;
     nes.Cpu.storeAccumulator(std.time.nanoTimestamp());
@@ -264,7 +264,7 @@ test "Read/Write Scroll" {
     nes.Cpu.memory[2] = 0x05;
     nes.Cpu.storeAccumulator(std.time.nanoTimestamp());
 
-    std.debug.print("Scroll is: {X}", .{nes.Ppu.cur_addr});
-    
+    std.debug.print("Scroll is: {X}!\n", .{nes.Ppu.cur_addr});
+
     try std.testing.expect(nes.Ppu.temp_addr == 0b110100101101111);
 }
