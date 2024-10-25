@@ -26,6 +26,11 @@ pub const Bus = struct {
             self.ppu_ptr.ppuMmi(self.addr_bus, self.data_bus);
         } else if (self.addr_bus == 0x4014) {
             self.oam_dma();
+            if (self.cpu_ptr.odd_cycle == 1) {
+                self.cpu_ptr.cycle(514);
+            } else {
+                self.cpu_ptr.cycle(513);
+            }
         } else if (self.addr_bus <= 0x401F) {
             return;
         }
