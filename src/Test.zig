@@ -273,13 +273,25 @@ test "Ppu Direct Memory Access" {
     std.debug.print("Write VRAM address!\n", .{});
     var nes: components.Nes = .{ .Cpu = .{}, .Ppu = .{}, .Bus = .{} };
 
-    //vram write test
+    //dma from the second page (zeropage)
+
     nes.init();
     nes.Cpu.pc = 0;
     nes.Cpu.accumulator = 1;
     nes.Cpu.instruction = 0x8D;
-    nes.Cpu.memory[1] = 0x40; 
+    nes.Cpu.memory[1] = 0x40;
     nes.Cpu.memory[2] = 0x14;
-    nes.Cpu.storeAccumulator;
 
+    var i: u8 = 0;
+
+    for (nes.Cpu.memory[256..512]) |*value| {
+        value.* = i;
+        i +%= 1;
+    }
+
+    nes.Cpu.storeAccumulator(std.time.nanoTimestamp());
+
+    for (nes.Cpu.memory[256..512], nes.Ppu.oam) |cpu, oam| {
+        try std.testing.expect(cpu == oam);
+    }
 }

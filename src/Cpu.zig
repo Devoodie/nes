@@ -24,7 +24,7 @@ pub const Cpu = struct {
     extra_cycle: u1 = undefined,
     odd_cycle: u1 = 0,
 
-    pub fn cycle(self: *Cpu, prev_time: i128, cycles: u8) void {
+    pub fn cycle(self: *Cpu, prev_time: i128, cycles: u16) void {
         const wait_time: i128 = 559 * @as(i128, @intCast(cycles));
         const goal_time = wait_time + prev_time;
         self.odd_cycle +%= @intCast(cycles % 2);
