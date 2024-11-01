@@ -15,6 +15,8 @@ pub const Ppu = struct {
     oam: [256]u8 = undefined,
     temp_addr: u16 = 0,
     fine_x: u3 = 0,
+    pattern_table: [8192]u8 = undefined,
+    bitmap: [240][256]u8 = undefined,
 
     pub fn PpuMmo(self: *Ppu, address: u16) u8 {
         switch (address % 8) {
@@ -199,5 +201,8 @@ pub const Ppu = struct {
         } else if (self.cur_addr >= 0x3EFF) {
             //pallete RAM
         }
+    }
+
+    pub fn draw(self: *Ppu) void {
     }
 };
