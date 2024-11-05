@@ -186,12 +186,12 @@ pub const Ppu = struct {
             self.memory[index] = data;
         } else if (self.cur_addr <= 0x27FF) {
             //name table 1
-            const offset: u12 = @as(u12, self.nametable_mirroring) * 1023;
+            const offset: u12 = @as(u12, self.nametable_mirroring) * 1024;
             const index = (self.cur_addr & 0x7FF) % 1024;
             self.memory[index + offset] = data;
         } else if (self.cur_addr <= 0x2BFF) {
             //nametable 2
-            const offset: u12 = @as(u12, self.nametable_mirroring) * 1023;
+            const offset: u12 = @as(u12, self.nametable_mirroring) * 1024;
             const index = self.cur_addr & 0x7FF;
             self.memory[index - offset] = data;
         } else if (self.cur_addr <= 0x2FFF) {
@@ -205,8 +205,9 @@ pub const Ppu = struct {
 
     //pub fn spriteEvaluation(self: *Ppu) void {}
 
-    //pub fn backgroundEvaluation(self: *Ppu) void {
-    //}
+    pub fn backgroundEvaluation(self: *Ppu) void {
+        ;
+    }
 
     //    pub fn draw(self: *Ppu) void {
     //        ;
