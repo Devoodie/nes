@@ -203,6 +203,12 @@ pub const Ppu = struct {
         }
     }
 
-    pub fn draw(self: *Ppu) void {
-    }
+    //pub fn spriteEvaluation(self: *Ppu) void {}
+
+    //pub fn backgroundEvaluation(self: *Ppu) void {
+    //}
+
+    //    pub fn draw(self: *Ppu) void {
+    //        ;
+    //   }
 };
