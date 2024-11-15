@@ -7,20 +7,22 @@ pub const Ppu = struct {
     oam_addr: u8 = 0,
     scroll: u8 = 0,
     data: u8 = 0,
-    memory: [2048]u8 = undefined,
+    nametable: [2048]u8 = undefined,
     read_buffer: u8 = 0,
-    cur_addr: u16 = 0,
+    v: u16 = 0,
     write_reg: u1 = 0,
     nametable_mirroring: u1 = 0,
     oam: [256]u8 = undefined,
-    temp_addr: u16 = 0,
+    t: u16 = 0,
     //suspected padding
     fine_x: u3 = 0,
     pattern_table: [8192]u8 = undefined,
     // this is gunna cause padding
-    bitmap: [240][256]u5 = undefined,
+    bitmap: [240][256]u4 = undefined,
     pallet_memory: [32]u8 = undefined,
     scanline: u12 = 261,
+    high_shift: u16 = 0,
+    low_shift: u16 = 0,
 
     pub fn PpuMmo(self: *Ppu, address: u16) u8 {
         switch (address % 8) {
@@ -49,7 +51,7 @@ pub const Ppu = struct {
                 self.control = data;
                 var xyscroll: u16 = @as(u16, data) & 0b11;
                 xyscroll <<= 10;
-                self.temp_addr |= xyscroll;
+                self.t |= xyscroll;
                 break :control;
             },
             1 => mask: {
@@ -88,9 +90,9 @@ pub const Ppu = struct {
 
         const status = (self.status & 0b00000100) >> 3;
         if (status == 0) {
-            self.cur_addr += 1;
+            self.v += 1;
         } else {
-            self.cur_addr += 32;
+            self.v += 32;
         }
     }
 
@@ -100,9 +102,9 @@ pub const Ppu = struct {
 
         const status = (self.status & 0b00000100) >> 3;
         if (status == 0) {
-            self.cur_addr += 1;
+            self.v += 1;
         } else {
-            self.cur_addr += 32;
+            self.v += 32;
         }
         return value;
     }
@@ -110,16 +112,16 @@ pub const Ppu = struct {
     pub fn writeAddress(self: *Ppu, addr: u8) void {
         if (self.write_reg == 1) {
             //low
-            self.temp_addr &= 0xFF00;
-            self.temp_addr |= addr;
-            self.cur_addr = self.temp_addr;
+            self.t &= 0xFF00;
+            self.t |= addr;
+            self.v = self.t;
             self.write_reg +%= 1;
         } else {
             //high
-            self.temp_addr &= 0x00FF;
+            self.t &= 0x00FF;
             const high: u16 = @as(u16, addr) << 8;
-            self.temp_addr |= high;
-            self.temp_addr &= 0b0011111111111111;
+            self.t |= high;
+            self.t &= 0b0011111111111111;
             self.write_reg +%= 1;
         }
     }
@@ -129,18 +131,18 @@ pub const Ppu = struct {
             const mid: u16 = data & 0b11000000;
             const high: u16 = data & 0b111;
 
-            self.temp_addr &= 0b0000110000011111;
-            self.temp_addr |= low << 2;
-            self.temp_addr |= mid << 2;
-            self.temp_addr |= high << 12;
+            self.t &= 0b0000110000011111;
+            self.t |= low << 2;
+            self.t |= mid << 2;
+            self.t |= high << 12;
 
-            self.cur_addr = self.temp_addr;
+            self.v = self.t;
         } else {
             var low: u8 = data & 0b11111000;
             low >>= 3;
             std.debug.print("The low comes out to: {X}!\n", .{low});
-            self.temp_addr &= 0xFF00;
-            self.temp_addr |= low;
+            self.t &= 0xFF00;
+            self.t |= low;
             self.fine_x = @truncate(data & 0b00000111);
             std.debug.print("The Fine x scroll is: {d}!\n", .{self.fine_x});
         }
@@ -148,31 +150,31 @@ pub const Ppu = struct {
     }
 
     pub fn GetPpuBus(self: *Ppu) u8 {
-        if (self.cur_addr <= 0xFFF) {
+        if (self.v <= 0xFFF) {
             //pattern table 0
             return 1;
-        } else if (self.cur_addr <= 0x1FFF) {
+        } else if (self.v <= 0x1FFF) {
             //pattern table 1
             return 1;
-        } else if (self.cur_addr <= 0x23BF) {
+        } else if (self.v <= 0x23BF) {
             //name table 0
-            const index = self.cur_addr & 0x7FF;
-            return self.memory[index];
-        } else if (self.cur_addr <= 0x27FF) {
+            const index = self.v & 0x7FF;
+            return self.nametable[index];
+        } else if (self.v <= 0x27FF) {
             //name table 1
             const offset: u12 = @as(u12, self.nametable_mirroring) * 1023;
-            const index = (self.cur_addr & 0x7FF) % 1024;
-            return self.memory[index + offset];
-        } else if (self.cur_addr <= 0x2BFF) {
+            const index = (self.v & 0x7FF) % 1024;
+            return self.nametable[index + offset];
+        } else if (self.v <= 0x2BFF) {
             //nametable 2
             const offset: u12 = @as(u12, self.nametable_mirroring) * 1023;
-            const index = self.cur_addr & 0x7FF;
-            return self.memory[index - offset];
-        } else if (self.cur_addr <= 0x2FFF) {
+            const index = self.v & 0x7FF;
+            return self.nametable[index - offset];
+        } else if (self.v <= 0x2FFF) {
             //nametable 3
-            const index = self.cur_addr & 0x7FF;
-            return self.memory[index];
-        } else if (self.cur_addr >= 0x3EFF) {
+            const index = self.v & 0x7FF;
+            return self.nametable[index];
+        } else if (self.v >= 0x3EFF) {
             //pallete RAM
             return 1;
         }
@@ -180,37 +182,59 @@ pub const Ppu = struct {
     }
 
     pub fn setPpuBus(self: *Ppu, data: u8) void {
-        if (self.cur_addr <= 0xFFF) {
+        if (self.v <= 0xFFF) {
             //pattern table 0
-        } else if (self.cur_addr <= 0x1FFF) {
+        } else if (self.v <= 0x1FFF) {
             //pattern table 1
-        } else if (self.cur_addr <= 0x23BF) {
+        } else if (self.v <= 0x23BF) {
             //name table 0
-            const index = self.cur_addr & 0x7FF;
-            self.memory[index] = data;
-        } else if (self.cur_addr <= 0x27FF) {
+            const index = self.v & 0x7FF;
+            self.nametable[index] = data;
+        } else if (self.v <= 0x27FF) {
             //name table 1
             const offset: u12 = @as(u12, self.nametable_mirroring) * 1024;
-            const index = (self.cur_addr & 0x7FF) % 1024;
-            self.memory[index + offset] = data;
-        } else if (self.cur_addr <= 0x2BFF) {
+            const index = (self.v & 0x7FF) % 1024;
+            self.nametable[index + offset] = data;
+        } else if (self.v <= 0x2BFF) {
             //nametable 2
             const offset: u12 = @as(u12, self.nametable_mirroring) * 1024;
-            const index = self.cur_addr & 0x7FF;
-            self.memory[index - offset] = data;
-        } else if (self.cur_addr <= 0x2FFF) {
+            const index = self.v & 0x7FF;
+            self.nametable[index - offset] = data;
+        } else if (self.v <= 0x2FFF) {
             //nametable 3
-            const index = self.cur_addr & 0x7FF;
-            self.memory[index] = data;
-        } else if (self.cur_addr >= 0x3EFF) {
+            const index = self.v & 0x7FF;
+            self.nametable[index] = data;
+        } else if (self.v >= 0x3EFF) {
             //pallete RAM
         }
     }
 
     //pub fn spriteEvaluation(self: *Ppu) void {}
+    pub fn drawTile(self: *Ppu) void {
+        //get nametable tile
+        //get attribute tile
+        //get pattern table low
+        //get pattern table high
+        //draw!
+        const nametable_tile = 0x2000 | (self.v & 0x0FFF);
 
-    pub fn backgroundEvaluation(self: *Ppu) void {
-        if 
+        const attribute_tile = 0x23C0 | (self.v & 0x0C0) | ((self.v >> 4) & 0x38) | ((self.v >> 2) & 0x07);
+
+        const nametable_data = self.nametable[nametable_tile];
+        const attribute_data = self.nametable[attribute_tile];
+        
+        var pattern_tile = nametable_data;
+        pattern_tile <<= 3;
+        const right_table: u16 = self.status & 0b00010000;
+
+        pattern_tile |= right_table << 8;
+        pattern_tile |= self.v >> 12;
+
+        self.low_shift |= self.pattern_table[pattern_tile];
+        self.high_shift |= self.pattern_table[pattern_tile + 0b1000];
+    }
+    pub fn backgroundScanLine(self: *Ppu) void {
+        self.low_shift &= 0xFF00;
     }
 
     pub fn draw(self: *Ppu) void {
@@ -224,5 +248,5 @@ pub const Ppu = struct {
         } else {
             //handle rendering
         }
-     }
+    }
 };

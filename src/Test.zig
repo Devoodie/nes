@@ -206,8 +206,8 @@ test "Read/Write PPU" {
     nes.Cpu.accumulator = 0;
 
     nes.Cpu.storeAccumulator(std.time.nanoTimestamp());
-    std.debug.print("VRAM address is {X}!\n", .{nes.Ppu.cur_addr});
-    try std.testing.expect(nes.Ppu.cur_addr == 0x2000);
+    std.debug.print("VRAM address is {X}!\n", .{nes.Ppu.v});
+    try std.testing.expect(nes.Ppu.v == 0x2000);
 
     //read delay test
     nes.Cpu.accumulator = 240;
@@ -217,7 +217,7 @@ test "Read/Write PPU" {
     nes.Cpu.storeAccumulator(std.time.nanoTimestamp());
 
     nes.Cpu.pc = 0;
-    nes.Ppu.cur_addr -= 1;
+    nes.Ppu.v -= 1;
     nes.Cpu.instruction = 0xAD;
     nes.Cpu.loadAccumulator(std.time.nanoTimestamp());
 
@@ -253,9 +253,9 @@ test "Read/Write Scroll" {
     nes.Cpu.memory[1] = 0x20;
     nes.Cpu.memory[2] = 0x05;
     nes.Cpu.storeAccumulator(std.time.nanoTimestamp());
-    std.debug.print("Temp Vram is: {X}!\n", .{nes.Ppu.temp_addr});
+    std.debug.print("Temp Vram is: {X}!\n", .{nes.Ppu.t});
 
-    try std.testing.expect(nes.Ppu.temp_addr == 0b0000100000001111);
+    try std.testing.expect(nes.Ppu.t == 0b0000100000001111);
     try std.testing.expect(nes.Ppu.fine_x == 0b101);
 
     nes.Cpu.pc = 0;
@@ -264,9 +264,9 @@ test "Read/Write Scroll" {
     nes.Cpu.memory[2] = 0x05;
     nes.Cpu.storeAccumulator(std.time.nanoTimestamp());
 
-    std.debug.print("Scroll is: {X}!\n", .{nes.Ppu.cur_addr});
+    std.debug.print("Scroll is: {X}!\n", .{nes.Ppu.v});
 
-    try std.testing.expect(nes.Ppu.temp_addr == 0b110100101101111);
+    try std.testing.expect(nes.Ppu.t == 0b110100101101111);
 }
 
 test "Ppu Direct Memory Access" {
