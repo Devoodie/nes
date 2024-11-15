@@ -14,9 +14,13 @@ pub const Ppu = struct {
     nametable_mirroring: u1 = 0,
     oam: [256]u8 = undefined,
     temp_addr: u16 = 0,
+    //suspected padding
     fine_x: u3 = 0,
     pattern_table: [8192]u8 = undefined,
-    bitmap: [240][256]u8 = undefined,
+    // this is gunna cause padding
+    bitmap: [240][256]u5 = undefined,
+    pallet_memory: [32]u8 = undefined,
+    scanline: u12 = 261,
 
     pub fn PpuMmo(self: *Ppu, address: u16) u8 {
         switch (address % 8) {
@@ -206,10 +210,19 @@ pub const Ppu = struct {
     //pub fn spriteEvaluation(self: *Ppu) void {}
 
     pub fn backgroundEvaluation(self: *Ppu) void {
-        ;
+        if 
     }
 
-    //    pub fn draw(self: *Ppu) void {
-    //        ;
-    //   }
+    pub fn draw(self: *Ppu) void {
+        if (self.scanline == 262) {
+            self.scanline == 0;
+            self.status &= 0x70;
+        } else if (self.scanline >= 240) {
+            //handle post render scanline
+            self.status |= 0x80;
+            self.scanline += 1;
+        } else {
+            //handle rendering
+        }
+     }
 };
