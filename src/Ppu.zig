@@ -18,7 +18,7 @@ pub const Ppu = struct {
     fine_x: u3 = 0,
     pattern_table: [8192]u8 = undefined,
     // this is gunna cause padding
-    bitmap: [240][256]u4 = undefined,
+    bitmap: [240][256]u5 = undefined,
     pallet_memory: [32]u8 = undefined,
     scanline: u12 = 261,
     high_shift: u16 = 0,
@@ -209,25 +209,42 @@ pub const Ppu = struct {
         }
     }
 
+    pub fn GetBackgroundPixel(self: *Ppu, attribute_bits: u8) u5 {
+        const fine_x_shifts = 14 - self.fine_x;
+
+        const low_pixel = self.low_shift >> fine_x_shifts & 0b1;
+        const high_pixel = self.high_shift >> fine_x_shifts & 0b1;
+
+        const pixel_data = low_pixel | high_pixel << 1 | attribute_bits << 2;
+
+        return pixel_data;
+    }
+
     //pub fn spriteEvaluation(self: *Ppu) void {}
-    pub fn drawTile(self: *Ppu) void {
+    pub fn drawCoarseX(self: *Ppu) void {
         //get nametable tile
         //get attribute tile
         //get pattern table low
         //get pattern table high
         //draw!
         const nametable_tile = 0x2000 | (self.v & 0x0FFF);
-
         const attribute_tile = 0x23C0 | (self.v & 0x0C0) | ((self.v >> 4) & 0x38) | ((self.v >> 2) & 0x07);
 
+        //nametable fetch
         const nametable_data = self.nametable[nametable_tile];
 
+        //attribute fetch and shift register placement
         const attribute_data = self.nametable[attribute_tile];
-        const coarse_x = self.v & 0b1;
-        const coarse_y = self.v & 0b10000 >> 4;
-       // wrong 
-        const attribute_low =  << coarse_x * 2 + coarse_y * 4;
+        const coarse_x = @as(u8, @truncate(self.v & 0b11111));
+        const coarse_y = @as(u8, @truncate(self.v & 0b1111100000 >> 4));
+        const coarse_x_bit1 = coarse_x & 0b1;
+        const coarse_y_bit1 = coarse_y & 0b1;
+        // extract attribute shifts
+        const attr_shifts = coarse_x_bit1 * 2 + coarse_y_bit1 * 4;
+        var attribute_bits: u8 = attribute_data >> attr_shifts;
+        attribute_bits &= 0b11;
 
+        //pattern fetch
         var pattern_address = nametable_data;
         pattern_address <<= 3;
         const right_table: u16 = self.status & 0b00010000;
@@ -235,9 +252,19 @@ pub const Ppu = struct {
         pattern_address |= right_table << 8;
         pattern_address |= self.v >> 12;
 
+        //placement into shift registers
         self.low_shift |= self.pattern_table[pattern_address];
         self.high_shift |= self.pattern_table[pattern_address + 0b1000];
+
+        if (self.scanline <= 239) {
+            for (&self.bitmap[self.scanline][coarse_x .. coarse_x + 8]) |*pixel| {
+                pixel.* = self.GetBackgroundPixel(attribute_bits);
+                self.low_shift << 1;
+                self.high_shift << 1;
+            }
+        }
     }
+
     pub fn backgroundScanLine(self: *Ppu) void {
         self.low_shift &= 0xFF00;
     }
