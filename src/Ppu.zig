@@ -221,8 +221,13 @@ pub const Ppu = struct {
         const attribute_tile = 0x23C0 | (self.v & 0x0C0) | ((self.v >> 4) & 0x38) | ((self.v >> 2) & 0x07);
 
         const nametable_data = self.nametable[nametable_tile];
+
         const attribute_data = self.nametable[attribute_tile];
-        
+        const coarse_x = self.v & 0b1;
+        const coarse_y = self.v & 0b10000 >> 4;
+       // wrong 
+        const attribute_low =  << coarse_x * 2 + coarse_y * 4;
+
         var pattern_address = nametable_data;
         pattern_address <<= 3;
         const right_table: u16 = self.status & 0b00010000;
