@@ -186,7 +186,7 @@ pub const Ppu = struct {
             //pattern table 0
         } else if (self.v <= 0x1FFF) {
             //pattern table 1
-        } else if (self.v <= 0x23BF) {
+        } else if (self.v <= 0x23FF) {
             //name table 0
             const index = self.v & 0x7FF;
             self.nametable[index] = data;
@@ -223,15 +223,15 @@ pub const Ppu = struct {
         const nametable_data = self.nametable[nametable_tile];
         const attribute_data = self.nametable[attribute_tile];
         
-        var pattern_tile = nametable_data;
-        pattern_tile <<= 3;
+        var pattern_address = nametable_data;
+        pattern_address <<= 3;
         const right_table: u16 = self.status & 0b00010000;
 
-        pattern_tile |= right_table << 8;
-        pattern_tile |= self.v >> 12;
+        pattern_address |= right_table << 8;
+        pattern_address |= self.v >> 12;
 
-        self.low_shift |= self.pattern_table[pattern_tile];
-        self.high_shift |= self.pattern_table[pattern_tile + 0b1000];
+        self.low_shift |= self.pattern_table[pattern_address];
+        self.high_shift |= self.pattern_table[pattern_address + 0b1000];
     }
     pub fn backgroundScanLine(self: *Ppu) void {
         self.low_shift &= 0xFF00;
