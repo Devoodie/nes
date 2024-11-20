@@ -231,8 +231,8 @@ test "Read/Write PPU" {
     nes.Cpu.pc = 0;
     nes.Cpu.instruction = 0x8D;
     nes.Cpu.storeAccumulator(std.time.nanoTimestamp());
-    std.debug.print("{d} at Cpu address 0x2002!\n", .{nes.Ppu.memory[2]});
-    try std.testing.expect(nes.Ppu.memory[2] == 240);
+    std.debug.print("{d} at Cpu address 0x2002!\n", .{nes.Ppu.nametable[2]});
+    try std.testing.expect(nes.Ppu.nametable[2] == 240);
 }
 
 test "Read/Write Scroll" {
@@ -303,7 +303,7 @@ test "Ppu Draw Coarse X " {
     //dma from the second page (zeropage)
 
     nes.init();
-    nes.Ppu.pattern_table[0] = 4;
+    nes.Ppu.pattern_table[0] = 187;
     nes.Ppu.pattern_table[8] = 10;
 
     nes.Ppu.nametable[0] = 0;
@@ -311,6 +311,13 @@ test "Ppu Draw Coarse X " {
     nes.Ppu.nametable[960] = 3;
 
     nes.Ppu.drawCoarseX();
-
-    std.testing.expect(std.Ppu);
+    std.debug.print("{d}", .{nes.Ppu.bitmap[0][0]});
+    try std.testing.expect(nes.Ppu.bitmap[0][0] == 15);
+    try std.testing.expect(nes.Ppu.bitmap[0][0] == 14);
+    try std.testing.expect(nes.Ppu.bitmap[0][0] == 13);
+    try std.testing.expect(nes.Ppu.bitmap[0][0] == 15);
+    try std.testing.expect(nes.Ppu.bitmap[0][0] == 15);
+    try std.testing.expect(nes.Ppu.bitmap[0][0] == 12);
+    try std.testing.expect(nes.Ppu.bitmap[0][0] == 13);
+    try std.testing.expect(nes.Ppu.bitmap[0][0] == 15);
 }
