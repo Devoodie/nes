@@ -236,7 +236,7 @@ test "Read/Write PPU" {
 }
 
 test "Read/Write Scroll" {
-    std.debug.print("Write VRAM address!\n", .{});
+    std.debug.print("Read/Write Scroll!\n", .{});
     var nes: components.Nes = .{ .Cpu = .{}, .Ppu = .{}, .Bus = .{} };
 
     //vram write test
@@ -270,7 +270,7 @@ test "Read/Write Scroll" {
 }
 
 test "Ppu Direct Memory Access" {
-    std.debug.print("Write VRAM address!\n", .{});
+    std.debug.print("PPU Direct Memory Access!\n", .{});
     var nes: components.Nes = .{ .Cpu = .{}, .Ppu = .{}, .Bus = .{} };
 
     //dma from the second page (zeropage)
@@ -294,4 +294,23 @@ test "Ppu Direct Memory Access" {
     for (nes.Cpu.memory[256..512], nes.Ppu.oam) |cpu, oam| {
         try std.testing.expect(cpu == oam);
     }
+}
+
+test "Ppu Draw Coarse X " {
+    std.debug.print("Draw Coarse X!\n", .{});
+    var nes: components.Nes = .{ .Cpu = .{}, .Ppu = .{}, .Bus = .{} };
+
+    //dma from the second page (zeropage)
+
+    nes.init();
+    nes.Ppu.pattern_table[0] = 4;
+    nes.Ppu.pattern_table[8] = 10;
+
+    nes.Ppu.nametable[0] = 0;
+
+    nes.Ppu.nametable[960] = 3;
+
+    nes.Ppu.drawCoarseX();
+
+    std.testing.expect(std.Ppu);
 }
