@@ -307,8 +307,10 @@ test "Ppu Draw Coarse X " {
     nes.Ppu.nametable[0] = 0;
     nes.Ppu.nametable[960] = 3;
 
-    nes.Ppu.pattern_table[0] = 187;
-    nes.Ppu.pattern_table[8] = 217;
+    //test right table capabilities
+    nes.Ppu.status = 0b10000;
+    nes.Ppu.pattern_table[0x1000] = 187;
+    nes.Ppu.pattern_table[0x1008] = 217;
 
     nes.Ppu.scanline = 1;
     nes.Ppu.fine_x = 7;

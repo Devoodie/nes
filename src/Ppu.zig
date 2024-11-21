@@ -188,12 +188,12 @@ pub const Ppu = struct {
             //pattern table 1
         } else if (self.v <= 0x23FF) {
             //name table 0
-            const index = self.v & 0x7FF;
+            const index = self.v & 0x3FF;
             self.nametable[index] = data;
         } else if (self.v <= 0x27FF) {
             //name table 1
             const offset: u12 = @as(u12, self.nametable_mirroring) * 1024;
-            const index = (self.v & 0x7FF) % 1024;
+            const index = (self.v & 0x3FF) % 1024;
             self.nametable[index + offset] = data;
         } else if (self.v <= 0x2BFF) {
             //nametable 2
