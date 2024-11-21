@@ -216,7 +216,7 @@ pub const Ppu = struct {
         const high_pixel = self.high_shift >> fine_x_shifts & 0b1;
 
         const pixel_data: u5 = @as(u5, @intCast(low_pixel)) | @as(u5, @intCast(high_pixel << 1)) | @as(u5, @intCast(attribute_bits << 2));
-        std.debug.print("You are drawing: {d}!\n From low: {d}\n From high: {d}\n Attribute: {d}\n", .{ pixel_data, self.low_shift, self.high_shift, attribute_bits });
+        //std.debug.print("You are drawing: {d}!\n From low: {d}\n From high: {d}\n Attribute: {d}\n", .{ pixel_data, self.low_shift, self.high_shift, attribute_bits });
         return pixel_data;
     }
 
@@ -263,7 +263,7 @@ pub const Ppu = struct {
         self.high_shift |= self.pattern_table[pattern_address + 0b1000];
 
         if (self.scanline <= 239) {
-            for (self.bitmap[self.scanline][coarse_x .. coarse_x + 8]) |*pixel| {
+            for (self.bitmap[self.scanline - 1][coarse_x .. coarse_x + 8]) |*pixel| {
                 pixel.* = self.GetBackgroundPixel(@truncate(attribute_bits));
                 self.low_shift <<= 1;
                 self.high_shift <<= 1;

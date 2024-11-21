@@ -316,11 +316,11 @@ test "Ppu Draw Coarse X " {
     nes.Ppu.drawCoarseX();
     std.debug.print("{d}", .{nes.Ppu.bitmap[0][0]});
     try std.testing.expect(nes.Ppu.bitmap[0][0] == 15);
-    try std.testing.expect(nes.Ppu.bitmap[0][0] == 14);
-    try std.testing.expect(nes.Ppu.bitmap[0][0] == 13);
-    try std.testing.expect(nes.Ppu.bitmap[0][0] == 15);
-    try std.testing.expect(nes.Ppu.bitmap[0][0] == 15);
-    try std.testing.expect(nes.Ppu.bitmap[0][0] == 12);
-    try std.testing.expect(nes.Ppu.bitmap[0][0] == 13);
-    try std.testing.expect(nes.Ppu.bitmap[0][0] == 15);
+    try std.testing.expect(nes.Ppu.bitmap[0][1] == 14);
+    try std.testing.expect(nes.Ppu.bitmap[0][2] == 13);
+    try std.testing.expect(nes.Ppu.bitmap[0][3] == 15);
+    try std.testing.expect(nes.Ppu.bitmap[0][4] == 15);
+    try std.testing.expect(nes.Ppu.bitmap[0][5] == 12);
+    try std.testing.expect(nes.Ppu.bitmap[0][6] == 13);
+    try std.testing.expect(nes.Ppu.bitmap[0][7] == 15);
 }
