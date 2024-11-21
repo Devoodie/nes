@@ -303,12 +303,15 @@ test "Ppu Draw Coarse X " {
     //dma from the second page (zeropage)
 
     nes.init();
-    nes.Ppu.pattern_table[0] = 187;
-    nes.Ppu.pattern_table[8] = 10;
-
+    nes.Ppu.v = 0;
     nes.Ppu.nametable[0] = 0;
-
     nes.Ppu.nametable[960] = 3;
+
+    nes.Ppu.pattern_table[0] = 187;
+    nes.Ppu.pattern_table[8] = 217;
+
+    nes.Ppu.scanline = 1;
+    nes.Ppu.fine_x = 7;
 
     nes.Ppu.drawCoarseX();
     std.debug.print("{d}", .{nes.Ppu.bitmap[0][0]});

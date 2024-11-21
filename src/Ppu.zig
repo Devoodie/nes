@@ -156,14 +156,14 @@ pub const Ppu = struct {
         } else if (self.v <= 0x1FFF) {
             //pattern table 1
             return 1;
-        } else if (self.v <= 0x23BF) {
+        } else if (self.v <= 0x23FF) {
             //name table 0
-            const index = self.v & 0x7FF;
+            const index = self.v & 0x3FF;
             return self.nametable[index];
         } else if (self.v <= 0x27FF) {
             //name table 1
             const offset: u12 = @as(u12, self.nametable_mirroring) * 1023;
-            const index = (self.v & 0x7FF) % 1024;
+            const index = (self.v & 0x3FF) % 1024;
             return self.nametable[index + offset];
         } else if (self.v <= 0x2BFF) {
             //nametable 2
@@ -215,8 +215,8 @@ pub const Ppu = struct {
         const low_pixel = self.low_shift >> fine_x_shifts & 0b1;
         const high_pixel = self.high_shift >> fine_x_shifts & 0b1;
 
-        const pixel_data: u5 = @as(u5, @truncate(low_pixel)) | @as(u5, @truncate(high_pixel << 1)) | @as(u5, @truncate(attribute_bits << 2));
-
+        const pixel_data: u5 = @as(u5, @intCast(low_pixel)) | @as(u5, @intCast(high_pixel << 1)) | @as(u5, @intCast(attribute_bits << 2));
+        std.debug.print("You are drawing: {d}!\n From low: {d}\n From high: {d}\n Attribute: {d}\n", .{ pixel_data, self.low_shift, self.high_shift, attribute_bits });
         return pixel_data;
     }
 
@@ -228,23 +228,23 @@ pub const Ppu = struct {
         //get pattern table high
         //draw!
         self.t = self.v;
-        self.v &= 0x2FFF;
+        self.v = 0x2000;
+        self.v |= self.t & 0x0FFF;
 
-        const nametable_tile = self.GetPpuBus();
+        const nametable_data = self.GetPpuBus();
         self.v = 0x23C0 | (self.t & 0x0C0) | ((self.t >> 4) & 0x38) | ((self.t >> 2) & 0x07);
-        const attribute_tile = self.GetPpuBus();
+        const attribute_data = self.GetPpuBus();
 
         self.v = self.t;
 
         //nametable fetch
-        const nametable_data = self.nametable[nametable_tile];
-
         //attribute fetch and shift register placement
-        const attribute_data = self.nametable[attribute_tile];
+
         const coarse_x = @as(u8, @truncate(self.v & 0b11111));
         const coarse_y = @as(u8, @truncate(self.v & 0b1111100000 >> 4));
         const coarse_x_bit1 = coarse_x & 0b1;
         const coarse_y_bit1 = coarse_y & 0b1;
+
         // extract attribute shifts
         const attr_shifts = @as(u3, @truncate(coarse_x_bit1 * 2 + coarse_y_bit1 * 4));
         var attribute_bits: u8 = attribute_data >> attr_shifts;
