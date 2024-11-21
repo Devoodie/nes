@@ -304,6 +304,8 @@ test "Ppu Draw Coarse X " {
 
     nes.init();
     nes.Ppu.v = 0;
+    nes.Ppu.cycles = 1;
+
     nes.Ppu.nametable[0] = 0;
     nes.Ppu.nametable[960] = 3;
 
@@ -312,11 +314,10 @@ test "Ppu Draw Coarse X " {
     nes.Ppu.pattern_table[0x1000] = 187;
     nes.Ppu.pattern_table[0x1008] = 217;
 
-    nes.Ppu.scanline = 1;
+    nes.Ppu.scanline = 0;
     nes.Ppu.fine_x = 7;
 
     nes.Ppu.drawCoarseX();
-    std.debug.print("{d}", .{nes.Ppu.bitmap[0][0]});
     try std.testing.expect(nes.Ppu.bitmap[0][0] == 15);
     try std.testing.expect(nes.Ppu.bitmap[0][1] == 14);
     try std.testing.expect(nes.Ppu.bitmap[0][2] == 13);
