@@ -275,8 +275,35 @@ pub const Ppu = struct {
         }
     }
 
-    pub fn backgroundScanLine(self: *Ppu) void {
-        self.low_shift &= 0xFF00;
+    pub fn drawScanLine(self: *Ppu) void {
+        self.GetBackgroundPixel();
+
+        self.cycles += 8;
+        var coarse_y = self.v & 0x3E0 >> 5;
+        if (self.v & 0x1F == 31) {
+            //coarse x increment
+            self.v &= 0x7FE0;
+            self.v ^= 0x400;
+        } else {
+            self.v += 1;
+        }
+
+        if (self.v & 0x7000 != 0x7000) {
+            //fine y increment
+            self.v += 0x1000;
+        } else {
+            //coarse y increment
+            self.v &= 0x0FFF;
+            if (coarse_y == 29) {
+                coarse_y = 0;
+                self.v ^= 0x800;
+            } else if (coarse_y == 31) {
+                coarse_y = 0;
+            } else {
+                coarse_y += 1;
+            }
+            self.v = (self.v & 0xFC1F) | (coarse_y << 5);
+        }
     }
 
     pub fn draw(self: *Ppu) void {
