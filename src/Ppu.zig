@@ -210,6 +210,15 @@ pub const Ppu = struct {
         }
     }
 
+    pub fn cycle(prev_time: i128) void {
+        const wait_time: i128 = 186 * 8;
+        const goal_time = wait_time + prev_time;
+
+        while (std.time.nanoTimestamp() <= goal_time) {
+            continue;
+        }
+    }
+
     pub fn GetBackgroundPixel(self: *Ppu, attribute_bits: u5) u5 {
         const fine_x_shifts = 14 - @as(u4, self.fine_x);
 
@@ -275,10 +284,15 @@ pub const Ppu = struct {
         }
     }
 
-    pub fn drawScanLine(self: *Ppu) void {
+    pub fn drawScanLine(self: *Ppu, time: i128) void {
         self.GetBackgroundPixel();
 
-        self.cycles += 8;
+        if (self.cycles == 0) {
+            self.cycles += 1;
+            self.cycle(time);
+            return;
+        }
+
         var coarse_y = self.v & 0x3E0 >> 5;
         if (self.v & 0x1F == 31) {
             //coarse x increment
@@ -304,6 +318,8 @@ pub const Ppu = struct {
             }
             self.v = (self.v & 0xFC1F) | (coarse_y << 5);
         }
+        self.cycles += 8;
+        self.cycle(time);
     }
 
     pub fn draw(self: *Ppu) void {
