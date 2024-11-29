@@ -1,5 +1,10 @@
 const std = @import("std");
 
+pub const Sprites = union {
+    small: [8][8]u5,
+    large: [16][8]u6,
+};
+
 pub const Ppu = struct {
     control: u8 = 0,
     mask: u8 = 0,
@@ -13,6 +18,7 @@ pub const Ppu = struct {
     write_reg: u1 = 0,
     nametable_mirroring: u1 = 0,
     oam: [256]u8 = undefined,
+    secondary_oam: [8]u6,
     t: u16 = 0,
     //suspected padding
     fine_x: u3 = 0,
@@ -24,6 +30,8 @@ pub const Ppu = struct {
     high_shift: u16 = 0,
     low_shift: u16 = 0,
     cycles: u12 = 0,
+    attribute: u8 = 0,
+    sprites: [64]Sprites = undefined,
 
     pub fn PpuMmo(self: *Ppu, address: u16) u8 {
         switch (address % 8) {
@@ -89,7 +97,7 @@ pub const Ppu = struct {
     pub fn writeData(self: *Ppu, data: u8) void {
         self.setPpuBus(data);
 
-        const status = (self.status & 0b00000100) >> 3;
+        const status = (self.control & 0b00000100) >> 3;
         if (status == 0) {
             self.v += 1;
         } else {
@@ -101,7 +109,7 @@ pub const Ppu = struct {
         const value = self.read_buffer;
         self.read_buffer = self.GetPpuBus();
 
-        const status = (self.status & 0b00000100) >> 3;
+        const status = (self.control & 0b00000100) >> 3;
         if (status == 0) {
             self.v += 1;
         } else {
@@ -219,14 +227,14 @@ pub const Ppu = struct {
         }
     }
 
-    pub fn GetBackgroundPixel(self: *Ppu, attribute_bits: u5) u5 {
+    pub fn GetBackgroundPixel(self: *Ppu) u5 {
         const fine_x_shifts = 14 - @as(u4, self.fine_x);
 
         const low_pixel = self.low_shift >> fine_x_shifts & 0b1;
         const high_pixel = self.high_shift >> fine_x_shifts & 0b1;
 
-        const pixel_data: u5 = @as(u5, @truncate(low_pixel)) | @as(u5, @truncate(high_pixel << 1)) | @as(u5, @truncate(attribute_bits << 2));
-        //std.debug.print("You are drawing: {d}!\n From low: {d}\n From high: {d}\n Attribute: {d}\n", .{ pixel_data, self.low_shift, self.high_shift, attribute_bits });
+        const pixel_data: u5 = @as(u5, @truncate(low_pixel)) | @as(u5, @truncate(high_pixel << 1)) | @as(u5, @truncate(self.attribute << 2));
+        //std.debug.print("You are drawing: {d}!\n From low: {d}\n From high: {d}\n Attribute: {d}\n", .{ pixel_data, self.low_shift, self.high_shift, self.attribute});
         return pixel_data;
     }
 
@@ -260,13 +268,13 @@ pub const Ppu = struct {
 
         // extract attribute shifts
         const attr_shifts = @as(u3, @truncate(coarse_x_bit1 * 2 + coarse_y_bit1 * 4));
-        var attribute_bits: u8 = attribute_data >> attr_shifts;
-        attribute_bits &= 0b11;
+        self.attribute = attribute_data >> attr_shifts;
+        self.attribute &= 0b11;
 
         //pattern fetch
         var pattern_address: u16 = nametable_data;
         pattern_address <<= 3;
-        const right_table: u16 = self.status & 0b00010000;
+        const right_table: u16 = self.control & 0b00010000;
 
         pattern_address |= right_table << 8;
         pattern_address |= self.v >> 12;
@@ -277,9 +285,25 @@ pub const Ppu = struct {
 
         if (self.cycles <= 256) {
             for (self.bitmap[self.scanline][coarse_x .. coarse_x + 8]) |*pixel| {
-                pixel.* = self.GetBackgroundPixel(@truncate(attribute_bits));
+                pixel.* = self.GetBackgroundPixel();
                 self.low_shift <<= 1;
                 self.high_shift <<= 1;
+            }
+        }
+    }
+
+    pub fn spriteEvaluation(self: *Ppu) void {
+        var render_index = 0;
+        for (0..64) |index| render_buffer: {
+            const is_sixteen = self.control >> 5 & 0b1;
+            const y = index * 4;
+            if (self.scanline >= y and self.scanline <= y + 8 + is_sixteen * 8) {
+                if (render_index > 7) {
+                    break :render_buffer;
+                } else {
+                    self.secondary_oam[render_index] == index;
+                    render_index += 1;
+                }
             }
         }
     }
@@ -325,10 +349,10 @@ pub const Ppu = struct {
     pub fn draw(self: *Ppu) void {
         if (self.scanline == 261) {
             self.scanline == 0;
-            self.status &= 0x70;
+            self.control &= 0x70;
         } else if (self.scanline >= 240) {
             //handle post render scanline
-            self.status |= 0x80;
+            self.control |= 0x80;
             self.scanline += 1;
         } else {
             //handle rendering
