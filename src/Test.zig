@@ -376,6 +376,22 @@ test "Fill Sprites" {
 
     std.debug.print("Fill Sprites Long!\n", .{});
 
+    nes.Ppu.pattern_table[0 + 0x1000] = 187;
+    nes.Ppu.pattern_table[8 + 0x1000] = 217;
+    nes.Ppu.pattern_table[1 + 0x1000] = 111;
+    nes.Ppu.pattern_table[9 + 0x1000] = 222;
+    nes.Ppu.pattern_table[2 + 0x1000] = 192;
+    nes.Ppu.pattern_table[10 + 0x1000] = 234;
+    nes.Ppu.pattern_table[3 + 0x1000] = 139;
+    nes.Ppu.pattern_table[11 + 0x1000] = 189;
+    nes.Ppu.pattern_table[4 + 0x1000] = 182;
+    nes.Ppu.pattern_table[12 + 0x1000] = 100;
+    nes.Ppu.pattern_table[5 + 0x1000] = 44;
+    nes.Ppu.pattern_table[13 + 0x1000] = 246;
+    nes.Ppu.pattern_table[6 + 0x1000] = 45;
+    nes.Ppu.pattern_table[14 + 0x1000] = 0;
+    nes.Ppu.pattern_table[7 + 0x1000] = 85;
+    nes.Ppu.pattern_table[15 + 0x1000] = 72;
     nes.Ppu.pattern_table[16 + 0x1000] = 187;
     nes.Ppu.pattern_table[24 + 0x1000] = 217;
     nes.Ppu.pattern_table[17 + 0x1000] = 111;
@@ -392,26 +408,12 @@ test "Fill Sprites" {
     nes.Ppu.pattern_table[30 + 0x1000] = 0;
     nes.Ppu.pattern_table[23 + 0x1000] = 85;
     nes.Ppu.pattern_table[31 + 0x1000] = 72;
-    nes.Ppu.pattern_table[32 + 0x1000] = 187;
-    nes.Ppu.pattern_table[40 + 0x1000] = 217;
-    nes.Ppu.pattern_table[33 + 0x1000] = 111;
-    nes.Ppu.pattern_table[41 + 0x1000] = 222;
-    nes.Ppu.pattern_table[34 + 0x1000] = 192;
-    nes.Ppu.pattern_table[42 + 0x1000] = 234;
-    nes.Ppu.pattern_table[35 + 0x1000] = 139;
-    nes.Ppu.pattern_table[43 + 0x1000] = 189;
-    nes.Ppu.pattern_table[36 + 0x1000] = 182;
-    nes.Ppu.pattern_table[44 + 0x1000] = 100;
-    nes.Ppu.pattern_table[37 + 0x1000] = 44;
-    nes.Ppu.pattern_table[45 + 0x1000] = 246;
-    nes.Ppu.pattern_table[38 + 0x1000] = 45;
-    nes.Ppu.pattern_table[46 + 0x1000] = 0;
-    nes.Ppu.pattern_table[39 + 0x1000] = 85;
-    nes.Ppu.pattern_table[47 + 0x1000] = 72;
 
     nes.Ppu.control = 0b100000;
 
-    const long_answers = [8][8]u5{
+    nes.Ppu.fillSprites();
+
+    const long_answers = [16][8]u5{
         [8]u5{ 31, 30, 29, 31, 31, 28, 29, 31 },
         [8]u5{ 30, 31, 29, 30, 31, 31, 31, 29 },
         [8]u5{ 31, 31, 30, 28, 30, 28, 30, 28 },
@@ -430,4 +432,10 @@ test "Fill Sprites" {
         [8]u5{ 28, 31, 28, 29, 30, 29, 28, 29 },
     };
 
+    for (nes.Ppu.sprites[1].large, long_answers, 0..) |value_row, answer_row, index| {
+        for (value_row, answer_row) |value, answer| {
+            std.debug.print("Value: {d}, Answer: {d}, Index: {d}\n", .{ value, answer, index });
+            try std.testing.expect(value == answer);
+        }
+    }
 }
