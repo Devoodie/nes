@@ -323,15 +323,31 @@ pub const Ppu = struct {
         var low_pixel: u8 = 0;
         var high_pixel: u8 = 0;
         const attr_bits = attributes & 0b11;
+        var right_table: u16 = 0;
+
         if (large == 1) {
+            right_table = (@as(u16, tile_number) & 0b1) * 0x1000;
             var sprite_buffer: Sprite = .{ .large = undefined };
-            sprite_buffer.large[0][0] = 30;
+
+            for (0..16) |row| {
+                small_buff = self.pattern_table[right_table + pattern_index + row];
+                large_buff = self.pattern_table[right_table + pattern_index + row + 8];
+
+                for (0..8) |column| {
+                    low_pixel = small_buff >> 7 - @as(u3, @intCast(column)) & 0b1;
+                    high_pixel = large_buff >> 7 - @as(u3, @intCast(column)) & 0b1;
+                    pixel_data = @as(u5, @truncate(low_pixel)) | @as(u5, @truncate(high_pixel << 1)) | @as(u5, @truncate(attr_bits << 2)) | 0b10000;
+                    sprite_buffer.large[row][column] = pixel_data;
+                }
+            }
             return sprite_buffer;
         } else {
+            right_table = (@as(u16, self.status) >> 3 & 0b1) * 0x1000;
             var sprite_buffer: Sprite = .{ .small = undefined };
+
             for (0..8) |row| {
-                small_buff = self.pattern_table[pattern_index + row];
-                large_buff = self.pattern_table[pattern_index + row + 8];
+                small_buff = self.pattern_table[right_table + pattern_index + row];
+                large_buff = self.pattern_table[right_table + pattern_index + row + 8];
                 // i hate this nested for but it seems reasonable for a matrix
                 for (0..8) |column| {
                     low_pixel = small_buff >> 7 - @as(u3, @intCast(column)) & 0b1;
