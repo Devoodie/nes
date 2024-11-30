@@ -359,7 +359,7 @@ test "Fill Sprites" {
     const answers = [8][8]u5{
         [8]u5{ 31, 30, 29, 31, 31, 28, 29, 31 },
         [8]u5{ 30, 31, 29, 30, 31, 31, 31, 29 },
-        [8]u5{ 31, 31, 30, 28, 30, 28, 30, 29 },
+        [8]u5{ 31, 31, 30, 28, 30, 28, 30, 28 },
         [8]u5{ 31, 28, 30, 30, 31, 30, 29, 31 },
         [8]u5{ 29, 30, 31, 29, 28, 31, 29, 28 },
         [8]u5{ 30, 30, 31, 30, 29, 31, 30, 28 },
@@ -367,10 +367,11 @@ test "Fill Sprites" {
         [8]u5{ 28, 31, 28, 29, 30, 29, 28, 29 },
     };
 
+    nes.Ppu.fillSprites();
+
     for (nes.Ppu.sprites[1].small, answers) |value_row, answer_row| {
         for (value_row, answer_row) |value, answer| {
             try std.testing.expect(value == answer);
         }
     }
-    nes.Ppu.fillSprites();
 }
