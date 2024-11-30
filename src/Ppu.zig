@@ -1,6 +1,6 @@
 const std = @import("std");
 
-pub const Sprites = union {
+pub const Sprite = union {
     small: [8][8]u5,
     large: [16][8]u6,
 };
@@ -18,7 +18,7 @@ pub const Ppu = struct {
     write_reg: u1 = 0,
     nametable_mirroring: u1 = 0,
     oam: [256]u8 = undefined,
-    secondary_oam: [8]u6,
+    secondary_oam: [8]u6 = undefined,
     t: u16 = 0,
     //suspected padding
     fine_x: u3 = 0,
@@ -31,7 +31,7 @@ pub const Ppu = struct {
     low_shift: u16 = 0,
     cycles: u12 = 0,
     attribute: u8 = 0,
-    sprites: [64]Sprites = undefined,
+    sprites: [64]Sprite = undefined,
 
     pub fn PpuMmo(self: *Ppu, address: u16) u8 {
         switch (address % 8) {
@@ -308,9 +308,44 @@ pub const Ppu = struct {
         }
     }
 
-    pub fn drawScanLine(self: *Ppu, time: i128) void {
-        self.GetBackgroundPixel();
+    pub fn fillSprites(self: *Ppu) void {
+        const is_large = self.control >> 5 & 0b1;
+        for (0..64) |oam_index| {
+            self.sprites[oam_index] = self.GetSpritePixel(self.oam[oam_index * 4 + 1], self.oam[oam_index * 4 + 2], is_large);
+        }
+    }
 
+    pub fn GetSpritePixel(self: *Ppu, tile_number: u8, attributes: u8, large: u8) Sprite {
+        var small_buff: u8 = 0;
+        var large_buff: u8 = 0;
+        const pattern_index = tile_number * 16;
+        var pixel_data: u5 = undefined;
+        var low_pixel: u8 = 0;
+        var high_pixel: u8 = 0;
+        const attr_bits = attributes & 0b11;
+        if (large == 1) {
+            var sprite_buffer: Sprite = .{ .large = undefined };
+            sprite_buffer.large[0][0] = 30;
+            return sprite_buffer;
+        } else {
+            var sprite_buffer: Sprite = .{ .small = undefined };
+            for (0..8) |row| {
+                small_buff = self.pattern_table[pattern_index + row];
+                large_buff = self.pattern_table[pattern_index + row + 8];
+                // i hate this nested for but it seems reasonable for a matrix
+                for (0..8) |column| {
+                    low_pixel = small_buff >> 7 - @as(u3, @intCast(column)) & 0b1;
+                    high_pixel = large_buff >> 7 - @as(u3, @intCast(column)) & 0b1;
+                    pixel_data = @as(u5, @truncate(low_pixel)) | @as(u5, @truncate(high_pixel << 1)) | @as(u5, @truncate(attr_bits << 2)) | 0b10000;
+                    sprite_buffer.small[row][column] = pixel_data;
+                }
+            }
+            return sprite_buffer;
+        }
+    }
+
+    pub fn drawScanLine(self: *Ppu, time: i128) void {
+        self.drawCoarseX();
         if (self.cycles == 0) {
             self.cycles += 1;
             self.cycle(time);

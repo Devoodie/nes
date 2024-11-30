@@ -327,3 +327,50 @@ test "Ppu Draw Coarse X " {
     try std.testing.expect(nes.Ppu.bitmap[0][6] == 13);
     try std.testing.expect(nes.Ppu.bitmap[0][7] == 15);
 }
+
+test "Fill Sprites" {
+    var nes: components.Nes = .{ .Cpu = .{}, .Ppu = .{}, .Bus = .{} };
+
+    //dma from the second page (zeropage)
+
+    nes.init();
+
+    nes.Ppu.oam[5] = 1;
+    nes.Ppu.oam[6] = 3;
+
+    //test right table capabilities
+    nes.Ppu.pattern_table[16] = 187;
+    nes.Ppu.pattern_table[24] = 217;
+    nes.Ppu.pattern_table[17] = 111;
+    nes.Ppu.pattern_table[25] = 222;
+    nes.Ppu.pattern_table[18] = 192;
+    nes.Ppu.pattern_table[26] = 234;
+    nes.Ppu.pattern_table[19] = 139;
+    nes.Ppu.pattern_table[27] = 189;
+    nes.Ppu.pattern_table[20] = 182;
+    nes.Ppu.pattern_table[28] = 100;
+    nes.Ppu.pattern_table[21] = 44;
+    nes.Ppu.pattern_table[29] = 246;
+    nes.Ppu.pattern_table[22] = 45;
+    nes.Ppu.pattern_table[30] = 0;
+    nes.Ppu.pattern_table[23] = 85;
+    nes.Ppu.pattern_table[31] = 72;
+
+    const answers = [8][8]u5{
+        [8]u5{ 31, 30, 29, 31, 31, 28, 29, 31 },
+        [8]u5{ 30, 31, 29, 30, 31, 31, 31, 29 },
+        [8]u5{ 31, 31, 30, 28, 30, 28, 30, 29 },
+        [8]u5{ 31, 28, 30, 30, 31, 30, 29, 31 },
+        [8]u5{ 29, 30, 31, 29, 28, 31, 29, 28 },
+        [8]u5{ 30, 30, 31, 30, 29, 31, 30, 28 },
+        [8]u5{ 28, 28, 29, 28, 29, 29, 28, 29 },
+        [8]u5{ 28, 31, 28, 29, 30, 29, 28, 29 },
+    };
+
+    for (nes.Ppu.sprites[1].small, answers) |value_row, answer_row| {
+        for (value_row, answer_row) |value, answer| {
+            try std.testing.expect(value == answer);
+        }
+    }
+    nes.Ppu.fillSprites();
+}
