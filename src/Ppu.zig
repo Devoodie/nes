@@ -318,7 +318,7 @@ pub const Ppu = struct {
     pub fn GetSpritePixel(self: *Ppu, tile_number: u8, attributes: u8, large: u8) Sprite {
         var small_buff: u8 = 0;
         var large_buff: u8 = 0;
-        const pattern_index = tile_number * 16;
+        var pattern_index = tile_number * 16;
         var pixel_data: u5 = undefined;
         var low_pixel: u8 = 0;
         var high_pixel: u8 = 0;
@@ -330,9 +330,11 @@ pub const Ppu = struct {
             var sprite_buffer: Sprite = .{ .large = undefined };
 
             for (0..16) |row| {
-                small_buff = self.pattern_table[right_table + pattern_index + row];
+                if (row == 8) {
+                    pattern_index += 16;
+                }
+                small_buff = self.pattern_table[right_table + pattern_index + row % 8];
                 large_buff = self.pattern_table[right_table + pattern_index + row + 8];
-
                 for (0..8) |column| {
                     low_pixel = small_buff >> 7 - @as(u3, @intCast(column)) & 0b1;
                     high_pixel = large_buff >> 7 - @as(u3, @intCast(column)) & 0b1;
