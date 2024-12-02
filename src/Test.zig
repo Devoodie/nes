@@ -432,9 +432,9 @@ test "Fill Sprites" {
         [8]u5{ 28, 31, 28, 29, 30, 29, 28, 29 },
     };
 
-    for (nes.Ppu.sprites[1].large, long_answers, 0..) |value_row, answer_row, index| {
+    for (nes.Ppu.sprites[1].large, long_answers) |value_row, answer_row| {
         for (value_row, answer_row) |value, answer| {
-            std.debug.print("Value: {d}, Answer: {d}, Index: {d}\n", .{ value, answer, index });
+            //            std.debug.print("Value: {d}, Answer: {d}, Index: {d}\n", .{ value, answer, index });
             try std.testing.expect(value == answer);
         }
     }

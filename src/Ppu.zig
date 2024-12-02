@@ -18,7 +18,7 @@ pub const Ppu = struct {
     write_reg: u1 = 0,
     nametable_mirroring: u1 = 0,
     oam: [256]u8 = undefined,
-    secondary_oam: [8]u6 = undefined,
+    secondary_oam: [8]?u6 = undefined,
     t: u16 = 0,
     //suspected padding
     fine_x: u3 = 0,
@@ -289,6 +289,9 @@ pub const Ppu = struct {
                 self.low_shift <<= 1;
                 self.high_shift <<= 1;
             }
+        } else {
+            self.low_shift <<= 8;
+            self.high_shift <<= 8;
         }
     }
 
@@ -311,11 +314,11 @@ pub const Ppu = struct {
     pub fn fillSprites(self: *Ppu) void {
         const is_large = self.control >> 5 & 0b1;
         for (0..64) |oam_index| {
-            self.sprites[oam_index] = self.GetSpritePixel(self.oam[oam_index * 4 + 1], self.oam[oam_index * 4 + 2], is_large);
+            self.sprites[oam_index] = self.GetSpritePixels(self.oam[oam_index * 4 + 1], self.oam[oam_index * 4 + 2], is_large);
         }
     }
 
-    pub fn GetSpritePixel(self: *Ppu, tile_number: u8, attributes: u8, large: u8) Sprite {
+    pub fn GetSpritePixels(self: *Ppu, tile_number: u8, attributes: u8, large: u8) Sprite {
         var small_buff: u8 = 0;
         var large_buff: u8 = 0;
         var pattern_index: u8 = 0;
@@ -364,14 +367,25 @@ pub const Ppu = struct {
         }
     }
 
-    pub fn drawScanLine(self: *Ppu, time: i128) void {
-        self.drawCoarseX();
+    //pub fn drawScanlineSprites(){
+    //check x values for secondary sprites
+    //once coarse x passes (x value + 8) grab the original background value
+    //check the sprite row starting from the back of secondary oam to front
+    //draw sprites from back to front:
+    //check if sprite is inverted
+    //check if sprite has priority
+    //set sprite 0 hit if it has background priority and is drown over opaque background
+    //draw background over sprite if so
+    //set secondary oam index to null
+    //}
+
+    pub fn drawScanLine(self: *Ppu) void {
+        //cycle after this function in the main loop
         if (self.cycles == 0) {
             self.cycles += 1;
-            self.cycle(time);
-            return;
         }
-
+        self.drawCoarseX();
+        //drawScanlineSprites();
         var coarse_y = self.v & 0x3E0 >> 5;
         if (self.v & 0x1F == 31) {
             //coarse x increment
@@ -380,7 +394,6 @@ pub const Ppu = struct {
         } else {
             self.v += 1;
         }
-
         if (self.v & 0x7000 != 0x7000) {
             //fine y increment
             self.v += 0x1000;
@@ -398,7 +411,6 @@ pub const Ppu = struct {
             self.v = (self.v & 0xFC1F) | (coarse_y << 5);
         }
         self.cycles += 8;
-        self.cycle(time);
     }
 
     pub fn draw(self: *Ppu) void {
@@ -411,6 +423,11 @@ pub const Ppu = struct {
             self.scanline += 1;
         } else {
             //handle rendering
+            for (0..240) |_| {
+                self.drawScanLine(std.time.nanoTimestamp());
+                //drawsprite!
+                self.scanline += 1;
+            }
         }
     }
 };
