@@ -18,7 +18,7 @@ pub const Ppu = struct {
     write_reg: u1 = 0,
     nametable_mirroring: u1 = 0,
     oam: [256]u8 = undefined,
-    secondary_oam: [8]?u6 = undefined,
+    secondary_oam: [8]u6 = undefined,
     t: u16 = 0,
     //suspected padding
     fine_x: u3 = 0,
@@ -29,6 +29,7 @@ pub const Ppu = struct {
     scanline: u12 = 261,
     high_shift: u16 = 0,
     low_shift: u16 = 0,
+    sprite_shift: u8 = 0,
     cycles: u12 = 0,
     attribute: u8 = 0,
     sprites: [64]Sprite = undefined,
@@ -314,11 +315,11 @@ pub const Ppu = struct {
     pub fn fillSprites(self: *Ppu) void {
         const is_large = self.control >> 5 & 0b1;
         for (0..64) |oam_index| {
-            self.sprites[oam_index] = self.GetSpritePixels(self.oam[oam_index * 4 + 1], self.oam[oam_index * 4 + 2], is_large);
+            self.sprites[oam_index] = self.GetSpriteBitmap(self.oam[oam_index * 4 + 1], self.oam[oam_index * 4 + 2], is_large);
         }
     }
 
-    pub fn GetSpritePixels(self: *Ppu, tile_number: u8, attributes: u8, large: u8) Sprite {
+    pub fn GetSpriteBitmap(self: *Ppu, tile_number: u8, attributes: u8, large: u8) Sprite {
         var small_buff: u8 = 0;
         var large_buff: u8 = 0;
         var pattern_index: u8 = 0;
@@ -367,17 +368,34 @@ pub const Ppu = struct {
         }
     }
 
-    //pub fn drawScanlineSprites(){
-    //check x values for secondary sprites
-    //once coarse x passes (x value + 8) grab the original background value
-    //check the sprite row starting from the back of secondary oam to front
-    //draw sprites from back to front:
-    //check if sprite is inverted
-    //check if sprite has priority
-    //set sprite 0 hit if it has background priority and is drown over opaque background
-    //draw background over sprite if so
-    //set secondary oam index to null
-    //}
+    pub fn drawScanlineSprites(self: *Ppu, coarsex: u8, background: u5) void {
+        var oam_index: u8 = 0;
+        var x_buffer: u8 = 0;
+        for (0..8) |iterations| {
+            oam_index = self.secondary_oam[7 - iterations];
+            x_buffer = self.oam[oam_index + 2];
+            if (coarsex < x_buffer + 8 and coarsex >= x_buffer) {
+                //draw:
+                const x_coord = x_buffer - coarsex;
+                const attributes = 
+                //determine inversion
+                //determine row/column
+                //forward bit
+                
+            }
+        }
+        //check the sprite row starting from the back of secondary oam to front
+        //draw sprites from back to front:
+        //check if sprite is inverted
+        //check if sprite has priority
+        //set sprite 0 hit if it has background priority and is drown over opaque background
+        //draw background over sprite if so
+        //set secondary oam index to null
+    }
+
+    pub fn GetSpritePixel(self: *Ppu, x: u8, attributes: u8) u5 {
+        if()
+    }
 
     pub fn drawScanLine(self: *Ppu) void {
         //cycle after this function in the main loop
