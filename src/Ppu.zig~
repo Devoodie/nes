@@ -479,8 +479,7 @@ pub const Ppu = struct {
             for (0..240) |_| {
                 if(self.cycles == 0) {
                     self.drawScanLine(std.time.nanoTimestamp());
-                } else {
-                    self.drawScanLine(time,)
+                    self.cycle(time, 1);
                 }
                 //drawsprite!
                 self.scanline += 1;
