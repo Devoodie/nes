@@ -303,11 +303,11 @@ test "Ppu Draw Coarse X " {
     //dma from the second page (zeropage)
 
     nes.init();
-    nes.Ppu.v = 0;
+    nes.Ppu.v = 1;
     nes.Ppu.cycles = 1;
 
     nes.Ppu.nametable[0] = 0;
-    nes.Ppu.nametable[960] = 3;
+    nes.Ppu.nametable[960] = 12;
 
     //test right table capabilities
     nes.Ppu.control = 0b10000;
@@ -318,14 +318,14 @@ test "Ppu Draw Coarse X " {
     nes.Ppu.fine_x = 7;
 
     nes.Ppu.drawCoarseX();
-    try std.testing.expect(nes.Ppu.bitmap[0][0] == 15);
-    try std.testing.expect(nes.Ppu.bitmap[0][1] == 14);
-    try std.testing.expect(nes.Ppu.bitmap[0][2] == 13);
-    try std.testing.expect(nes.Ppu.bitmap[0][3] == 15);
-    try std.testing.expect(nes.Ppu.bitmap[0][4] == 15);
-    try std.testing.expect(nes.Ppu.bitmap[0][5] == 12);
-    try std.testing.expect(nes.Ppu.bitmap[0][6] == 13);
-    try std.testing.expect(nes.Ppu.bitmap[0][7] == 15);
+    try std.testing.expect(nes.Ppu.bitmap[0][8] == 15);
+    try std.testing.expect(nes.Ppu.bitmap[0][9] == 14);
+    try std.testing.expect(nes.Ppu.bitmap[0][10] == 13);
+    try std.testing.expect(nes.Ppu.bitmap[0][11] == 15);
+    try std.testing.expect(nes.Ppu.bitmap[0][12] == 15);
+    try std.testing.expect(nes.Ppu.bitmap[0][13] == 12);
+    try std.testing.expect(nes.Ppu.bitmap[0][14] == 13);
+    try std.testing.expect(nes.Ppu.bitmap[0][15] == 15);
 }
 
 test "Fill Sprites" {

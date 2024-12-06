@@ -2,7 +2,7 @@ const std = @import("std");
 
 pub const Sprite = union {
     small: [8][8]u5,
-    large: [16][8]u6,
+    large: [16][8]u5,
 };
 
 pub const Ppu = struct {
@@ -235,7 +235,7 @@ pub const Ppu = struct {
         const high_pixel = self.high_shift >> fine_x_shifts & 0b1;
 
         const pixel_data: u5 = @as(u5, @truncate(low_pixel)) | @as(u5, @truncate(high_pixel << 1)) | @as(u5, @truncate(self.attribute << 2));
-        //std.debug.print("You are drawing: {d}!\n From low: {d}\n From high: {d}\n Attribute: {d}\n", .{ pixel_data, self.low_shift, self.high_shift, self.attribute});
+        std.debug.print("You are drawing: {d}!\n From low: {d}\n From high: {d}\n Attribute: {d}\n", .{ pixel_data, self.low_shift, self.high_shift, self.attribute });
         return pixel_data;
     }
 
@@ -254,7 +254,8 @@ pub const Ppu = struct {
         self.v |= self.t & 0x0FFF;
 
         const nametable_data = self.GetPpuBus();
-        self.v = 0x23C0 | (self.t & 0x0C0) | ((self.t >> 4) & 0x38) | ((self.t >> 2) & 0x07);
+        self.v = 0x23C0 | (self.t & 0xC00) | ((self.t >> 4) & 0x38) | ((self.t >> 2) & 0x07);
+        std.debug.print("Attribtue Address: 0x{X}\n", .{self.v});
         const attribute_data = self.GetPpuBus();
 
         self.v = self.t;
@@ -270,6 +271,7 @@ pub const Ppu = struct {
         // extract attribute shifts
         const attr_shifts = @as(u3, @truncate(coarse_x_bit1 * 2 + coarse_y_bit1 * 4));
         self.attribute = attribute_data >> attr_shifts;
+        std.debug.print("Attribute Data: {d}, Attribute shifts: {d}\n", .{ attribute_data, attr_shifts });
         self.attribute &= 0b11;
 
         //pattern fetch
@@ -285,10 +287,17 @@ pub const Ppu = struct {
         self.high_shift |= self.pattern_table[pattern_address + 0b1000];
 
         if (self.cycles <= 256) {
-            for (self.bitmap[self.scanline][coarse_x .. coarse_x + 8]) |*pixel| {
+            for (self.bitmap[self.scanline][coarse_x * 8 .. coarse_x * 8 + 8], coarse_x * 8..) |*pixel, x_index| {
                 pixel.* = self.GetBackgroundPixel();
                 self.low_shift <<= 1;
                 self.high_shift <<= 1;
+                std.debug.print("{d}\n", .{pixel.*});
+
+                const sprite_pixel: ?u5 = self.drawScanlineSprites(@truncate(x_index), pixel.*);
+                if (sprite_pixel != null) {
+                    //std.debug.print("TRUE\n", .{});
+                    pixel.* = sprite_pixel.?;
+                }
             }
         } else {
             self.low_shift <<= 8;
@@ -368,33 +377,52 @@ pub const Ppu = struct {
         }
     }
 
-    pub fn drawScanlineSprites(self: *Ppu, coarsex: u8, background: u5) void {
+    pub fn drawScanlineSprites(self: *Ppu, coarsex: u8, background: u5) ?u5 {
         var oam_index: u8 = 0;
         var x_buffer: u8 = 0;
+        var x_coord: ?u8 = null;
+        var y_coord: ?u8 = null;
+        var attributes: ?u8 = null;
         for (0..8) |iterations| {
             oam_index = self.secondary_oam[7 - iterations];
             x_buffer = self.oam[oam_index + 2];
             if (coarsex < x_buffer + 8 and coarsex >= x_buffer) {
-                //draw:
-                const x_coord = x_buffer - coarsex;
-                const attributes = 
-                //determine inversion
-                //determine row/column
-                //forward bit
-                
+                x_coord = coarsex - x_buffer;
+                y_coord = @as(u8, @truncate(self.scanline)) - self.oam[oam_index];
+                attributes = self.oam[oam_index + 3];
             }
         }
-        //check the sprite row starting from the back of secondary oam to front
-        //draw sprites from back to front:
-        //check if sprite is inverted
-        //check if sprite has priority
-        //set sprite 0 hit if it has background priority and is drown over opaque background
-        //draw background over sprite if so
-        //set secondary oam index to null
+        if (x_coord != null) {
+            return self.GetSpritePixel(x_coord.?, y_coord.?, attributes.?, self.sprites[oam_index], background);
+        } else {
+            return null;
+        }
     }
 
-    pub fn GetSpritePixel(self: *Ppu, x: u8, attributes: u8) u5 {
-        if()
+    pub fn GetSpritePixel(self: *Ppu, x: u8, y: u8, attributes: u8, sprite: Sprite, background: u5) u5 {
+        var bitmap_x: u8 = x;
+        var bitmap_y: u8 = y;
+        if (attributes & 0x20 == 0x20) {
+            //background has priority
+            return background;
+        } else if (self.control & 0x8 == 0x8) {
+            if (attributes & 0x80 == 0x80) {
+                bitmap_x = ~x & 0b111;
+            }
+            if (attributes & 0x40 == 0x40) {
+                bitmap_y = ~y & 0b1111;
+                bitmap_x = ~x & 0b111;
+            }
+            return sprite.large[bitmap_y][bitmap_x];
+        } else {
+            if (attributes & 0x80 == 0x80) {
+                bitmap_x = ~x & 0b111;
+            }
+            if (attributes & 0x40 == 0x40) {
+                bitmap_y = ~y & 0b111;
+            }
+            return sprite.small[bitmap_y][bitmap_x];
+        }
     }
 
     pub fn drawScanLine(self: *Ppu) void {
