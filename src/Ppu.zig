@@ -285,14 +285,16 @@ pub const Ppu = struct {
         if (self.cycles < 257) {
             //rendering occurs before
             for (self.bitmap[self.scanline][coarse_x * 8 .. coarse_x * 8 + 8], coarse_x * 8..) |*pixel, x_index| {
-                pixel.* = self.GetBackgroundPixel();
-                self.low_shift <<= 1;
-                self.high_shift <<= 1;
-                std.debug.print("{d}\n", .{pixel.*});
+                if (self.mask & 0x8 != 0x8) {
+                    pixel.* = self.GetBackgroundPixel();
+                    self.low_shift <<= 1;
+                    self.high_shift <<= 1;
+                    std.debug.print("{d}\n", .{pixel.*});
+                }
 
                 const sprite_pixel: ?u5 = self.drawSprites(@truncate(x_index), pixel.*);
+
                 if (sprite_pixel != null) {
-                    //std.debug.print("TRUE\n", .{});
                     pixel.* = sprite_pixel.?;
                 }
             }
@@ -394,10 +396,10 @@ pub const Ppu = struct {
                 attributes = self.oam[oam_index + 3];
             }
         }
-        if (x_coord != null) {
-            return self.GetSpritePixel(x_coord.?, y_coord, attributes, self.sprites[oam_index], background, sprite0);
-        } else {
+        if (self.mask & 0x10 == 0x10 or x_coord == null) {
             return null;
+        } else {
+            return self.GetSpritePixel(x_coord.?, y_coord, attributes, self.sprites[oam_index], background, sprite0);
         }
     }
 
@@ -435,6 +437,9 @@ pub const Ppu = struct {
 
     pub fn drawScanLine(self: *Ppu, time: i128) void {
         //cycle after this function in the main loop
+        if (self.mask & 0x18 == 0) {
+            return;
+        }
         for (0..33) |_| {
             if (self.cycles == 0) {
                 self.cycles += 1;
