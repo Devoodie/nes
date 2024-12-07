@@ -219,7 +219,7 @@ pub const Ppu = struct {
         }
     }
 
-    pub fn cycle(prev_time: i128, count: u8)  void {
+    pub fn cycle(prev_time: i128, count: u8) void {
         const wait_time: i128 = 186 * count;
         const goal_time = wait_time + prev_time;
 
@@ -282,11 +282,8 @@ pub const Ppu = struct {
         pattern_address |= right_table << 8;
         pattern_address |= self.v >> 12;
 
-        //placement into shift registers
-        self.low_shift |= self.pattern_table[pattern_address];
-        self.high_shift |= self.pattern_table[pattern_address + 0b1000];
-
-        if (self.cycles <= 256) {
+        if (self.cycles < 257) {
+            //rendering occurs before
             for (self.bitmap[self.scanline][coarse_x * 8 .. coarse_x * 8 + 8], coarse_x * 8..) |*pixel, x_index| {
                 pixel.* = self.GetBackgroundPixel();
                 self.low_shift <<= 1;
@@ -303,6 +300,9 @@ pub const Ppu = struct {
             self.low_shift <<= 8;
             self.high_shift <<= 8;
         }
+        //placement into shift registers occurs after
+        self.low_shift |= self.pattern_table[pattern_address];
+        self.high_shift |= self.pattern_table[pattern_address + 0b1000];
     }
 
     pub fn spriteEvaluation(self: *Ppu) void {
@@ -381,19 +381,21 @@ pub const Ppu = struct {
         var oam_index: u8 = 0;
         var x_buffer: u8 = 0;
         var x_coord: ?u8 = null;
-        var y_coord: ?u8 = null;
-        var attributes: ?u8 = null;
+        var y_coord: u8 = 0;
+        var attributes: u8 = 0;
+        var sprite0: u8 = 0;
         for (0..8) |iterations| {
             oam_index = self.secondary_oam[7 - iterations];
             x_buffer = self.oam[oam_index + 2];
             if (coarsex < x_buffer + 8 and coarsex >= x_buffer) {
                 x_coord = coarsex - x_buffer;
+                sprite0 = 7 - @as(u8, @intCast(iterations));
                 y_coord = @as(u8, @truncate(self.scanline)) - self.oam[oam_index];
                 attributes = self.oam[oam_index + 3];
             }
         }
         if (x_coord != null) {
-            return self.GetSpritePixel(x_coord.?, y_coord.?, attributes.?, self.sprites[oam_index], background);
+            return self.GetSpritePixel(x_coord.?, y_coord, attributes, self.sprites[oam_index], background, sprite0);
         } else {
             return null;
         }
@@ -431,37 +433,42 @@ pub const Ppu = struct {
         }
     }
 
-    pub fn drawScanLine(self: *Ppu) void {
+    pub fn drawScanLine(self: *Ppu, time: i128) void {
         //cycle after this function in the main loop
-        if (self.cycles == 0) {
-            self.cycles += 1;
-        }
-        self.drawCoarseX();
-        var coarse_y = self.v & 0x3E0 >> 5;
-        if (self.v & 0x1F == 31) {
-            //coarse x increment
-            self.v &= 0x7FE0;
-            self.v ^= 0x400;
-        } else {
-            self.v += 1;
-        }
-        if (self.v & 0x7000 != 0x7000) {
-            //fine y increment
-            self.v += 0x1000;
-        } else {
-            //coarse y increment
-            self.v &= 0x0FFF;
-            if (coarse_y == 29) {
-                coarse_y = 0;
-                self.v ^= 0x800;
-            } else if (coarse_y == 31) {
-                coarse_y = 0;
-            } else {
-                coarse_y += 1;
+        for (0..33) |_| {
+            if (self.cycles == 0) {
+                self.cycles += 1;
+                self.cycle(time, 1);
+                continue;
             }
-            self.v = (self.v & 0xFC1F) | (coarse_y << 5);
+            self.drawCoarseX();
+            var coarse_y = self.v & 0x3E0 >> 5;
+            if (self.v & 0x1F == 31) {
+                //coarse x increment
+                self.v &= 0x7FE0;
+                self.v ^= 0x400;
+            } else {
+                self.v += 1;
+            }
+            if (self.v & 0x7000 != 0x7000) {
+                //fine y increment
+                self.v += 0x1000;
+            } else {
+                //coarse y increment
+                self.v &= 0x0FFF;
+                if (coarse_y == 29) {
+                    coarse_y = 0;
+                    self.v ^= 0x800;
+                } else if (coarse_y == 31) {
+                    coarse_y = 0;
+                } else {
+                    coarse_y += 1;
+                }
+                self.v = (self.v & 0xFC1F) | (coarse_y << 5);
+            }
+            self.cycles += 8;
+            self.cycle(time, 8);
         }
-        self.cycles += 8;
     }
 
     pub fn draw(self: *Ppu) void {
@@ -477,13 +484,9 @@ pub const Ppu = struct {
             self.fillSprites();
             var time: i128 = std.time.nanoTimestamp();
             for (0..240) |_| {
-                if(self.cycles == 0) {
-                    self.drawScanLine(std.time.nanoTimestamp());
-                } else {
-                    self.drawScanLine(time,)
-                }
-                //drawsprite!
+                self.drawScanLine(std.time.nanoTimestamp());
                 self.scanline += 1;
+                time = std.time.nanoTimestamp();
             }
         }
     }

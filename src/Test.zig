@@ -317,6 +317,7 @@ test "Ppu Draw Coarse X " {
     nes.Ppu.scanline = 0;
     nes.Ppu.fine_x = 7;
 
+    nes.Ppu.drawCoarseX(); //fetch the 2 tiles
     nes.Ppu.drawCoarseX();
     try std.testing.expect(nes.Ppu.bitmap[0][8] == 15);
     try std.testing.expect(nes.Ppu.bitmap[0][9] == 14);
