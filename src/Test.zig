@@ -316,6 +316,7 @@ test "Ppu Draw Coarse X " {
 
     nes.Ppu.scanline = 0;
     nes.Ppu.fine_x = 7;
+    nes.Ppu.mask = 0xA;
 
     nes.Ppu.drawCoarseX(); //fetch the 2 tiles
     nes.Ppu.drawCoarseX();
@@ -439,4 +440,40 @@ test "Fill Sprites" {
             try std.testing.expect(value == answer);
         }
     }
+}
+
+test "Get Sprite Pixel" {
+    var nes: components.Nes = .{ .Cpu = .{}, .Ppu = .{}, .Bus = .{} };
+
+    std.debug.print("Get Sprite Pixel!\n", .{});
+
+    nes.Ppu.v |= 0x100000;
+    nes.Ppu.scanline = 1;
+
+    nes.Ppu.oam[4] = 1;
+    nes.Ppu.oam[5] = 1;
+    nes.Ppu.oam[6] = 3;
+
+    nes.Ppu.pattern_table[16] = 187;
+    nes.Ppu.pattern_table[24] = 217;
+    nes.Ppu.pattern_table[17] = 111;
+    nes.Ppu.pattern_table[25] = 222;
+    nes.Ppu.pattern_table[18] = 192;
+    nes.Ppu.pattern_table[26] = 234;
+    nes.Ppu.pattern_table[19] = 139;
+    nes.Ppu.pattern_table[27] = 189;
+    nes.Ppu.pattern_table[20] = 182;
+    nes.Ppu.pattern_table[28] = 100;
+    nes.Ppu.pattern_table[21] = 44;
+    nes.Ppu.pattern_table[29] = 246;
+    nes.Ppu.pattern_table[22] = 45;
+    nes.Ppu.pattern_table[30] = 0;
+    nes.Ppu.pattern_table[23] = 85;
+    nes.Ppu.pattern_table[31] = 72;
+
+    //no rendering test
+
+    const background: u5 = 15;
+
+    nes.Ppu.drawSprites(background, 0);
 }

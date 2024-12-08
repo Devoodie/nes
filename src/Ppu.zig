@@ -228,7 +228,7 @@ pub const Ppu = struct {
         }
     }
 
-    pub fn GetBackgroundPixel(self: *Ppu) u5 {
+    pub fn GetBackgroundPixel(self: *Ppu, coarsex: u8) ?u5 {
         const fine_x_shifts = 14 - @as(u4, self.fine_x);
 
         const low_pixel = self.low_shift >> fine_x_shifts & 0b1;
@@ -236,7 +236,12 @@ pub const Ppu = struct {
 
         const pixel_data: u5 = @as(u5, @truncate(low_pixel)) | @as(u5, @truncate(high_pixel << 1)) | @as(u5, @truncate(self.attribute << 2));
         std.debug.print("You are drawing: {d}!\n From low: {d}\n From high: {d}\n Attribute: {d}\n", .{ pixel_data, self.low_shift, self.high_shift, self.attribute });
-        return pixel_data;
+
+        if (self.mask & 0x8 != 0x8 or (self.mask & 0x2 == 0x2 and coarsex == 0)) {
+            return null;
+        } else {
+            return pixel_data;
+        }
     }
 
     //pub fn spriteEvaluation(self: *Ppu) void {}
@@ -285,8 +290,10 @@ pub const Ppu = struct {
         if (self.cycles < 257) {
             //rendering occurs before
             for (self.bitmap[self.scanline][coarse_x * 8 .. coarse_x * 8 + 8], coarse_x * 8..) |*pixel, x_index| {
-                if (self.mask & 0x8 != 0x8) {
-                    pixel.* = self.GetBackgroundPixel();
+                const background_pixel: ?u5 = self.GetBackgroundPixel(coarse_x);
+
+                if (background_pixel != null) {
+                    pixel.* = background_pixel.?;
                     self.low_shift <<= 1;
                     self.high_shift <<= 1;
                     std.debug.print("{d}\n", .{pixel.*});
@@ -396,7 +403,7 @@ pub const Ppu = struct {
                 attributes = self.oam[oam_index + 3];
             }
         }
-        if (self.mask & 0x10 == 0x10 or x_coord == null) {
+        if (self.mask & 0x10 != 0x10 or x_coord == null) {
             return null;
         } else {
             return self.GetSpritePixel(x_coord.?, y_coord, attributes, self.sprites[oam_index], background, sprite0);
