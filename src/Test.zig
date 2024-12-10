@@ -2,6 +2,7 @@ const std = @import("std");
 const components = @import("Nes.zig");
 
 test "Immediate Addressing" {
+    std.debug.print("Cpu Testing!\n\n", .{});
     var nes: components.Nes = .{ .Cpu = .{}, .Ppu = .{}, .Bus = .{} };
 
     nes.init();
@@ -181,12 +182,14 @@ test "Multi-Byte Subtraction" {
     nes.Cpu.instruction = 0xE9;
 
     nes.Cpu.subtractWithCarry(std.time.nanoTimestamp());
-    std.debug.print("Difference is {d}!\n", .{nes.Cpu.accumulator});
+    std.debug.print("Difference is {d}!\n\n", .{nes.Cpu.accumulator});
     try std.testing.expect(nes.Cpu.accumulator == 255);
     try std.testing.expect(nes.Cpu.status.carry == 0);
     try std.testing.expect(nes.Cpu.status.negative == 1);
     try std.testing.expect(nes.Cpu.status.zero == 0);
     try std.testing.expect(nes.Cpu.status.overflow == 1);
+
+    std.debug.print("Ppu Testing!\n\n", .{});
 }
 
 test "Read/Write PPU" {
@@ -447,14 +450,14 @@ test "Get Sprite Pixel" {
 
     std.debug.print("Get Sprite Pixel!\n", .{});
 
-    nes.Ppu.v |= 0x100000;
-    nes.Ppu.scanline = 1;
+    nes.Ppu.v |= 0b100000000;
+    nes.Ppu.scanline = 8;
 
-    nes.Ppu.oam[4] = 1;
+    nes.Ppu.oam[4] = 8;
     nes.Ppu.oam[5] = 1;
-    nes.Ppu.oam[6] = 3;
+    nes.Ppu.oam[6] = 0x23;
+    nes.Ppu.oam[7] = 0;
 
-    nes.Ppu.pattern_table[16] = 187;
     nes.Ppu.pattern_table[24] = 217;
     nes.Ppu.pattern_table[17] = 111;
     nes.Ppu.pattern_table[25] = 222;
@@ -471,9 +474,36 @@ test "Get Sprite Pixel" {
     nes.Ppu.pattern_table[23] = 85;
     nes.Ppu.pattern_table[31] = 72;
 
+    //sprite evaluation test
+    nes.Ppu.spriteEvaluation();
+
+    try std.testing.expect(nes.Ppu.secondary_oam[0].? == 1);
+    std.debug.print("Sprite Evaluation Test: GOOD!\n", .{});
+
     //no rendering test
 
     const background: u5 = 15;
 
-    nes.Ppu.drawSprites(background, 0);
+    var sprite: ?u5 = nes.Ppu.drawSprites(0, background);
+    std.debug.print("No Sprite Rendering Test: GOOD!\n", .{});
+
+    try std.testing.expect(sprite == null);
+
+    //background priority
+    nes.Ppu.mask |= 0x14;
+
+    sprite = nes.Ppu.drawSprites(0, background);
+
+    try std.testing.expect(sprite.? == background);
+
+    std.debug.print("Background Priority Test: GOOD!\n", .{});
+
+    //Draw Sprite
+    nes.Ppu.oam[6] = 3;
+
+    sprite = nes.Ppu.drawSprites(0, background);
+
+    std.debug.print("Sprite is: {d}!\n", .{sprite.?});
+    try std.testing.expect(sprite.? == 31);
+    std.debug.print("Small Sprite Drawing: GOOD!\n", .{});
 }

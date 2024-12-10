@@ -28,7 +28,7 @@ pub const Cpu = struct {
         const wait_time: i128 = 559 * @as(i128, @intCast(cycles));
         const goal_time = wait_time + prev_time;
         self.odd_cycle +%= @intCast(cycles % 2);
-        std.debug.print("The cycles are {d}!\n", .{self.odd_cycle});
+        //        std.debug.print("The cycles are {d}!\n", .{self.odd_cycle});
 
         while (std.time.nanoTimestamp() <= goal_time) {
             continue;

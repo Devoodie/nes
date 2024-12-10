@@ -18,7 +18,7 @@ pub const Ppu = struct {
     write_reg: u1 = 0,
     nametable_mirroring: u1 = 0,
     oam: [256]u8 = undefined,
-    secondary_oam: [8]u6 = undefined,
+    secondary_oam: [8]?u6 = undefined,
     t: u16 = 0,
     //suspected padding
     fine_x: u3 = 0,
@@ -235,7 +235,7 @@ pub const Ppu = struct {
         const high_pixel = self.high_shift >> fine_x_shifts & 0b1;
 
         const pixel_data: u5 = @as(u5, @truncate(low_pixel)) | @as(u5, @truncate(high_pixel << 1)) | @as(u5, @truncate(self.attribute << 2));
-        std.debug.print("You are drawing: {d}!\n From low: {d}\n From high: {d}\n Attribute: {d}\n", .{ pixel_data, self.low_shift, self.high_shift, self.attribute });
+        //std.debug.print("You are drawing: {d}!\n From low: {d}\n From high: {d}\n Attribute: {d}\n", .{ pixel_data, self.low_shift, self.high_shift, self.attribute });
 
         if (self.mask & 0x8 != 0x8 or (self.mask & 0x2 == 0x2 and coarsex == 0)) {
             return null;
@@ -244,7 +244,6 @@ pub const Ppu = struct {
         }
     }
 
-    //pub fn spriteEvaluation(self: *Ppu) void {}
     pub fn drawCoarseX(self: *Ppu) void {
         //get nametable tile
         //get attribute tile
@@ -260,7 +259,6 @@ pub const Ppu = struct {
 
         const nametable_data = self.GetPpuBus();
         self.v = 0x23C0 | (self.t & 0xC00) | ((self.t >> 4) & 0x38) | ((self.t >> 2) & 0x07);
-        std.debug.print("Attribtue Address: 0x{X}\n", .{self.v});
         const attribute_data = self.GetPpuBus();
 
         self.v = self.t;
@@ -276,7 +274,7 @@ pub const Ppu = struct {
         // extract attribute shifts
         const attr_shifts = @as(u3, @truncate(coarse_x_bit1 * 2 + coarse_y_bit1 * 4));
         self.attribute = attribute_data >> attr_shifts;
-        std.debug.print("Attribute Data: {d}, Attribute shifts: {d}\n", .{ attribute_data, attr_shifts });
+        // std.debug.print("Attribute Data: {d}, Attribute shifts: {d}\n", .{ attribute_data, attr_shifts });
         self.attribute &= 0b11;
 
         //pattern fetch
@@ -296,7 +294,6 @@ pub const Ppu = struct {
                     pixel.* = background_pixel.?;
                     self.low_shift <<= 1;
                     self.high_shift <<= 1;
-                    std.debug.print("{d}\n", .{pixel.*});
                 }
 
                 const sprite_pixel: ?u5 = self.drawSprites(@truncate(x_index), pixel.*);
@@ -315,15 +312,23 @@ pub const Ppu = struct {
     }
 
     pub fn spriteEvaluation(self: *Ppu) void {
-        var render_index = 0;
+        var render_index: u8 = 0;
+
+        //clear secondary oam for next scanline
+        for (&self.secondary_oam) |*index| {
+            index.* = null;
+        }
+
         for (0..64) |index| render_buffer: {
             const is_sixteen = self.control >> 5 & 0b1;
-            const y = index * 4;
-            if (self.scanline >= y and self.scanline <= y + 8 + is_sixteen * 8) {
+            const y = self.oam[@as(u8, @truncate(index)) * 4];
+            if (self.scanline >= y and self.scanline < y + 8 + (is_sixteen * 8)) {
                 if (render_index > 7) {
+                    //sprite overflow
                     break :render_buffer;
                 } else {
-                    self.secondary_oam[render_index] == index;
+                    std.debug.print("Entered Evaluation index: {d}!\n", .{index});
+                    self.secondary_oam[render_index] = @truncate(index);
                     render_index += 1;
                 }
             }
@@ -387,34 +392,42 @@ pub const Ppu = struct {
     }
 
     pub fn drawSprites(self: *Ppu, coarsex: u8, background: u5) ?u5 {
-        var oam_index: u8 = 0;
+        var oam_index: ?u6 = 0;
         var x_buffer: u8 = 0;
         var x_coord: ?u8 = null;
         var y_coord: u8 = 0;
         var attributes: u8 = 0;
         var sprite0: u8 = 0;
+        if (self.mask & 0x10 != 0x10) return null;
+
         for (0..8) |iterations| {
             oam_index = self.secondary_oam[7 - iterations];
-            x_buffer = self.oam[oam_index + 2];
+            if (oam_index == null) {
+                continue;
+            }
+            oam_index.? *= 4;
+            x_buffer = self.oam[oam_index.? + 3];
             if (coarsex < x_buffer + 8 and coarsex >= x_buffer) {
+                std.debug.print("Entered TRUE!\n", .{});
                 x_coord = coarsex - x_buffer;
                 sprite0 = 7 - @as(u8, @intCast(iterations));
-                y_coord = @as(u8, @truncate(self.scanline)) - self.oam[oam_index];
-                attributes = self.oam[oam_index + 3];
+                y_coord = @as(u8, @truncate(self.scanline)) - self.oam[oam_index.?];
+                attributes = self.oam[oam_index.? + 2];
             }
         }
-        if (self.mask & 0x10 != 0x10 or x_coord == null) {
+
+        if (x_coord == null or (coarsex == 0 and self.mask & 0x4 != 0x4)) {
             return null;
         } else {
-            return self.GetSpritePixel(x_coord.?, y_coord, attributes, self.sprites[oam_index], background, sprite0);
+            std.debug.print("This Has to be true!\n", .{});
+            return self.GetSpritePixel(x_coord.?, y_coord, attributes, self.sprites[oam_index.?], background, sprite0);
         }
     }
 
     pub fn GetSpritePixel(self: *Ppu, x: u8, y: u8, attributes: u8, sprite: Sprite, background: u5, sprite0: u8) u5 {
         var bitmap_x: u8 = x;
         var bitmap_y: u8 = y;
-        if (attributes & 0x20 == 0x20) {
-            //background has priority
+        if (attributes & 0x20 == 0x20) { //background has priority return background;
             return background;
         } else if (self.control & 0x8 == 0x8) {
             if (attributes & 0x80 == 0x80) {
@@ -435,7 +448,7 @@ pub const Ppu = struct {
             if (attributes & 0x40 == 0x40) {
                 bitmap_y = ~y & 0b111;
             }
-            if (x > 7 and sprite.large[bitmap_y][bitmap_x] & 0b11 < 0 and background & 0b11 < 0 and sprite0 == 0) {
+            if (x > 7 and sprite.small[bitmap_y][bitmap_x] & 0b11 < 0 and background & 0b11 < 0 and sprite0 == 0) {
                 self.status |= 0x40;
             }
             return sprite.small[bitmap_y][bitmap_x];
