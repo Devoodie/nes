@@ -234,7 +234,7 @@ test "Read/Write PPU" {
     nes.Cpu.pc = 0;
     nes.Cpu.instruction = 0x8D;
     nes.Cpu.storeAccumulator(std.time.nanoTimestamp());
-    std.debug.print("{d} at Cpu address 0x2002!\n", .{nes.Ppu.nametable[2]});
+    std.debug.print("{d} at Cpu address 0x2002!\n\n", .{nes.Ppu.nametable[2]});
     try std.testing.expect(nes.Ppu.nametable[2] == 240);
 }
 
@@ -267,13 +267,13 @@ test "Read/Write Scroll" {
     nes.Cpu.memory[2] = 0x05;
     nes.Cpu.storeAccumulator(std.time.nanoTimestamp());
 
-    std.debug.print("Scroll is: {X}!\n", .{nes.Ppu.v});
+    std.debug.print("Scroll is: {X}!\n\n", .{nes.Ppu.v});
 
     try std.testing.expect(nes.Ppu.t == 0b110100101101111);
 }
 
 test "Ppu Direct Memory Access" {
-    std.debug.print("PPU Direct Memory Access!\n", .{});
+    std.debug.print("PPU Direct Memory Access!\n\n", .{});
     var nes: components.Nes = .{ .Cpu = .{}, .Ppu = .{}, .Bus = .{} };
 
     //dma from the second page (zeropage)
@@ -300,7 +300,7 @@ test "Ppu Direct Memory Access" {
 }
 
 test "Ppu Draw Coarse X " {
-    std.debug.print("Draw Coarse X!\n", .{});
+    std.debug.print("Draw Coarse X!\n\n", .{});
     var nes: components.Nes = .{ .Cpu = .{}, .Ppu = .{}, .Bus = .{} };
 
     //dma from the second page (zeropage)
@@ -379,7 +379,7 @@ test "Fill Sprites" {
         }
     }
 
-    std.debug.print("Fill Sprites Long!\n", .{});
+    std.debug.print("Fill Sprites Long!\n\n", .{});
 
     nes.Ppu.pattern_table[0 + 0x1000] = 187;
     nes.Ppu.pattern_table[8 + 0x1000] = 217;
@@ -458,6 +458,23 @@ test "Get Sprite Pixel" {
     nes.Ppu.oam[6] = 0x23;
     nes.Ppu.oam[7] = 0;
 
+    nes.Ppu.pattern_table[0] = 187;
+    nes.Ppu.pattern_table[8] = 217;
+    nes.Ppu.pattern_table[1] = 111;
+    nes.Ppu.pattern_table[9] = 222;
+    nes.Ppu.pattern_table[2] = 192;
+    nes.Ppu.pattern_table[10] = 234;
+    nes.Ppu.pattern_table[3] = 139;
+    nes.Ppu.pattern_table[11] = 189;
+    nes.Ppu.pattern_table[4] = 182;
+    nes.Ppu.pattern_table[12] = 100;
+    nes.Ppu.pattern_table[5] = 44;
+    nes.Ppu.pattern_table[13] = 246;
+    nes.Ppu.pattern_table[6] = 45;
+    nes.Ppu.pattern_table[14] = 0;
+    nes.Ppu.pattern_table[7] = 85;
+    nes.Ppu.pattern_table[15] = 72;
+    nes.Ppu.pattern_table[16] = 187;
     nes.Ppu.pattern_table[24] = 217;
     nes.Ppu.pattern_table[17] = 111;
     nes.Ppu.pattern_table[25] = 222;
@@ -473,6 +490,8 @@ test "Get Sprite Pixel" {
     nes.Ppu.pattern_table[30] = 0;
     nes.Ppu.pattern_table[23] = 85;
     nes.Ppu.pattern_table[31] = 72;
+
+    nes.Ppu.fillSprites();
 
     //sprite evaluation test
     nes.Ppu.spriteEvaluation();
@@ -496,14 +515,68 @@ test "Get Sprite Pixel" {
 
     try std.testing.expect(sprite.? == background);
 
-    std.debug.print("Background Priority Test: GOOD!\n", .{});
+    std.debug.print("Background Priority Test: GOOD!\n\n", .{});
 
     //Draw Sprite
     nes.Ppu.oam[6] = 3;
 
     sprite = nes.Ppu.drawSprites(0, background);
 
-    std.debug.print("Sprite is: {d}!\n", .{sprite.?});
     try std.testing.expect(sprite.? == 31);
-    std.debug.print("Small Sprite Drawing: GOOD!\n", .{});
+    std.debug.print("Small Sprite Drawing: GOOD!\n\n", .{});
+
+    //Draw Sprite Horizontal Flipped
+    nes.Ppu.oam[6] = 0x43;
+
+    sprite = 0;
+
+    sprite = nes.Ppu.drawSprites(0, background);
+
+    try std.testing.expect(sprite.? == 31);
+    std.debug.print("Small Sprite Horizontal Flipped: GOOD!\n\n", .{});
+
+    //Draw Sprite Vertical Flipped
+    nes.Ppu.oam[6] = 0xC3;
+
+    sprite = 0;
+
+    sprite = nes.Ppu.drawSprites(0, background);
+
+    try std.testing.expect(sprite.? == 29);
+    std.debug.print("Small Sprite Vertical Flipped: GOOD!\n\n", .{});
+
+    //Draw Sprite Large
+    nes.Ppu.control = 0x20;
+
+    nes.Ppu.oam[5] = 0;
+    nes.Ppu.oam[6] = 3;
+
+    nes.Ppu.fillSprites();
+
+    sprite = 0;
+
+    sprite = nes.Ppu.drawSprites(0, background);
+
+    try std.testing.expect(sprite.? == 31);
+    std.debug.print("Large Sprite Drawing: GOOD!\n\n", .{});
+
+    //Draw Large Sprite Horizontal Flipped
+    nes.Ppu.oam[6] = 0x43;
+
+    sprite = 0;
+
+    sprite = nes.Ppu.drawSprites(0, background);
+
+    try std.testing.expect(sprite.? == 31);
+    std.debug.print("Large Sprite Horizontal Flipped: Good!\n\n", .{});
+
+    //Draw Large Sprite Verticle Flipped
+    nes.Ppu.oam[6] = 0xC3;
+
+    sprite = 0;
+
+    sprite = nes.Ppu.drawSprites(0, background);
+
+    try std.testing.expect(sprite.? == 28);
+    std.debug.print("Large Sprite Verticle Flipped: Good!\n\n", .{});
 }

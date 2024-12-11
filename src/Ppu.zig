@@ -398,17 +398,21 @@ pub const Ppu = struct {
         var y_coord: u8 = 0;
         var attributes: u8 = 0;
         var sprite0: u8 = 0;
+        var sprite_index: u8 = 0;
         if (self.mask & 0x10 != 0x10) return null;
 
         for (0..8) |iterations| {
             oam_index = self.secondary_oam[7 - iterations];
+
             if (oam_index == null) {
                 continue;
             }
+
             oam_index.? *= 4;
+            sprite_index = self.secondary_oam[7 - iterations].?;
             x_buffer = self.oam[oam_index.? + 3];
+
             if (coarsex < x_buffer + 8 and coarsex >= x_buffer) {
-                std.debug.print("Entered TRUE!\n", .{});
                 x_coord = coarsex - x_buffer;
                 sprite0 = 7 - @as(u8, @intCast(iterations));
                 y_coord = @as(u8, @truncate(self.scanline)) - self.oam[oam_index.?];
@@ -419,8 +423,7 @@ pub const Ppu = struct {
         if (x_coord == null or (coarsex == 0 and self.mask & 0x4 != 0x4)) {
             return null;
         } else {
-            std.debug.print("This Has to be true!\n", .{});
-            return self.GetSpritePixel(x_coord.?, y_coord, attributes, self.sprites[oam_index.?], background, sprite0);
+            return self.GetSpritePixel(x_coord.?, y_coord, attributes, self.sprites[sprite_index], background, sprite0);
         }
     }
 
@@ -429,28 +432,30 @@ pub const Ppu = struct {
         var bitmap_y: u8 = y;
         if (attributes & 0x20 == 0x20) { //background has priority return background;
             return background;
-        } else if (self.control & 0x8 == 0x8) {
+        } else if (self.control & 0x20 == 0x20) {
             if (attributes & 0x80 == 0x80) {
-                bitmap_x = ~x & 0b111;
+                bitmap_y = ~bitmap_y & 0b1111;
+                bitmap_x = ~bitmap_x & 0b111;
             }
             if (attributes & 0x40 == 0x40) {
-                bitmap_y = ~y & 0b1111;
-                bitmap_x = ~x & 0b111;
+                bitmap_x = ~bitmap_x & 0b111;
             }
             if (x > 7 and sprite.large[bitmap_y][bitmap_x] & 0b11 < 0 and background & 0b11 < 0 and sprite0 == 0) {
                 self.status |= 0x40;
             }
+            std.debug.print("X Coord: {d}, Y Coord: {d}\n", .{ bitmap_x, bitmap_y });
             return sprite.large[bitmap_y][bitmap_x];
         } else {
             if (attributes & 0x80 == 0x80) {
-                bitmap_x = ~x & 0b111;
+                bitmap_y = ~bitmap_y & 0b111;
             }
             if (attributes & 0x40 == 0x40) {
-                bitmap_y = ~y & 0b111;
+                bitmap_x = ~bitmap_x & 0b111;
             }
             if (x > 7 and sprite.small[bitmap_y][bitmap_x] & 0b11 < 0 and background & 0b11 < 0 and sprite0 == 0) {
                 self.status |= 0x40;
             }
+            std.debug.print("X Coord: {d}, Y Coord: {d}\n", .{ bitmap_x, bitmap_y });
             return sprite.small[bitmap_y][bitmap_x];
         }
     }
