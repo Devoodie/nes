@@ -294,6 +294,9 @@ pub const Ppu = struct {
                     pixel.* = background_pixel.?;
                     self.low_shift <<= 1;
                     self.high_shift <<= 1;
+                } else {
+                    //return backdrop color (black placeholder)
+                    pixel.* = 0x1F;
                 }
 
                 const sprite_pixel: ?u5 = self.drawSprites(@truncate(x_index), pixel.*);

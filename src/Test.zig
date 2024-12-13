@@ -450,7 +450,7 @@ test "Get Sprite Pixel" {
 
     std.debug.print("Get Sprite Pixel!\n", .{});
 
-    nes.Ppu.v |= 0b100000000;
+    nes.Ppu.v |= 0b000100000;
     nes.Ppu.scanline = 8;
 
     nes.Ppu.oam[4] = 8;
@@ -579,4 +579,35 @@ test "Get Sprite Pixel" {
 
     try std.testing.expect(sprite.? == 28);
     std.debug.print("Large Sprite Verticle Flipped: Good!\n\n", .{});
+}
+
+test "Draw Scanline" {
+    var nes: components.Nes = .{ .Cpu = .{}, .Ppu = .{}, .Bus = .{} };
+
+    std.debug.print("Draw Scanline!\n", .{});
+
+    nes.Ppu.v |= 0b1000000000000;
+    nes.Ppu.scanline = 1;
+
+    nes.Ppu.oam[4] = 8;
+    nes.Ppu.oam[5] = 1;
+    nes.Ppu.oam[6] = 0x23;
+    nes.Ppu.oam[7] = 0;
+
+    nes.Ppu.pattern_table[0] = 187;
+    nes.Ppu.pattern_table[8] = 217;
+    nes.Ppu.pattern_table[1] = 111;
+    nes.Ppu.pattern_table[9] = 222;
+    nes.Ppu.pattern_table[2] = 192;
+    nes.Ppu.pattern_table[10] = 234;
+    nes.Ppu.pattern_table[3] = 139;
+    nes.Ppu.pattern_table[11] = 189;
+    nes.Ppu.pattern_table[4] = 182;
+    nes.Ppu.pattern_table[12] = 100;
+    nes.Ppu.pattern_table[5] = 44;
+    nes.Ppu.pattern_table[13] = 246;
+    nes.Ppu.pattern_table[6] = 45;
+    nes.Ppu.pattern_table[14] = 0;
+    nes.Ppu.pattern_table[7] = 85;
+    nes.Ppu.pattern_table[15] = 72;
 }
