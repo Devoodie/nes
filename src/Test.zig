@@ -320,6 +320,7 @@ test "Ppu Draw Coarse X " {
     nes.Ppu.scanline = 0;
     nes.Ppu.fine_x = 7;
     nes.Ppu.mask = 0xA;
+    nes.Ppu.x_pos = 8;
 
     nes.Ppu.drawCoarseX(); //fetch the 2 tiles
     nes.Ppu.drawCoarseX();
@@ -586,28 +587,32 @@ test "Draw Scanline" {
 
     std.debug.print("Draw Scanline!\n", .{});
 
-    nes.Ppu.v |= 0b1000000000000;
-    nes.Ppu.scanline = 1;
+    //we're on scanline 12 loading the last row of the tile
+    nes.Ppu.v = 0x700C;
+    nes.Ppu.scanline = 7;
 
-    nes.Ppu.oam[4] = 8;
-    nes.Ppu.oam[5] = 1;
+    nes.Ppu.oam[4] = 7;
+    nes.Ppu.oam[5] = 0;
     nes.Ppu.oam[6] = 0x23;
     nes.Ppu.oam[7] = 0;
 
-    nes.Ppu.pattern_table[0] = 187;
-    nes.Ppu.pattern_table[8] = 217;
-    nes.Ppu.pattern_table[1] = 111;
-    nes.Ppu.pattern_table[9] = 222;
-    nes.Ppu.pattern_table[2] = 192;
-    nes.Ppu.pattern_table[10] = 234;
-    nes.Ppu.pattern_table[3] = 139;
-    nes.Ppu.pattern_table[11] = 189;
-    nes.Ppu.pattern_table[4] = 182;
-    nes.Ppu.pattern_table[12] = 100;
-    nes.Ppu.pattern_table[5] = 44;
-    nes.Ppu.pattern_table[13] = 246;
-    nes.Ppu.pattern_table[6] = 45;
-    nes.Ppu.pattern_table[14] = 0;
-    nes.Ppu.pattern_table[7] = 85;
-    nes.Ppu.pattern_table[15] = 72;
+    for (12..44) |index| {
+        nes.Ppu.nametable[index] = index - 11;
+    }
+
+    //background tiles should be = to 255
+    for (1..33) |tile| {
+        // fine y = 7 and scanline = 8; name table points to this tile first
+        nes.Ppu.pattern_table[tile * 16 + 7] = 0xFF;
+        nes.Ppu.pattern_table[tile * 16 + 15] = 0xFF;
+    }
+
+    // first two tiles
+    nes.Ppu.low_shift = 192 << 8;
+    nes.Ppu.high_shift = 148 << 8;
+
+    nes.Ppu.low_shift |= 234;
+    nes.Ppu.high_shift |= 214;
+
+    //fill sprites
 }

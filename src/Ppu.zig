@@ -27,6 +27,7 @@ pub const Ppu = struct {
     bitmap: [240][256]u5 = undefined,
     pallet_memory: [32]u8 = undefined,
     scanline: u12 = 261,
+    x_pos: u8 = 0,
     high_shift: u16 = 0,
     low_shift: u16 = 0,
     sprite_shift: u8 = 0,
@@ -228,92 +229,6 @@ pub const Ppu = struct {
         }
     }
 
-    pub fn GetBackgroundPixel(self: *Ppu, coarsex: u8) ?u5 {
-        const fine_x_shifts = 14 - @as(u4, self.fine_x);
-
-        const low_pixel = self.low_shift >> fine_x_shifts & 0b1;
-        const high_pixel = self.high_shift >> fine_x_shifts & 0b1;
-
-        const pixel_data: u5 = @as(u5, @truncate(low_pixel)) | @as(u5, @truncate(high_pixel << 1)) | @as(u5, @truncate(self.attribute << 2));
-        //std.debug.print("You are drawing: {d}!\n From low: {d}\n From high: {d}\n Attribute: {d}\n", .{ pixel_data, self.low_shift, self.high_shift, self.attribute });
-
-        if (self.mask & 0x8 != 0x8 or (self.mask & 0x2 == 0x2 and coarsex == 0)) {
-            return null;
-        } else {
-            return pixel_data;
-        }
-    }
-
-    pub fn drawCoarseX(self: *Ppu) void {
-        //get nametable tile
-        //get attribute tile
-        //get pattern table low
-        //get pattern table high
-        //draw!
-        if (self.cycles == 0) {
-            return;
-        }
-        self.t = self.v;
-        self.v = 0x2000;
-        self.v |= self.t & 0x0FFF;
-
-        const nametable_data = self.GetPpuBus();
-        self.v = 0x23C0 | (self.t & 0xC00) | ((self.t >> 4) & 0x38) | ((self.t >> 2) & 0x07);
-        const attribute_data = self.GetPpuBus();
-
-        self.v = self.t;
-
-        //nametable fetch
-        //attribute fetch and shift register placement
-
-        const coarse_x = @as(u8, @truncate(self.v & 0b11111));
-        const coarse_y = @as(u8, @truncate(self.v & 0b1111100000 >> 4));
-        const coarse_x_bit1 = coarse_x & 0b1;
-        const coarse_y_bit1 = coarse_y & 0b1;
-
-        // extract attribute shifts
-        const attr_shifts = @as(u3, @truncate(coarse_x_bit1 * 2 + coarse_y_bit1 * 4));
-        self.attribute = attribute_data >> attr_shifts;
-        // std.debug.print("Attribute Data: {d}, Attribute shifts: {d}\n", .{ attribute_data, attr_shifts });
-        self.attribute &= 0b11;
-
-        //pattern fetch
-        var pattern_address: u16 = nametable_data;
-        pattern_address <<= 3;
-        const right_table: u16 = self.control & 0b00010000;
-
-        pattern_address |= right_table << 8;
-        pattern_address |= self.v >> 12;
-
-        if (self.cycles < 257) {
-            //rendering occurs before
-            for (self.bitmap[self.scanline][coarse_x * 8 .. coarse_x * 8 + 8], coarse_x * 8..) |*pixel, x_index| {
-                const background_pixel: ?u5 = self.GetBackgroundPixel(coarse_x);
-
-                if (background_pixel != null) {
-                    pixel.* = background_pixel.?;
-                    self.low_shift <<= 1;
-                    self.high_shift <<= 1;
-                } else {
-                    //return backdrop color (black placeholder)
-                    pixel.* = 0x1F;
-                }
-
-                const sprite_pixel: ?u5 = self.drawSprites(@truncate(x_index), pixel.*);
-
-                if (sprite_pixel != null) {
-                    pixel.* = sprite_pixel.?;
-                }
-            }
-        } else {
-            self.low_shift <<= 8;
-            self.high_shift <<= 8;
-        }
-        //placement into shift registers occurs after
-        self.low_shift |= self.pattern_table[pattern_address];
-        self.high_shift |= self.pattern_table[pattern_address + 0b1000];
-    }
-
     pub fn spriteEvaluation(self: *Ppu) void {
         var render_index: u8 = 0;
 
@@ -462,6 +377,91 @@ pub const Ppu = struct {
             return sprite.small[bitmap_y][bitmap_x];
         }
     }
+    pub fn drawCoarseX(self: *Ppu) void {
+        //get nametable tile
+        //get attribute tile
+        //get pattern table low
+        //get pattern table high
+        //draw!
+        if (self.cycles == 0) {
+            return;
+        }
+        self.t = self.v;
+        self.v = 0x2000;
+        self.v |= self.t & 0x0FFF;
+
+        const nametable_data = self.GetPpuBus();
+        self.v = 0x23C0 | (self.t & 0xC00) | ((self.t >> 4) & 0x38) | ((self.t >> 2) & 0x07);
+        const attribute_data = self.GetPpuBus();
+
+        self.v = self.t;
+
+        //nametable fetch
+        //attribute fetch and shift register placement
+
+        const coarse_x = @as(u8, @truncate(self.v & 0b11111));
+        const coarse_y = @as(u8, @truncate(self.v & 0b1111100000 >> 4));
+        const coarse_x_bit1 = coarse_x & 0b1;
+        const coarse_y_bit1 = coarse_y & 0b1;
+
+        // extract attribute shifts
+        const attr_shifts = @as(u3, @truncate(coarse_x_bit1 * 2 + coarse_y_bit1 * 4));
+        self.attribute = attribute_data >> attr_shifts;
+        // std.debug.print("Attribute Data: {d}, Attribute shifts: {d}\n", .{ attribute_data, attr_shifts });
+        self.attribute &= 0b11;
+
+        //pattern fetch
+        var pattern_address: u16 = nametable_data;
+        pattern_address <<= 3;
+        const right_table: u16 = self.control & 0b00010000;
+
+        pattern_address |= right_table << 8;
+        pattern_address |= self.v >> 12;
+
+        if (self.cycles < 257) {
+            //rendering occurs before
+            for (self.bitmap[self.scanline][self.x_pos .. self.x_pos + 8], self.x_pos..) |*pixel, x_index| {
+                const background_pixel: ?u5 = self.GetBackgroundPixel(coarse_x);
+
+                if (background_pixel != null) {
+                    pixel.* = background_pixel.?;
+                    self.low_shift <<= 1;
+                    self.high_shift <<= 1;
+                } else {
+                    //return backdrop color (black placeholder)
+                    pixel.* = 0x1F;
+                }
+
+                const sprite_pixel: ?u5 = self.drawSprites(@truncate(x_index), pixel.*);
+
+                if (sprite_pixel != null) {
+                    pixel.* = sprite_pixel.?;
+                }
+            }
+        } else {
+            self.low_shift <<= 8;
+            self.high_shift <<= 8;
+        }
+        //placement into shift registers occurs after
+        self.low_shift |= self.pattern_table[pattern_address];
+        self.high_shift |= self.pattern_table[pattern_address + 0b1000];
+    }
+
+    pub fn GetBackgroundPixel(self: *Ppu, coarsex: u8) ?u5 {
+        const fine_x_shifts = 14 - @as(u4, self.fine_x);
+
+        const low_pixel = self.low_shift >> fine_x_shifts & 0b1;
+        const high_pixel = self.high_shift >> fine_x_shifts & 0b1;
+
+        const pixel_data: u5 = @as(u5, @truncate(low_pixel)) | @as(u5, @truncate(high_pixel << 1)) | @as(u5, @truncate(self.attribute << 2));
+        //std.debug.print("You are drawing: {d}!\n From low: {d}\n From high: {d}\n Attribute: {d}\n", .{ pixel_data, self.low_shift, self.high_shift, self.attribute });
+
+        if (self.mask & 0x8 != 0x8 or (self.mask & 0x2 == 0x2 and coarsex == 0)) {
+            return null;
+        } else {
+            return pixel_data;
+        }
+    }
 
     pub fn drawScanLine(self: *Ppu, time: i128) void {
         //cycle after this function in the main loop
@@ -499,9 +499,11 @@ pub const Ppu = struct {
                 }
                 self.v = (self.v & 0xFC1F) | (coarse_y << 5);
             }
+            self.x_pos += 8;
             self.cycles += 8;
             self.cycle(time, 8);
         }
+        self.x_pos = 0;
     }
 
     pub fn draw(self: *Ppu) void {
