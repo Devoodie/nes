@@ -221,7 +221,7 @@ pub const Ppu = struct {
     }
 
     pub fn cycle(prev_time: i128, count: u8) void {
-        const wait_time: i128 = 186 * count;
+        const wait_time: i128 = 186 * @as(i128, count);
         const goal_time = wait_time + prev_time;
 
         while (std.time.nanoTimestamp() <= goal_time) {
@@ -418,9 +418,9 @@ pub const Ppu = struct {
         pattern_address |= right_table << 8;
         pattern_address |= self.v >> 12;
 
-        if (self.cycles < 257) {
+        if (self.cycles <= 249) {
             //rendering occurs before
-            for (self.bitmap[self.scanline][self.x_pos .. self.x_pos + 8], self.x_pos..) |*pixel, x_index| {
+            for (self.bitmap[self.scanline][self.x_pos .. @as(u10, self.x_pos) + 8], self.x_pos..) |*pixel, x_index| {
                 const background_pixel: ?u5 = self.GetBackgroundPixel(coarse_x);
 
                 if (background_pixel != null) {
@@ -438,6 +438,7 @@ pub const Ppu = struct {
                     pixel.* = sprite_pixel.?;
                 }
             }
+            self.x_pos += 8;
         } else {
             self.low_shift <<= 8;
             self.high_shift <<= 8;
@@ -499,8 +500,8 @@ pub const Ppu = struct {
                 }
                 self.v = (self.v & 0xFC1F) | (coarse_y << 5);
             }
-            self.x_pos += 8;
             self.cycles += 8;
+            std.debug.print("Cycles: {d}!, X_Position: {d}\n", .{ self.cycles, self.x_pos });
             cycle(time, 8);
         }
         self.x_pos = 0;
