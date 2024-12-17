@@ -260,10 +260,10 @@ pub const Ppu = struct {
         }
     }
 
-    pub fn GetSpriteBitmap(self: *Ppu, tile_number: u8, attributes: u8, large: u8) Sprite {
+    pub fn GetSpriteBitmap(self: *Ppu, tile_number: u16, attributes: u8, large: u8) Sprite {
         var small_buff: u8 = 0;
         var large_buff: u8 = 0;
-        var pattern_index: u8 = 0;
+        var pattern_index: u16 = 0;
         var pixel_data: u5 = undefined;
         var low_pixel: u8 = 0;
         var high_pixel: u8 = 0;
@@ -471,7 +471,7 @@ pub const Ppu = struct {
         for (0..33) |_| {
             if (self.cycles == 0) {
                 self.cycles += 1;
-                self.cycle(time, 1);
+                cycle(time, 1);
                 continue;
             }
             self.drawCoarseX();
@@ -501,7 +501,7 @@ pub const Ppu = struct {
             }
             self.x_pos += 8;
             self.cycles += 8;
-            self.cycle(time, 8);
+            cycle(time, 8);
         }
         self.x_pos = 0;
     }

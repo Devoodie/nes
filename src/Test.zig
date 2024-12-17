@@ -590,14 +590,56 @@ test "Draw Scanline" {
     //we're on scanline 12 loading the last row of the tile
     nes.Ppu.v = 0x700C;
     nes.Ppu.scanline = 7;
+    nes.Ppu.mask = 0x1E;
+
+    nes.Ppu.oam[0] = 7;
+    nes.Ppu.oam[1] = 63;
+    nes.Ppu.oam[2] = 3;
+    nes.Ppu.oam[3] = 4;
 
     nes.Ppu.oam[4] = 7;
-    nes.Ppu.oam[5] = 0;
-    nes.Ppu.oam[6] = 0x23;
+    nes.Ppu.oam[5] = 64;
+    nes.Ppu.oam[6] = 3;
     nes.Ppu.oam[7] = 0;
 
+    //sprite 0's pattern data
+    nes.Ppu.pattern_table[1008] = 187;
+    nes.Ppu.pattern_table[1016] = 217;
+    nes.Ppu.pattern_table[1009] = 111;
+    nes.Ppu.pattern_table[1017] = 222;
+    nes.Ppu.pattern_table[1010] = 192;
+    nes.Ppu.pattern_table[1018] = 234;
+    nes.Ppu.pattern_table[1011] = 139;
+    nes.Ppu.pattern_table[1019] = 189;
+    nes.Ppu.pattern_table[1012] = 182;
+    nes.Ppu.pattern_table[1020] = 100;
+    nes.Ppu.pattern_table[1013] = 44;
+    nes.Ppu.pattern_table[1021] = 246;
+    nes.Ppu.pattern_table[1014] = 45;
+    nes.Ppu.pattern_table[1022] = 0;
+    nes.Ppu.pattern_table[1015] = 85;
+    nes.Ppu.pattern_table[1023] = 72;
+
+    //next sprites pattern data
+    nes.Ppu.pattern_table[1024] = 187;
+    nes.Ppu.pattern_table[1032] = 217;
+    nes.Ppu.pattern_table[1025] = 111;
+    nes.Ppu.pattern_table[1033] = 222;
+    nes.Ppu.pattern_table[1026] = 192;
+    nes.Ppu.pattern_table[1034] = 234;
+    nes.Ppu.pattern_table[1027] = 139;
+    nes.Ppu.pattern_table[1035] = 189;
+    nes.Ppu.pattern_table[1028] = 182;
+    nes.Ppu.pattern_table[1036] = 100;
+    nes.Ppu.pattern_table[1029] = 44;
+    nes.Ppu.pattern_table[1037] = 246;
+    nes.Ppu.pattern_table[1030] = 45;
+    nes.Ppu.pattern_table[1038] = 0;
+    nes.Ppu.pattern_table[1031] = 85;
+    nes.Ppu.pattern_table[1039] = 72;
+
     for (12..44) |index| {
-        nes.Ppu.nametable[index] = index - 11;
+        nes.Ppu.nametable[index] = @as(u8, @truncate(index)) - 11;
     }
 
     //background tiles should be = to 255
@@ -615,4 +657,16 @@ test "Draw Scanline" {
     nes.Ppu.high_shift |= 214;
 
     //fill sprites
+    nes.Ppu.fillSprites();
+    nes.Ppu.drawScanLine(std.time.nanoTimestamp());
+
+    for (nes.Ppu.bitmap[7], 0..) |pixel, index| {
+        if (index < 4) {
+            std.debug.print("Bitmap Value: {d}, Sprite Value: {d}!\n", .{ pixel, nes.Ppu.sprites[1].small[7][@truncate(index)] });
+            try std.testing.expect(pixel == nes.Ppu.sprites[1].small[7][@truncate(index)]);
+        } else if (index <= 12) {
+            std.debug.print("Bitmap Value: {d}, Sprite Value: {d}!\n", .{ pixel, nes.Ppu.sprites[1].small[7][@truncate(index)] - 4 });
+            try std.testing.expect(pixel == nes.Ppu.sprites[0].small[7][@truncate(index)] - 4);
+        }
+    }
 }
