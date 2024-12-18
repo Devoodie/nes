@@ -245,7 +245,7 @@ pub const Ppu = struct {
                     //sprite overflow
                     break :render_buffer;
                 } else {
-                    std.debug.print("Entered Evaluation index: {d}!\n", .{index});
+                    //         std.debug.print("Entered Evaluation index: {d}!\n", .{index});
                     self.secondary_oam[render_index] = @truncate(index);
                     render_index += 1;
                 }
@@ -361,7 +361,7 @@ pub const Ppu = struct {
             if (x > 7 and sprite.large[bitmap_y][bitmap_x] & 0b11 < 0 and background & 0b11 < 0 and sprite0 == 0) {
                 self.status |= 0x40;
             }
-            std.debug.print("X Coord: {d}, Y Coord: {d}\n", .{ bitmap_x, bitmap_y });
+            // std.debug.print("X Coord: {d}, Y Coord: {d}\n", .{ bitmap_x, bitmap_y });
             return sprite.large[bitmap_y][bitmap_x];
         } else {
             if (attributes & 0x80 == 0x80) {
@@ -373,7 +373,7 @@ pub const Ppu = struct {
             if (x > 7 and sprite.small[bitmap_y][bitmap_x] & 0b11 < 0 and background & 0b11 < 0 and sprite0 == 0) {
                 self.status |= 0x40;
             }
-            std.debug.print("X Coord: {d}, Y Coord: {d}\n", .{ bitmap_x, bitmap_y });
+            //std.debug.print("X Coord: {d}, Y Coord: {d}\n", .{ bitmap_x, bitmap_y });
             return sprite.small[bitmap_y][bitmap_x];
         }
     }
