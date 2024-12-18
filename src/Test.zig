@@ -320,7 +320,7 @@ test "Ppu Draw Coarse X " {
     nes.Ppu.scanline = 0;
     nes.Ppu.fine_x = 7;
     nes.Ppu.mask = 0xA;
-    nes.Ppu.x_pos = 8;
+    nes.Ppu.x_pos = 0;
 
     nes.Ppu.drawCoarseX(); //fetch the 2 tiles
     nes.Ppu.drawCoarseX();
@@ -592,12 +592,12 @@ test "Draw Scanline" {
     nes.Ppu.scanline = 7;
     nes.Ppu.mask = 0x1E;
 
-    nes.Ppu.oam[0] = 7;
+    nes.Ppu.oam[0] = 0;
     nes.Ppu.oam[1] = 63;
     nes.Ppu.oam[2] = 3;
     nes.Ppu.oam[3] = 4;
 
-    nes.Ppu.oam[4] = 7;
+    nes.Ppu.oam[4] = 0;
     nes.Ppu.oam[5] = 64;
     nes.Ppu.oam[6] = 3;
     nes.Ppu.oam[7] = 0;
@@ -638,35 +638,41 @@ test "Draw Scanline" {
     nes.Ppu.pattern_table[1031] = 85;
     nes.Ppu.pattern_table[1039] = 72;
 
-    for (12..44) |index| {
-        nes.Ppu.nametable[index] = @as(u8, @truncate(index)) - 11;
+    for (0..32) |index| {
+        nes.Ppu.nametable[index] = @as(u8, @truncate(index));
     }
 
     //background tiles should be = to 255
-    for (1..33) |tile| {
+    for (0..32) |tile| {
         // fine y = 7 and scanline = 8; name table points to this tile first
         nes.Ppu.pattern_table[tile * 16 + 7] = 0xFF;
         nes.Ppu.pattern_table[tile * 16 + 15] = 0xFF;
     }
 
     // first two tiles
-    nes.Ppu.low_shift = 192 << 8;
-    nes.Ppu.high_shift = 148 << 8;
+    //    nes.Ppu.low_shift = 192 << 8;
+    //   nes.Ppu.high_shift = 148 << 8;
 
-    nes.Ppu.low_shift |= 234;
-    nes.Ppu.high_shift |= 214;
+    //  nes.Ppu.low_shift |= 234;
+    // nes.Ppu.high_shift |= 214;
+    nes.Ppu.low_shift = 0xFFFF;
+    nes.Ppu.high_shift = 0xFFFF;
 
     //fill sprites
     nes.Ppu.fillSprites();
+    nes.Ppu.spriteEvaluation();
     nes.Ppu.drawScanLine(std.time.nanoTimestamp());
 
     for (nes.Ppu.bitmap[7], 0..) |pixel, index| {
         if (index < 4) {
-            std.debug.print("Bitmap Value: {d}, Sprite Value: {d}!\n", .{ pixel, nes.Ppu.sprites[1].small[7][@truncate(index)] });
+            // std.debug.print("Bitmap Value: {d}, Sprite Value: {d}!\n", .{ pixel, nes.Ppu.sprites[1].small[7][@truncate(index)] });
             try std.testing.expect(pixel == nes.Ppu.sprites[1].small[7][@truncate(index)]);
-        } else if (index <= 12) {
-            std.debug.print("Bitmap Value: {d}, Sprite Value: {d}!\n", .{ pixel, nes.Ppu.sprites[1].small[7][@truncate(index)] - 4 });
-            try std.testing.expect(pixel == nes.Ppu.sprites[0].small[7][@truncate(index)] - 4);
+        } else if (index < 12) {
+            //            std.debug.print("Bitmap Value: {d}, Sprite Value: {d}!\n", .{ pixel, nes.Ppu.sprites[1].small[7][@as(u3, @truncate(index - 4))] });
+            try std.testing.expect(pixel == nes.Ppu.sprites[0].small[7][@as(u3, @truncate(index - 4))]);
+        } else {
+            //     try std.testing.expect(pixel == 3);
         }
+        std.debug.print("Pixel: {d}!\n", .{pixel});
     }
 }
