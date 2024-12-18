@@ -671,8 +671,8 @@ test "Draw Scanline" {
             //            std.debug.print("Bitmap Value: {d}, Sprite Value: {d}!\n", .{ pixel, nes.Ppu.sprites[1].small[7][@as(u3, @truncate(index - 4))] });
             try std.testing.expect(pixel == nes.Ppu.sprites[0].small[7][@as(u3, @truncate(index - 4))]);
         } else {
-            //     try std.testing.expect(pixel == 3);
+            try std.testing.expect(pixel == 3);
         }
-        std.debug.print("Pixel: {d}!\n", .{pixel});
+        //std.debug.print("Pixel: {d}!\n", .{pixel});
     }
 }
