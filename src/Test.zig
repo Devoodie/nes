@@ -675,4 +675,5 @@ test "Draw Scanline" {
         }
         //std.debug.print("Pixel: {d}!\n", .{pixel});
     }
+    std.debug.print("\n\n", .{});
 }
