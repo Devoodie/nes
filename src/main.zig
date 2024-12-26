@@ -1,5 +1,6 @@
 const std = @import("std");
 const components = @import("Nes.zig");
+const rl = @import("raylib");
 
 pub fn main() !void {
     std.debug.print("All your {s} are belong to us.\n", .{"codebase"});

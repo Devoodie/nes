@@ -34,11 +34,13 @@ pub const Ppu = struct {
     cycles: u12 = 0,
     attribute: u8 = 0,
     sprites: [64]Sprite = undefined,
+    nmi: u1 = 0,
 
     pub fn PpuMmo(self: *Ppu, address: u16) u8 {
         switch (address % 8) {
             2 => {
                 self.write_reg = 0;
+                self.status &= 0x60;
                 return self.status;
             },
             3 => {
@@ -100,8 +102,8 @@ pub const Ppu = struct {
     pub fn writeData(self: *Ppu, data: u8) void {
         self.setPpuBus(data);
 
-        const status = (self.control & 0b00000100) >> 3;
-        if (status == 0) {
+        const control = (self.control & 0b00000100) >> 3;
+        if (control == 0) {
             self.v += 1;
         } else {
             self.v += 32;
@@ -112,8 +114,8 @@ pub const Ppu = struct {
         const value = self.read_buffer;
         self.read_buffer = self.GetPpuBus();
 
-        const status = (self.control & 0b00000100) >> 3;
-        if (status == 0) {
+        const control = (self.control & 0b00000100) >> 3;
+        if (control == 0) {
             self.v += 1;
         } else {
             self.v += 32;
@@ -513,13 +515,22 @@ pub const Ppu = struct {
     pub fn draw(self: *Ppu) void {
         self.scanline = 0;
         var time: i128 = std.time.nanoTimestamp();
+        //aquire lock
         for (0..262) |_| {
             if (self.scanline == 261) {
-                self.scanline == 0;
-                self.control &= 0x70;
+                self.scanline = 0;
+                self.status = 0;
+                //cycle
+                break;
             } else if (self.scanline >= 240) {
+                //release lock
                 //handle post render scanline
-                self.control |= 0x80;
+                if (self.scanline == 241) {
+                    self.status |= 0x80;
+                    if (self.control == 0x80) self.nmi = 1;
+                }
+                //cycle
+                self.scanline += 1;
             } else {
                 //handle rendering
                 self.fillSprites();
