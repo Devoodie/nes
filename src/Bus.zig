@@ -32,7 +32,10 @@ pub const Bus = struct {
                 self.cpu_ptr.cycle(std.time.nanoTimestamp(), 513);
             }
         } else if (self.addr_bus <= 0x401F) {
+            //apu stuff
             return;
+        } else {
+            //mapper stuff
         }
     }
 
