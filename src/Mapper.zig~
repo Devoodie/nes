@@ -8,7 +8,6 @@ pub const Cartridge = struct {
     prg_rom: []u8 = undefined,
     prg_ram: []u8 = undefined,
     chr_rom: []u8 = undefined,
-    //    nvram: []u8 = undefined,
     trainer: []u8 = undefined,
     mapper: Mapper = undefined,
     hori_mirroring: u1 = 0,
@@ -22,8 +21,6 @@ pub const Cartridge = struct {
         if (file[7] & 0xC == 8) ines = false;
         var prg_rom_size: u16 = 0;
         var chr_rom_size: u16 = 0;
-        var prg_ram_size: u16 = 0;
-        //       var prg_nvram_size: u16 = 0;
         var mapper: u8 = 0;
 
         for (4..12) |index| {
@@ -58,42 +55,19 @@ pub const Cartridge = struct {
                     //other shit like console type
                     break :nes2;
                 },
-                8 => sub_mapper: {
+                8 => prg_ram_size: {
                     //nes2.0  shit
-                    break :sub_mapper;
-                },
-                9 => nes2_prg_rom_size: {
-                    if (ines != true) {
-                        prg_rom_size |= (@as(u16, header) & 0xF) << 8;
-                        chr_rom_size |= (@as(u16, header) & 0xF0) << 4;
-                    }
-                    break :nes2_prg_rom_size;
-                },
-                10 => prg_ram_size: {
-                    if (ines != true) {
-                        prg_ram_size = 64 << (header & 0xF);
-                        //nvramsize
-                    }
                     break :prg_ram_size;
                 },
-                else => default: {
-                    break :default;
-                },
+                9 => nes2_prg_rom_size: {
+                    
+                    break :nes2_prg_ram_size;
+                }
             }
         }
 
-        if (ines == true) {
-            if (mapper == 0) {
-                prg_ram_size = 2048;
-            }
-        }
-
-        self.mapper = mapper;
         self.prg_rom = try allocator.alloc(u8, prg_rom_size * 16384);
         self.chr_rom = try allocator.alloc(u8, chr_rom_size * 8192);
-        self.prg_ram = try allocator.alloc(u8, prg_ram_size);
-
-        std.debug.print("Mapper Initialized to PRG_RAM: {d}, PRG_ROM: {d}, CHR_ROM: {d}\n", .{ prg_ram_size, prg_rom_size, chr_rom_size });
         //intialize every array according to their size values in the headers
     }
 
