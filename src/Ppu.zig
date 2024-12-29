@@ -1,4 +1,5 @@
 const std = @import("std");
+const mapper = @import("Mapper.zig");
 
 pub const Sprite = union {
     small: [8][8]u5,
@@ -35,6 +36,7 @@ pub const Ppu = struct {
     attribute: u8 = 0,
     sprites: [64]Sprite = undefined,
     nmi: u1 = 0,
+    cartridge: *mapper.Cartridge = undefined,
 
     pub fn PpuMmo(self: *Ppu, address: u16) u8 {
         switch (address % 8) {

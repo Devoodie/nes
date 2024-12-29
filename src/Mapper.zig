@@ -97,5 +97,20 @@ pub const Cartridge = struct {
         //intialize every array according to their size values in the headers
     }
 
+    pub fn deinit(self: *Cartridge, allocator: std.mem.Allocator) !void {
+        allocator.free(self.prg_ram);
+        allocator.free(self.prg_rom);
+        allocator.free(self.chr_rom);
+        allocator.free(self.trainer);
+    }
+
+    pub fn getPpuData(self: *Cartridge, address: u16) u8 {
+        if (address <= 0x1FFF) {
+            return self.chr_rom[address];
+        }
+        //  focus on NROM else if (address <=)
+
+    }
+
     // pub fn mapper_deinit() void{}
 };
