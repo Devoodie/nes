@@ -141,6 +141,7 @@ pub const Ppu = struct {
             self.write_reg +%= 1;
         }
     }
+
     pub fn writeScroll(self: *Ppu, data: u8) void {
         if (self.write_reg == 1) {
             const low: u16 = data & 0b00111000;
@@ -285,8 +286,8 @@ pub const Ppu = struct {
                 if (row == 8) {
                     pattern_index += 16;
                 }
-                small_buff = self.pattern_table[right_table + pattern_index + row % 8];
-                large_buff = self.pattern_table[right_table + pattern_index + row % 8 + 8];
+                small_buff = self.cartridge.getPpuData(right_table + pattern_index + row % 8);
+                large_buff = self.cartridge.getPpuData(right_table + pattern_index + row % 8 + 8);
                 for (0..8) |column| {
                     low_pixel = small_buff >> 7 - @as(u3, @intCast(column)) & 0b1;
                     high_pixel = large_buff >> 7 - @as(u3, @intCast(column)) & 0b1;
@@ -301,8 +302,8 @@ pub const Ppu = struct {
             var sprite_buffer: Sprite = .{ .small = undefined };
 
             for (0..8) |row| {
-                small_buff = self.pattern_table[right_table + pattern_index + row];
-                large_buff = self.pattern_table[right_table + pattern_index + row + 8];
+                small_buff = self.cartridge.getPpuData(right_table + pattern_index + row);
+                large_buff = self.cartridge.getPpuData(right_table + pattern_index + row + 8);
                 // i hate this nested for but it seems reasonable for a matrix
                 for (0..8) |column| {
                     low_pixel = small_buff >> 7 - @as(u3, @intCast(column)) & 0b1;
@@ -450,8 +451,8 @@ pub const Ppu = struct {
             self.high_shift <<= 8;
         }
         //placement into shift registers occurs after
-        self.low_shift |= self.pattern_table[pattern_address];
-        self.high_shift |= self.pattern_table[pattern_address + 0b1000];
+        self.low_shift |= self.cartridge.getPpuData(pattern_address);
+        self.high_shift |= self.cartridge.getPpuData(pattern_address + 0b1000);
     }
 
     pub fn GetBackgroundPixel(self: *Ppu, coarsex: u8) ?u5 {
@@ -514,7 +515,7 @@ pub const Ppu = struct {
         self.x_pos = 0;
     }
 
-    pub fn draw(self: *Ppu) void {
+    pub fn drawBitmap(self: *Ppu) void {
         self.scanline = 0;
         var time: i128 = std.time.nanoTimestamp();
         //aquire lock

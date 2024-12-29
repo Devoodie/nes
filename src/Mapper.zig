@@ -106,8 +106,9 @@ pub const Cartridge = struct {
 
     pub fn getPpuData(self: *Cartridge, address: u16) u8 {
         if (address <= 0x1FFF) {
-            return self.chr_rom[address];
+            return self.chr_rom[address % 8192];
         }
+        return 0;
         //  focus on NROM else if (address <=)
 
     }
