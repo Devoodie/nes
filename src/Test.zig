@@ -314,8 +314,15 @@ test "Ppu Draw Coarse X " {
 
     //test right table capabilities
     nes.Ppu.control = 0b10000;
-    nes.Ppu.pattern_table[0x1000] = 187;
-    nes.Ppu.pattern_table[0x1008] = 217;
+
+    var gpa = std.heap.GeneralPurposeAllocator(.{}).init;
+    defer _ = gpa.deinit();
+    var allocator = gpa.allocator();
+    nes.Mapper.chr_rom = try allocator.alloc(u8, 8192);
+    defer allocator.free(nes.Mapper.chr_rom);
+
+    nes.Mapper.chr_rom[0x1000] = 187;
+    nes.Mapper.chr_rom[0x1008] = 217;
 
     nes.Ppu.scanline = 0;
     nes.Ppu.fine_x = 7;
@@ -340,26 +347,32 @@ test "Fill Sprites" {
     std.debug.print("Fill Sprites!\n", .{});
     nes.init();
 
+    var gpa = std.heap.GeneralPurposeAllocator(.{}).init;
+    defer _ = gpa.deinit();
+    var allocator = gpa.allocator();
+    nes.Mapper.chr_rom = try allocator.alloc(u8, 8192);
+    defer allocator.free(nes.Mapper.chr_rom);
+
     nes.Ppu.oam[5] = 1;
     nes.Ppu.oam[6] = 3;
 
     //test right table capabilities
-    nes.Ppu.pattern_table[16] = 187;
-    nes.Ppu.pattern_table[24] = 217;
-    nes.Ppu.pattern_table[17] = 111;
-    nes.Ppu.pattern_table[25] = 222;
-    nes.Ppu.pattern_table[18] = 192;
-    nes.Ppu.pattern_table[26] = 234;
-    nes.Ppu.pattern_table[19] = 139;
-    nes.Ppu.pattern_table[27] = 189;
-    nes.Ppu.pattern_table[20] = 182;
-    nes.Ppu.pattern_table[28] = 100;
-    nes.Ppu.pattern_table[21] = 44;
-    nes.Ppu.pattern_table[29] = 246;
-    nes.Ppu.pattern_table[22] = 45;
-    nes.Ppu.pattern_table[30] = 0;
-    nes.Ppu.pattern_table[23] = 85;
-    nes.Ppu.pattern_table[31] = 72;
+    nes.Mapper.chr_rom[16] = 187;
+    nes.Mapper.chr_rom[24] = 217;
+    nes.Mapper.chr_rom[17] = 111;
+    nes.Mapper.chr_rom[25] = 222;
+    nes.Mapper.chr_rom[18] = 192;
+    nes.Mapper.chr_rom[26] = 234;
+    nes.Mapper.chr_rom[19] = 139;
+    nes.Mapper.chr_rom[27] = 189;
+    nes.Mapper.chr_rom[20] = 182;
+    nes.Mapper.chr_rom[28] = 100;
+    nes.Mapper.chr_rom[21] = 44;
+    nes.Mapper.chr_rom[29] = 246;
+    nes.Mapper.chr_rom[22] = 45;
+    nes.Mapper.chr_rom[30] = 0;
+    nes.Mapper.chr_rom[23] = 85;
+    nes.Mapper.chr_rom[31] = 72;
 
     const answers = [8][8]u5{
         [8]u5{ 31, 30, 29, 31, 31, 28, 29, 31 },
@@ -382,38 +395,38 @@ test "Fill Sprites" {
 
     std.debug.print("Fill Sprites Long!\n\n", .{});
 
-    nes.Ppu.pattern_table[0 + 0x1000] = 187;
-    nes.Ppu.pattern_table[8 + 0x1000] = 217;
-    nes.Ppu.pattern_table[1 + 0x1000] = 111;
-    nes.Ppu.pattern_table[9 + 0x1000] = 222;
-    nes.Ppu.pattern_table[2 + 0x1000] = 192;
-    nes.Ppu.pattern_table[10 + 0x1000] = 234;
-    nes.Ppu.pattern_table[3 + 0x1000] = 139;
-    nes.Ppu.pattern_table[11 + 0x1000] = 189;
-    nes.Ppu.pattern_table[4 + 0x1000] = 182;
-    nes.Ppu.pattern_table[12 + 0x1000] = 100;
-    nes.Ppu.pattern_table[5 + 0x1000] = 44;
-    nes.Ppu.pattern_table[13 + 0x1000] = 246;
-    nes.Ppu.pattern_table[6 + 0x1000] = 45;
-    nes.Ppu.pattern_table[14 + 0x1000] = 0;
-    nes.Ppu.pattern_table[7 + 0x1000] = 85;
-    nes.Ppu.pattern_table[15 + 0x1000] = 72;
-    nes.Ppu.pattern_table[16 + 0x1000] = 187;
-    nes.Ppu.pattern_table[24 + 0x1000] = 217;
-    nes.Ppu.pattern_table[17 + 0x1000] = 111;
-    nes.Ppu.pattern_table[25 + 0x1000] = 222;
-    nes.Ppu.pattern_table[18 + 0x1000] = 192;
-    nes.Ppu.pattern_table[26 + 0x1000] = 234;
-    nes.Ppu.pattern_table[19 + 0x1000] = 139;
-    nes.Ppu.pattern_table[27 + 0x1000] = 189;
-    nes.Ppu.pattern_table[20 + 0x1000] = 182;
-    nes.Ppu.pattern_table[28 + 0x1000] = 100;
-    nes.Ppu.pattern_table[21 + 0x1000] = 44;
-    nes.Ppu.pattern_table[29 + 0x1000] = 246;
-    nes.Ppu.pattern_table[22 + 0x1000] = 45;
-    nes.Ppu.pattern_table[30 + 0x1000] = 0;
-    nes.Ppu.pattern_table[23 + 0x1000] = 85;
-    nes.Ppu.pattern_table[31 + 0x1000] = 72;
+    nes.Mapper.chr_rom[0 + 0x1000] = 187;
+    nes.Mapper.chr_rom[8 + 0x1000] = 217;
+    nes.Mapper.chr_rom[1 + 0x1000] = 111;
+    nes.Mapper.chr_rom[9 + 0x1000] = 222;
+    nes.Mapper.chr_rom[2 + 0x1000] = 192;
+    nes.Mapper.chr_rom[10 + 0x1000] = 234;
+    nes.Mapper.chr_rom[3 + 0x1000] = 139;
+    nes.Mapper.chr_rom[11 + 0x1000] = 189;
+    nes.Mapper.chr_rom[4 + 0x1000] = 182;
+    nes.Mapper.chr_rom[12 + 0x1000] = 100;
+    nes.Mapper.chr_rom[5 + 0x1000] = 44;
+    nes.Mapper.chr_rom[13 + 0x1000] = 246;
+    nes.Mapper.chr_rom[6 + 0x1000] = 45;
+    nes.Mapper.chr_rom[14 + 0x1000] = 0;
+    nes.Mapper.chr_rom[7 + 0x1000] = 85;
+    nes.Mapper.chr_rom[15 + 0x1000] = 72;
+    nes.Mapper.chr_rom[16 + 0x1000] = 187;
+    nes.Mapper.chr_rom[24 + 0x1000] = 217;
+    nes.Mapper.chr_rom[17 + 0x1000] = 111;
+    nes.Mapper.chr_rom[25 + 0x1000] = 222;
+    nes.Mapper.chr_rom[18 + 0x1000] = 192;
+    nes.Mapper.chr_rom[26 + 0x1000] = 234;
+    nes.Mapper.chr_rom[19 + 0x1000] = 139;
+    nes.Mapper.chr_rom[27 + 0x1000] = 189;
+    nes.Mapper.chr_rom[20 + 0x1000] = 182;
+    nes.Mapper.chr_rom[28 + 0x1000] = 100;
+    nes.Mapper.chr_rom[21 + 0x1000] = 44;
+    nes.Mapper.chr_rom[29 + 0x1000] = 246;
+    nes.Mapper.chr_rom[22 + 0x1000] = 45;
+    nes.Mapper.chr_rom[30 + 0x1000] = 0;
+    nes.Mapper.chr_rom[23 + 0x1000] = 85;
+    nes.Mapper.chr_rom[31 + 0x1000] = 72;
 
     nes.Ppu.control = 0b100000;
 
@@ -450,6 +463,7 @@ test "Get Sprite Pixel" {
     var nes: components.Nes = .{ .Cpu = .{}, .Ppu = .{}, .Bus = .{} };
 
     std.debug.print("Get Sprite Pixel!\n", .{});
+    nes.init();
 
     nes.Ppu.v |= 0b000100000;
     nes.Ppu.scanline = 8;
@@ -459,39 +473,46 @@ test "Get Sprite Pixel" {
     nes.Ppu.oam[6] = 0x23;
     nes.Ppu.oam[7] = 0;
 
-    nes.Ppu.pattern_table[0] = 187;
-    nes.Ppu.pattern_table[8] = 217;
-    nes.Ppu.pattern_table[1] = 111;
-    nes.Ppu.pattern_table[9] = 222;
-    nes.Ppu.pattern_table[2] = 192;
-    nes.Ppu.pattern_table[10] = 234;
-    nes.Ppu.pattern_table[3] = 139;
-    nes.Ppu.pattern_table[11] = 189;
-    nes.Ppu.pattern_table[4] = 182;
-    nes.Ppu.pattern_table[12] = 100;
-    nes.Ppu.pattern_table[5] = 44;
-    nes.Ppu.pattern_table[13] = 246;
-    nes.Ppu.pattern_table[6] = 45;
-    nes.Ppu.pattern_table[14] = 0;
-    nes.Ppu.pattern_table[7] = 85;
-    nes.Ppu.pattern_table[15] = 72;
-    nes.Ppu.pattern_table[16] = 187;
-    nes.Ppu.pattern_table[24] = 217;
-    nes.Ppu.pattern_table[17] = 111;
-    nes.Ppu.pattern_table[25] = 222;
-    nes.Ppu.pattern_table[18] = 192;
-    nes.Ppu.pattern_table[26] = 234;
-    nes.Ppu.pattern_table[19] = 139;
-    nes.Ppu.pattern_table[27] = 189;
-    nes.Ppu.pattern_table[20] = 182;
-    nes.Ppu.pattern_table[28] = 100;
-    nes.Ppu.pattern_table[21] = 44;
-    nes.Ppu.pattern_table[29] = 246;
-    nes.Ppu.pattern_table[22] = 45;
-    nes.Ppu.pattern_table[30] = 0;
-    nes.Ppu.pattern_table[23] = 85;
-    nes.Ppu.pattern_table[31] = 72;
+    var gpa = std.heap.GeneralPurposeAllocator(.{}).init;
+    defer _ = gpa.deinit();
+    var allocator = gpa.allocator();
+    nes.Mapper.chr_rom = try allocator.alloc(u8, 8192);
+    defer allocator.free(nes.Mapper.chr_rom);
 
+    nes.Mapper.chr_rom[0] = 187;
+    nes.Mapper.chr_rom[8] = 217;
+    nes.Mapper.chr_rom[1] = 111;
+    nes.Mapper.chr_rom[9] = 222;
+    nes.Mapper.chr_rom[2] = 192;
+    nes.Mapper.chr_rom[10] = 234;
+    nes.Mapper.chr_rom[3] = 139;
+    nes.Mapper.chr_rom[11] = 189;
+    nes.Mapper.chr_rom[4] = 182;
+    nes.Mapper.chr_rom[12] = 100;
+    nes.Mapper.chr_rom[5] = 44;
+    nes.Mapper.chr_rom[13] = 246;
+    nes.Mapper.chr_rom[6] = 45;
+    nes.Mapper.chr_rom[14] = 0;
+    nes.Mapper.chr_rom[7] = 85;
+    nes.Mapper.chr_rom[15] = 72;
+    nes.Mapper.chr_rom[16] = 187;
+    nes.Mapper.chr_rom[24] = 217;
+    nes.Mapper.chr_rom[17] = 111;
+    nes.Mapper.chr_rom[25] = 222;
+    nes.Mapper.chr_rom[18] = 192;
+    nes.Mapper.chr_rom[26] = 234;
+    nes.Mapper.chr_rom[19] = 139;
+    nes.Mapper.chr_rom[27] = 189;
+    nes.Mapper.chr_rom[20] = 182;
+    nes.Mapper.chr_rom[28] = 100;
+    nes.Mapper.chr_rom[21] = 44;
+    nes.Mapper.chr_rom[29] = 246;
+    nes.Mapper.chr_rom[22] = 45;
+    nes.Mapper.chr_rom[30] = 0;
+    nes.Mapper.chr_rom[23] = 85;
+    nes.Mapper.chr_rom[31] = 72;
+
+    std.debug.print("Ppu cartridge address: {*} Cartridge Address: {*}\n", .{ nes.Ppu.cartridge, &nes.Mapper });
     nes.Ppu.fillSprites();
 
     //sprite evaluation test
@@ -586,6 +607,13 @@ test "Draw Scanline" {
     var nes: components.Nes = .{ .Cpu = .{}, .Ppu = .{}, .Bus = .{} };
 
     std.debug.print("Draw Scanline!\n", .{});
+    nes.init();
+
+    var gpa = std.heap.GeneralPurposeAllocator(.{}).init;
+    defer _ = gpa.deinit();
+    var allocator = gpa.allocator();
+    nes.Mapper.chr_rom = try allocator.alloc(u8, 8192);
+    defer allocator.free(nes.Mapper.chr_rom);
 
     //we're on scanline 12 loading the last row of the tile
     nes.Ppu.v = 0x700C;
@@ -603,40 +631,40 @@ test "Draw Scanline" {
     nes.Ppu.oam[7] = 0;
 
     //sprite 0's pattern data
-    nes.Ppu.pattern_table[1008] = 187;
-    nes.Ppu.pattern_table[1016] = 217;
-    nes.Ppu.pattern_table[1009] = 111;
-    nes.Ppu.pattern_table[1017] = 222;
-    nes.Ppu.pattern_table[1010] = 192;
-    nes.Ppu.pattern_table[1018] = 234;
-    nes.Ppu.pattern_table[1011] = 139;
-    nes.Ppu.pattern_table[1019] = 189;
-    nes.Ppu.pattern_table[1012] = 182;
-    nes.Ppu.pattern_table[1020] = 100;
-    nes.Ppu.pattern_table[1013] = 44;
-    nes.Ppu.pattern_table[1021] = 246;
-    nes.Ppu.pattern_table[1014] = 45;
-    nes.Ppu.pattern_table[1022] = 0;
-    nes.Ppu.pattern_table[1015] = 85;
-    nes.Ppu.pattern_table[1023] = 72;
+    nes.Mapper.chr_rom[1008] = 187;
+    nes.Mapper.chr_rom[1016] = 217;
+    nes.Mapper.chr_rom[1009] = 111;
+    nes.Mapper.chr_rom[1017] = 222;
+    nes.Mapper.chr_rom[1010] = 192;
+    nes.Mapper.chr_rom[1018] = 234;
+    nes.Mapper.chr_rom[1011] = 139;
+    nes.Mapper.chr_rom[1019] = 189;
+    nes.Mapper.chr_rom[1012] = 182;
+    nes.Mapper.chr_rom[1020] = 100;
+    nes.Mapper.chr_rom[1013] = 44;
+    nes.Mapper.chr_rom[1021] = 246;
+    nes.Mapper.chr_rom[1014] = 45;
+    nes.Mapper.chr_rom[1022] = 0;
+    nes.Mapper.chr_rom[1015] = 85;
+    nes.Mapper.chr_rom[1023] = 72;
 
     //next sprites pattern data
-    nes.Ppu.pattern_table[1024] = 187;
-    nes.Ppu.pattern_table[1032] = 217;
-    nes.Ppu.pattern_table[1025] = 111;
-    nes.Ppu.pattern_table[1033] = 222;
-    nes.Ppu.pattern_table[1026] = 192;
-    nes.Ppu.pattern_table[1034] = 234;
-    nes.Ppu.pattern_table[1027] = 139;
-    nes.Ppu.pattern_table[1035] = 189;
-    nes.Ppu.pattern_table[1028] = 182;
-    nes.Ppu.pattern_table[1036] = 100;
-    nes.Ppu.pattern_table[1029] = 44;
-    nes.Ppu.pattern_table[1037] = 246;
-    nes.Ppu.pattern_table[1030] = 45;
-    nes.Ppu.pattern_table[1038] = 0;
-    nes.Ppu.pattern_table[1031] = 85;
-    nes.Ppu.pattern_table[1039] = 72;
+    nes.Mapper.chr_rom[1024] = 187;
+    nes.Mapper.chr_rom[1032] = 217;
+    nes.Mapper.chr_rom[1025] = 111;
+    nes.Mapper.chr_rom[1033] = 222;
+    nes.Mapper.chr_rom[1026] = 192;
+    nes.Mapper.chr_rom[1034] = 234;
+    nes.Mapper.chr_rom[1027] = 139;
+    nes.Mapper.chr_rom[1035] = 189;
+    nes.Mapper.chr_rom[1028] = 182;
+    nes.Mapper.chr_rom[1036] = 100;
+    nes.Mapper.chr_rom[1029] = 44;
+    nes.Mapper.chr_rom[1037] = 246;
+    nes.Mapper.chr_rom[1030] = 45;
+    nes.Mapper.chr_rom[1038] = 0;
+    nes.Mapper.chr_rom[1031] = 85;
+    nes.Mapper.chr_rom[1039] = 72;
 
     for (0..32) |index| {
         nes.Ppu.nametable[index] = @as(u8, @truncate(index));
@@ -645,8 +673,8 @@ test "Draw Scanline" {
     //background tiles should be = to 255
     for (0..32) |tile| {
         // fine y = 7 and scanline = 8; name table points to this tile first
-        nes.Ppu.pattern_table[tile * 16 + 7] = 0xFF;
-        nes.Ppu.pattern_table[tile * 16 + 15] = 0xFF;
+        nes.Mapper.chr_rom[tile * 16 + 7] = 0xFF;
+        nes.Mapper.chr_rom[tile * 16 + 15] = 0xFF;
     }
 
     // first two tiles

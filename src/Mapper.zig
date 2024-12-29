@@ -13,7 +13,7 @@ pub const Cartridge = struct {
     mapper: Mapper = undefined,
     hori_mirroring: u1 = 0,
     trainer_bit: u1 = 0,
-    alt_nametable: u1,
+    alt_nametable: u1 = 0,
 
     pub fn mapper_init(self: *Cartridge, file: *[]u8, allocator: std.mem.Allocator) !void {
         //no raii gangy
