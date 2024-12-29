@@ -125,6 +125,13 @@ pub const Cartridge = struct {
         // just like PPU Data foucs on NROM
     }
 
+    pub fn putCpuData(self: *Cartridge, address: u16, data: u8) void {
+        if (address <= 0x7FFF) {
+            const index = address - 0x6000;
+            self.prg_ram[index % self.prg_ram.len] = data;
+        }
+    }
+
     pub fn mapROM(self: *Cartridge, rom: *[]u8) void {
         switch (self.mapper) {
             Mapper.NROM => nrom: {

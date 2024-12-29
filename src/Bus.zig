@@ -39,8 +39,8 @@ pub const Bus = struct {
         } else if (self.addr_bus <= 0x401F) {
             //apu stuff
             return;
-        } else {
-            //mapper stuff
+        } else if (self.addr_bus >= 0x6000) {
+            self.catridge_ptr.putCpuData(self.addr_bus, self.data_bus);
         }
     }
 
