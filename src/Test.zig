@@ -512,7 +512,6 @@ test "Get Sprite Pixel" {
     nes.Mapper.chr_rom[23] = 85;
     nes.Mapper.chr_rom[31] = 72;
 
-    std.debug.print("Ppu cartridge address: {*} Cartridge Address: {*}\n", .{ nes.Ppu.cartridge, &nes.Mapper });
     nes.Ppu.fillSprites();
 
     //sprite evaluation test

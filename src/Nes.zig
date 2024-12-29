@@ -18,6 +18,7 @@ pub const Nes = struct {
         self.Mapper = .{};
         self.Bus.cpu_ptr = &self.Cpu;
         self.Bus.ppu_ptr = &self.Ppu;
+        self.Bus.catridge_ptr = &self.Mapper;
         self.Ppu = .{
             .nametable = [_]u8{0} ** 2048,
             .oam = [_]u8{0} ** 256,

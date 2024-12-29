@@ -302,7 +302,6 @@ pub const Ppu = struct {
             var sprite_buffer: Sprite = .{ .small = undefined };
 
             for (0..8) |row| {
-                std.debug.print("This is the memory value: {d}\n", .{right_table + pattern_index + @as(u8, @truncate(row)) % 8});
                 small_buff = self.cartridge.getPpuData(right_table + pattern_index + @as(u8, @truncate(row)));
                 large_buff = self.cartridge.getPpuData(right_table + pattern_index + @as(u8, @truncate(row)) + 8);
                 // i hate this nested for but it seems reasonable for a matrix

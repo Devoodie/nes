@@ -2,12 +2,15 @@ const std = @import("std");
 const cpu = @import("Cpu.zig");
 const ppu = @import("Ppu.zig");
 const apu = @import("Apu.zig");
+const mapper = @import("Mapper.zig");
+
 pub const Bus = struct {
     addr_bus: u16 = 0,
     data_bus: u8 = 0,
     cpu_ptr: *cpu.Cpu = undefined,
     ppu_ptr: *ppu.Ppu = undefined,
     apu_ptr: *apu.Apu = undefined,
+    catridge_ptr: *mapper.Cartridge = undefined,
 
     pub fn getMmo(self: *Bus) void {
         if (self.addr_bus <= 0x1FFF) {
@@ -16,6 +19,8 @@ pub const Bus = struct {
             self.data_bus = self.ppu_ptr.*.PpuMmo(self.addr_bus);
         } else if (self.addr_bus <= 0x401F) {
             return;
+        } else if (self.addr_bus >= 0x6000) {
+            self.data_bus = self.catridge_ptr.getCpuData(self.addr_bus);
         }
     }
 

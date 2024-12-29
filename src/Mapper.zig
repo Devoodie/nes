@@ -113,5 +113,27 @@ pub const Cartridge = struct {
 
     }
 
-    // pub fn mapper_deinit() void{}
+    pub fn getCpuData(self: *Cartridge, address: u16) u8 {
+        if (address <= 0x7FFF) {
+            const index = address - 0x6000;
+            return self.prg_ram[index % self.prg_ram.len];
+        } else {
+            const index = address - 0x8000;
+            return self.prg_rom[index % self.prg_rom.len];
+        }
+        return 0;
+        // just like PPU Data foucs on NROM
+    }
+
+    pub fn mapROM(self: *Cartridge, rom: *[]u8) void {
+        switch (self.mapper) {
+            Mapper.NROM => nrom: {
+                std.mem.copyForwards(u8, self.prg_rom, rom[16..16400]);
+                break :nrom;
+            },
+            else => default: {
+                break :default;
+            },
+        }
+    }
 };
