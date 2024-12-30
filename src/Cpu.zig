@@ -22,7 +22,7 @@ pub const Cpu = struct {
     bus: *component.Bus = undefined,
     instruction: u8 = undefined,
     irq_line: u1 = 0,
-    extra_cycle: u1 = undefined,
+    extra_cycle: u8 = 0,
     odd_cycle: u1 = 0,
 
     pub fn cycle(self: *Cpu, prev_time: i128, cycles: u16) void {
@@ -70,7 +70,7 @@ pub const Cpu = struct {
         self.bus.getMmo();
         const highbyte: u8 = self.bus.data_bus;
 
-        self.bus.addr_bus - self.stack_pointer + 0x100;
+        self.bus.addr_bus -= self.stack_pointer + 0x100;
         self.bus.getMmo();
         const lowbyte: u8 = self.bus.data_bus;
 
@@ -1295,7 +1295,7 @@ pub const Cpu = struct {
         } else {
             self.status.zero = 0;
         }
-        self.status.negative = @intCast(self.accumulator >> 7);
+        self.status.negative = @truncate(self.accumulator >> 7);
     }
 
     pub fn compareAccumulator(self: *Cpu, time: i128) void {
@@ -2894,6 +2894,10 @@ pub const Cpu = struct {
                             std.debug.print("6502: INC Found!\n", .{});
                             break :RMW;
                         }
+                    },
+                    else => {
+                        std.debug.print("6502: No Valid Instruction Found!\n", .{});
+                        break :RMW;
                     },
                 }
             },

@@ -19,7 +19,7 @@ pub const Cartridge = struct {
         //no raii gangy
         //determine ines or nes2.0 format
         var ines: bool = true;
-        if (file[7] & 0xC == 8) ines = false;
+        if (file.*[7] & 0xC == 8) ines = false;
         var prg_rom_size: u16 = 0;
         var chr_rom_size: u16 = 0;
         var prg_ram_size: u16 = 0;
@@ -27,7 +27,7 @@ pub const Cartridge = struct {
         var mapper: u8 = 0;
 
         for (4..12) |index| {
-            const header = file[index];
+            const header = file.*[index];
             switch (index) {
                 4 => prg_rom_size: {
                     if (ines == true) {
@@ -48,7 +48,7 @@ pub const Cartridge = struct {
                 6 => misc: {
                     mapper |= header >> 4;
                     self.alt_nametable = @truncate(header >> 3 & 0b1);
-                    self.trainer = @truncate(header >> 2 & 0b1);
+                    self.trainer_bit = @truncate(header >> 2 & 0b1);
                     //battery
                     self.hori_mirroring = @truncate(header & 0b1);
                     break :misc;
@@ -71,7 +71,7 @@ pub const Cartridge = struct {
                 },
                 10 => prg_ram_size: {
                     if (ines != true) {
-                        prg_ram_size = 64 << (header & 0xF);
+                        prg_ram_size = @as(u16, 64) << @truncate(header & 0xF);
                         //nvramsize
                     }
                     break :prg_ram_size;
@@ -88,12 +88,14 @@ pub const Cartridge = struct {
             }
         }
 
-        self.mapper = mapper;
+        self.mapper = @enumFromInt(mapper);
         self.prg_rom = try allocator.alloc(u8, prg_rom_size * 16384);
         self.chr_rom = try allocator.alloc(u8, chr_rom_size * 8192);
         self.prg_ram = try allocator.alloc(u8, prg_ram_size);
 
-        std.debug.print("Mapper Initialized to PRG_RAM: {d}, PRG_ROM: {d}, CHR_ROM: {d}\n", .{ prg_ram_size, prg_rom_size, chr_rom_size });
+        std.debug.print("Mapper Initialized to PRG_RAM: {d}KiB, PRG_ROM: {d}KiB, CHR_ROM: {d}KiB\n", .{ self.prg_ram.len, self.prg_rom.len, self.chr_rom.len });
+        self.mapROM(file);
+
         //intialize every array according to their size values in the headers
     }
 
@@ -135,12 +137,12 @@ pub const Cartridge = struct {
     pub fn mapROM(self: *Cartridge, rom: *[]u8) void {
         switch (self.mapper) {
             Mapper.NROM => nrom: {
-                std.mem.copyForwards(u8, self.prg_rom, rom[16..16400]);
+                std.mem.copyForwards(u8, self.prg_rom, rom.*[16..16400]);
                 break :nrom;
             },
-            else => default: {
-                break :default;
-            },
+            //else => default: {
+            //   break :default;
+            //},
         }
     }
 };

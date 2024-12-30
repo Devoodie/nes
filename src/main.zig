@@ -43,6 +43,25 @@ pub fn main() !void {
     defer allocator.free(rom);
 
     std.debug.print("Rom Loaded: {d}!\n\n", .{rom.len});
+
+    try nes.Mapper.mapper_init(@constCast(&rom), allocator);
+    //program start
+
+    //boostrap sequence
+    {
+        nes.Cpu.pc -= 1;
+        const msb: u16 = nes.Cpu.GetImmediate();
+        nes.Cpu.pc += 1;
+        const lsb: u16 = nes.Cpu.GetImmediate();
+
+        nes.Bus.addr_bus = msb << 8;
+        nes.Bus.addr_bus |= lsb;
+    }
+
+    while (true) {
+        nes.Cpu.execute();
+    }
+    try nes.Mapper.deinit(allocator);
 }
 
 test "simple test" {
