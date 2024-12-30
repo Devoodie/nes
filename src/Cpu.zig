@@ -2484,6 +2484,8 @@ pub const Cpu = struct {
 
     pub fn operate(self: *Cpu) void {
         self.execute();
+        //if there's a non-maskable interrupt /detect and handle
+        if (self.bus.ppu_ptr.nmi == 1) {}
     }
 
     pub fn execute(self: *Cpu) void {
@@ -2813,6 +2815,52 @@ pub const Cpu = struct {
                         } else if (self.instruction == 0x9A) {
                             self.xToStackPointer(time);
                             std.debug.print("6502: TXS Found!\n", .{});
+                            break :RMW;
+                        }
+                    },
+                    0xA0, 0xB0 => {
+                        if (self.instruction == 0xB2) {
+                            std.debug.print("6502: No Valid Instruction 'STP' Found!\n", .{});
+                            break :RMW;
+                        } else if (self.instruction == 0xAA) {
+                            self.accumulatorToX(time);
+                            std.debug.print("6502: TAX Found!\n", .{});
+                            break :RMW;
+                        } else if (self.instruction == 0xBA) {
+                            self.xToStackPointer(time);
+                            std.debug.print("6502: TSX Found!\n", .{});
+                            break :RMW;
+                        } else {
+                            self.loadXRegister(time);
+                            std.debug.print("6502: LDX Found!\n", .{});
+                            break :RMW;
+                        }
+                    },
+                    0xC0, 0xD0 => {
+                        if (self.instruction == 0xE2) {
+                            std.debug.print("6502: No Valid Instruction 'STP' Found!\n", .{});
+                            break :RMW;
+                        } else if (self.instruction == 0xC0 or self.instruction == 0xEA) {
+                            self.nop(time);
+                            std.debug.print("6502: NOP Found!\n", .{});
+                            break :RMW;
+                        } else {
+                            self.decrement(time);
+                            std.debug.print("6502: DEC Found!\n", .{});
+                            break :RMW;
+                        }
+                    },
+                    0xE0, 0xF0 => {
+                        if (self.instruction == 0xF2) {
+                            std.debug.print("6502: No Valid Instruction 'STP' Found!\n", .{});
+                            break :RMW;
+                        } else if (self.instruction == 0xE0 or self.instruction == 0xEA or self.instruction == 0xFA) {
+                            self.nop(time);
+                            std.debug.print("6502: NOP Found!\n", .{});
+                            break :RMW;
+                        } else {
+                            self.increment(time);
+                            std.debug.print("6502: INC Found!\n", .{});
                             break :RMW;
                         }
                     },
