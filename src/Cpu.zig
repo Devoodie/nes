@@ -2505,25 +2505,106 @@ pub const Cpu = struct {
                         self.forceInterrupt(time);
                         break :CONTROL;
                     },
-
+                    0x08 => {
+                        self.pushStatus(time);
+                        break :CONTROL;
+                    },
+                    0x10 => {
+                        self.branchNoNegative(time);
+                        break :CONTROL;
+                    },
+                    0x18 => {
+                        self.clearCarry(time);
+                        break :CONTROL;
+                    },
                     0x20 => {
-                        self.logicalAnd(time);
+                        self.jumpSubroutine(time);
+                        break :CONTROL;
+                    },
+                    0x24, 0x2C => {
+                        self.bitTest(time);
+                        break :CONTROL;
+                    },
+                    0x28 => {
+                        self.pullStatus(time);
+                        break :CONTROL;
+                    },
+                    0x30 => {
+                        self.branchOnNegative(time);
+                        break :CONTROL;
+                    },
+                    0x38 => {
+                        self.setCarry(time);
                         break :CONTROL;
                     },
                     0x40 => {
-                        self.exclusiveOr(time);
+                        self.returnInterrupt(time);
+                        break :CONTROL;
+                    },
+                    0x48 => {
+                        self.pushAccumulator(time);
+                        break :CONTROL;
+                    },
+                    0x4C, 0x6C => {
+                        self.jump(time);
+                        break :CONTROL;
+                    },
+                    0x50 => {
+                        self.branchNoOverflow(time);
+                        break :CONTROL;
+                    },
+                    0x58 => {
+                        self.clearInterrupt(time);
                         break :CONTROL;
                     },
                     0x60 => {
-                        self.addWithCarry(time);
+                        self.returnSubroutine(time);
                         break :CONTROL;
                     },
-                    0x80 => {
-                        self.storeAccumulator(time);
+                    0x68 => {
+                        self.pullAccumulator(time);
                         break :CONTROL;
                     },
-                    0xA0 => {
-                        self.loadAccumulator(time);
+                    0x70 => {
+                        self.branchOnOverflow(time);
+                        break :CONTROL;
+                    },
+                    0x78 => {
+                        self.setInterrupt(time);
+                        break :CONTROL;
+                    },
+                    0x84, 0x94 => {
+                        self.storeYRegister(time);
+                        break :CONTROL;
+                    },
+                    0x88 => {
+                        self.decrementY(time);
+                        break :CONTROL;
+                    },
+                    0x90 => {
+                        self.branchNoCarry(time);
+                        break :CONTROL;
+                    },
+                    0x98 => {
+                        self.yToAccumulator(time);
+                        break :CONTROL;
+                        //SHY is 0x9C
+                    },
+                    0xA0, 0xA4, 0xAC, 0xB4, 0xBC => {
+                        //complete this instruction
+                        self.loadYRegister(time);
+                        break :CONTROL;
+                    },
+                    0xA8 => {
+                        self.accumulatorToY(time);
+                        break :CONTROL;
+                    },
+                    0xB0 => {
+                        self.branchOnCarry(time);
+                        break :CONTROL;
+                    },
+                    0xB8 => {
+                        self.clearOverflow(time);
                         break :CONTROL;
                     },
                     0xC0 => {
