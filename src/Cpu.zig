@@ -2481,4 +2481,107 @@ pub const Cpu = struct {
         }
         self.status.negative = self.accumulator >> 7;
     }
+
+    pub fn operate(self: *Cpu) void {
+        self.execute();
+    }
+
+    pub fn execute(self: *Cpu) void {
+        //instruction decode
+        const time: i128 = std.time.nanoTimestamp();
+        self.bus.addr_bus = self.pc;
+        self.bus.getMmo();
+
+        self.instruction = self.bus.data_bus;
+
+        const first_nib = (self.instruction & 0xF);
+        const second_nib = (self.instruction & 0xF0);
+
+        //instruction execute
+        switch (first_nib % 4) {
+            0 => CONTROL: {
+                switch (self.instruction) {
+                    0x00 => {
+                        self.forceInterrupt(time);
+                        break :CONTROL;
+                    },
+
+                    0x20 => {
+                        self.logicalAnd(time);
+                        break :CONTROL;
+                    },
+                    0x40 => {
+                        self.exclusiveOr(time);
+                        break :CONTROL;
+                    },
+                    0x60 => {
+                        self.addWithCarry(time);
+                        break :CONTROL;
+                    },
+                    0x80 => {
+                        self.storeAccumulator(time);
+                        break :CONTROL;
+                    },
+                    0xA0 => {
+                        self.loadAccumulator(time);
+                        break :CONTROL;
+                    },
+                    0xC0 => {
+                        self.compareAccumulator(time);
+                        break :CONTROL;
+                    },
+                    0xE0 => {
+                        self.subtractWithCarry(time);
+                        break :CONTROL;
+                    },
+                    else => {
+                        break :CONTROL;
+                    },
+                }
+            },
+            1 => ALU: {
+                switch (second_nib) {
+                    0x00 => {
+                        self.logicalOr(time);
+                        break :ALU;
+                    },
+                    0x20 => {
+                        self.logicalAnd(time);
+                        break :ALU;
+                    },
+                    0x40 => {
+                        self.exclusiveOr(time);
+                        break :ALU;
+                    },
+                    0x60 => {
+                        self.addWithCarry(time);
+                        break :ALU;
+                    },
+                    0x80 => {
+                        self.storeAccumulator(time);
+                        break :ALU;
+                    },
+                    0xA0 => {
+                        self.loadAccumulator(time);
+                        break :ALU;
+                    },
+                    0xC0 => {
+                        self.compareAccumulator(time);
+                        break :ALU;
+                    },
+                    0xE0 => {
+                        self.subtractWithCarry(time);
+                        break :ALU;
+                    },
+                    else => {
+                        break :ALU;
+                    },
+                }
+            },
+            else => default: {
+                std.debug.print("6502: No Valid Instruction Found!\n", .{});
+                break :default;
+            },
+        }
+    }
 };
