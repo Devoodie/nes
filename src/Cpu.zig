@@ -5,7 +5,7 @@ const StatusRegister = struct {
     carry: u1 = 0,
     zero: u1 = 0,
     interrupt_dsble: u1 = 0,
-    break_inter: u0 = 0,
+    break_inter: u1 = 0,
     decimal: u1 = 0,
     overflow: u1 = 0,
     negative: u1 = 0,
@@ -21,6 +21,7 @@ pub const Cpu = struct {
     status: StatusRegister = .{},
     bus: *component.Bus = undefined,
     instruction: u8 = undefined,
+    irq_line: u1 = 0,
     extra_cycle: u1 = undefined,
     odd_cycle: u1 = 0,
 
@@ -1021,6 +1022,38 @@ pub const Cpu = struct {
         self.status.negative = self.y_register >> 7;
     }
 
+    pub fn forceInterrupt(self: *Cpu, time: i128) void {
+        self.stackPushAddress(self.pc + 1);
+        self.pushStatus(time);
+
+        const new_time = std.time.nanoTimestamp();
+        self.status.break_inter = 1;
+        self.pc = 0xFFFD;
+
+        var address: u16 = self.GetImmediate();
+        address << 8;
+        self.pc += 1;
+        address |= self.GetImmediate();
+
+        self.pc = address;
+        self.self.cycle(new_time, 4);
+    }
+
+    pub fn interruptRequest(self: *Cpu, time: i128, vector: u16) void {
+        self.stackPushAddress(self.pc);
+        self.pushStatus(time);
+
+        const new_time = std.time.nanoTimestamp();
+        self.pc = vector - 1;
+        var address: u16 = self.GetImmediate();
+        address << 8;
+        self.pc += 1;
+        address |= self.GetImmediate();
+
+        self.pc = address;
+        self.self.cycle(new_time, 4);
+    }
+
     pub fn returnInterrupt(self: *Cpu, time: i128) void {
         const status = self.stackPopAddress();
         self.status.negative = status >> 7;
@@ -1030,25 +1063,12 @@ pub const Cpu = struct {
         self.status.interrupt_dsble = (status >> 3) & 0b1;
         self.status.zero = (status >> 2) & 0b1;
         self.status.carry = status & 0b1;
-        self.pc += 1;
-        self.pc += 1;
+        self.pc = self.stackPopAddress();
         self.cycle(time, 6);
-    }
-
-    pub fn returnSubroutine(self: *Cpu, time: i128) void {
-        self.pc = self.stackPopAddress() + 1;
-        self.cycle(time, 6);
-    }
-
-    pub fn forceInterrupt(self: *Cpu, time: i128) void {
-        self.stackPushAddress(self.pc + 1);
-        self.status.break_inter = 1;
-        self.pc = 0xFFFF;
-        self.self.cycle(time, 7);
     }
 
     pub fn jumpSubroutine(self: *Cpu, time: i128) void {
-        self.stackPush(self.pc + 3 - 1);
+        self.stackPushAddress(self.pc + 3);
 
         self.bus.addr_bus = self.pc + 2;
         self.bus.getMmo();
@@ -1063,6 +1083,11 @@ pub const Cpu = struct {
         self.pc = addr;
 
         self.self.cycle(time, 6);
+    }
+
+    pub fn returnSubroutine(self: *Cpu, time: i128) void {
+        self.pc = self.stackPopAddress();
+        self.cycle(time, 6);
     }
 
     pub fn subtractWithCarry(self: *Cpu, time: i128) void {
@@ -2483,9 +2508,15 @@ pub const Cpu = struct {
     }
 
     pub fn operate(self: *Cpu) void {
-        self.execute();
-        //if there's a non-maskable interrupt /detect and handle
-        if (self.bus.ppu_ptr.nmi == 1) {}
+        while (true) {
+            self.execute();
+            //if there's a non-maskable interrupt /detect and handle
+            if (self.bus.ppu_ptr.nmi == 1) {
+                self.interruptRequest(std.time.nanoTimestamp(), 0xFFFA);
+            } else if (self.irq_line == 1 and self.status.interrupt_dsble != 1) {
+                self.interruptRequest(std.time.nanoTimestamp(), 0xFFFE);
+            }
+        }
     }
 
     pub fn execute(self: *Cpu) void {
