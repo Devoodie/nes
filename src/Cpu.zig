@@ -21,7 +21,7 @@ pub const Cpu = struct {
     status: StatusRegister = .{},
     bus: *component.Bus = undefined,
     instruction: u8 = undefined,
-    irq_line: u1 = 0,
+    irq_line: u1 = 1,
     extra_cycle: u8 = 0,
     odd_cycle: u1 = 0,
 
@@ -36,43 +36,47 @@ pub const Cpu = struct {
         }
     }
 
-    pub fn stackPush(data: u8, self: *Cpu) void {
-        self.bus.addr_bus = self.stack_pointer + 0x100;
+    pub fn stackPush(self: *Cpu, data: u8) void {
+        self.bus.addr_bus = @as(u16, self.stack_pointer) + 0x100;
         self.bus.data_bus = data;
         self.bus.putMmi();
-        self.stack_pointer -= 1;
+        self.stack_pointer -%= 1;
     }
 
-    pub fn stackPushAddress(address: u16, self: *Cpu) void {
-        const highbyte: u8 = address >> 8;
-        const lowbyte: u8 = address & 0xFF;
+    pub fn stackPushAddress(self: *Cpu, address: u16) void {
+        const highbyte: u8 = @truncate(address >> 8);
+        const lowbyte: u8 = @truncate(address & 0xFF);
 
-        self.bus.addr_bus = self.stack_pointer + 0x100;
+        self.bus.addr_bus = @as(u16, self.stack_pointer) + 0x100;
+        self.stack_pointer -%= 1;
         self.bus.data_bus = highbyte;
         self.bus.putMmi();
 
-        self.bus.addr_bus = self.stack_pointer + 0x100;
+        self.bus.addr_bus = @as(u16, self.stack_pointer) + 0x100;
+        self.stack_pointer -%= 1;
         self.bus.data_bus = lowbyte;
         self.bus.putMmi();
-        self.stack_pointer -= 2;
     }
 
     pub fn stackPop(self: *Cpu) u8 {
-        self.bus.addr_bus = self.stack_pointer + 0x100;
+        self.stack_pointer +%= 1;
+        self.bus.addr_bus = @as(u16, self.stack_pointer) + 0x100;
         self.bus.getMmo();
-        self.stack_pointer += 1;
         return self.bus.data_bus;
     }
 
     pub fn stackPopAddress(self: *Cpu) u16 {
         var address: u16 = 0;
-        self.bus.addr_bus = self.stack_pointer + 0x100;
+        self.stack_pointer +%= 1;
+        self.bus.addr_bus = @as(u16, self.stack_pointer) + 0x100;
         self.bus.getMmo();
-        const highbyte: u8 = self.bus.data_bus;
+        self.stack_pointer +%= 1;
+        const highbyte: u16 = self.bus.data_bus;
 
-        self.bus.addr_bus -= self.stack_pointer + 0x100;
+        self.bus.addr_bus +%= 1;
         self.bus.getMmo();
-        const lowbyte: u8 = self.bus.data_bus;
+        self.stack_pointer +%= 1;
+        const lowbyte: u16 = self.bus.data_bus;
 
         address = (highbyte << 8) | lowbyte;
         return address;
@@ -396,7 +400,7 @@ pub const Cpu = struct {
         } else {
             self.status.zero = 0;
         }
-        self.status.negative = self.accumulator >> 7;
+        self.status.negative = @truncate(self.accumulator >> 7);
 
         self.pc += 1;
         self.cycle(time, 2);
@@ -409,7 +413,7 @@ pub const Cpu = struct {
         } else {
             self.status.zero = 0;
         }
-        self.status.negative = self.accumulator >> 7;
+        self.status.negative = @truncate(self.accumulator >> 7);
 
         self.pc += 1;
         self.cycle(time, 2);
@@ -422,7 +426,7 @@ pub const Cpu = struct {
         } else {
             self.status.zero = 0;
         }
-        self.status.negative = self.x_register >> 7;
+        self.status.negative = @truncate(self.x_register >> 7);
 
         self.pc += 1;
         self.cycle(time, 2);
@@ -435,7 +439,7 @@ pub const Cpu = struct {
         } else {
             self.status.zero = 0;
         }
-        self.status.negative = self.x_register >> 7;
+        self.status.negative = @truncate(self.x_register >> 7);
 
         self.pc += 1;
         self.cycle(time, 2);
@@ -448,7 +452,7 @@ pub const Cpu = struct {
         } else {
             self.status.zero = 0;
         }
-        self.status.negative = self.stack_pointer >> 7;
+        self.status.negative = @truncate(self.stack_pointer >> 7);
 
         self.pc += 1;
         self.cycle(time, 2);
@@ -461,7 +465,7 @@ pub const Cpu = struct {
         } else {
             self.status.zero = 0;
         }
-        self.status.negative = self.y_register >> 7;
+        self.status.negative = @truncate(self.y_register >> 7);
 
         self.pc += 1;
         self.cycle(time, 2);
@@ -482,33 +486,33 @@ pub const Cpu = struct {
     pub fn pullStatus(self: *Cpu, time: i128) void {
         const status = self.stackPop();
 
-        self.status.negative = status >> 7;
-        self.status.overflow = (status >> 6) & 0b1;
-        self.status.break_inter = (status >> 5);
-        self.status.decimal = (status >> 4) & 0b1;
-        self.status.interrupt_dsble = (status >> 3) & 0b1;
-        self.status.zero = (status >> 2) & 0b1;
-        self.status.carry = status & 0b1;
+        self.status.negative = @truncate(status >> 7);
+        self.status.overflow = @truncate((status >> 6) & 0b1);
+        self.status.break_inter = @truncate(status >> 5);
+        self.status.decimal = @truncate((status >> 4) & 0b1);
+        self.status.interrupt_dsble = @truncate((status >> 3) & 0b1);
+        self.status.zero = @truncate((status >> 2) & 0b1);
+        self.status.carry = @truncate(status & 0b1);
 
         self.pc += 1;
         self.cycle(time, 4);
     }
 
     pub fn pushStatus(self: *Cpu, time: i128) void {
-        var status = 0;
+        var status: u8 = 0;
 
         status |= self.status.negative;
-        status << 1;
+        status <<= 1;
         status |= self.status.overflow;
-        status << 1;
+        status <<= 1;
         status |= self.status.break_inter;
-        status << 2;
+        status <<= 2;
         status |= self.status.decimal;
-        status << 1;
+        status <<= 1;
         status |= self.status.interrupt_dsble;
-        status << 1;
+        status <<= 1;
         status |= self.status.zero;
-        status << 1;
+        status <<= 1;
         status |= self.status.carry;
         self.stackPush(status);
 
@@ -534,7 +538,7 @@ pub const Cpu = struct {
                 } else {
                     self.status.zero = 0;
                 }
-                self.status.negative = value >> 7;
+                self.status.negative = @truncate(value >> 7);
 
                 self.pc += 2;
                 self.cycle(time, 2);
@@ -551,7 +555,7 @@ pub const Cpu = struct {
                 } else {
                     self.status.zero = 0;
                 }
-                self.status.negative = value >> 7;
+                self.status.negative = @truncate(value >> 7);
 
                 self.pc += 2;
                 self.cycle(time, 3);
@@ -568,7 +572,7 @@ pub const Cpu = struct {
                 } else {
                     self.status.zero = 0;
                 }
-                self.status.negative = value >> 7;
+                self.status.negative = @truncate(value >> 7);
 
                 self.pc += 3;
                 self.cycle(time, 4);
@@ -594,7 +598,7 @@ pub const Cpu = struct {
                 } else {
                     self.status.zero = 0;
                 }
-                self.status.negative = value >> 7;
+                self.status.negative = @truncate(value >> 7);
 
                 self.pc += 2;
                 self.cycle(time, 2);
@@ -611,7 +615,7 @@ pub const Cpu = struct {
                 } else {
                     self.status.zero = 0;
                 }
-                self.status.negative = value >> 7;
+                self.status.negative = @truncate(value >> 7);
 
                 self.pc += 2;
                 self.cycle(time, 3);
@@ -628,7 +632,7 @@ pub const Cpu = struct {
                 } else {
                     self.status.zero = 0;
                 }
-                self.status.negative = value >> 7;
+                self.status.negative = @truncate(value >> 7);
 
                 self.pc += 3;
                 self.cycle(time, 4);
@@ -652,7 +656,7 @@ pub const Cpu = struct {
             success = 0;
         }
         self.pc += 2;
-        self.cycle(time, 2 + success + self.extra_cycle);
+        self.cycle(time, self.extra_cycle + 2 + success);
     }
 
     pub fn branchOnCarry(self: *Cpu, time: i128) void {
@@ -666,7 +670,7 @@ pub const Cpu = struct {
             success = 0;
         }
         self.pc += 2;
-        self.cycle(time, 2 + success + self.extra_cycle);
+        self.cycle(time, self.extra_cycle + success);
     }
 
     pub fn branchOnZero(self: *Cpu, time: i128) void {
@@ -680,7 +684,7 @@ pub const Cpu = struct {
             success = 0;
         }
         self.pc += 2;
-        self.cycle(time, 2 + success + self.extra_cycle);
+        self.cycle(time, self.extra_cycle + 2 + success);
     }
 
     pub fn branchNoZero(self: *Cpu, time: i128) void {
@@ -709,7 +713,7 @@ pub const Cpu = struct {
             success = 0;
         }
         self.pc += 2;
-        self.cycle(time, 2 + success + self.extra_cycle);
+        self.cycle(time, self.extra_cycle + 2 + success);
     }
 
     pub fn branchOnNegative(self: *Cpu, time: i128) void {
@@ -723,7 +727,7 @@ pub const Cpu = struct {
             success = 0;
         }
         self.pc += 2;
-        self.cycle(time, 2 + success + self.extra_cycle);
+        self.cycle(time, self.extra_cycle + 2 + success);
     }
 
     pub fn branchNoOverflow(self: *Cpu, time: i128) void {
@@ -737,7 +741,7 @@ pub const Cpu = struct {
             success = 0;
         }
         self.pc += 2;
-        self.cycle(time, 2 + success + self.extra_cycle);
+        self.cycle(time, self.extra_cycle + 2 + success);
     }
 
     pub fn branchOnOverflow(self: *Cpu, time: i128) void {
@@ -751,7 +755,7 @@ pub const Cpu = struct {
             success = 0;
         }
         self.pc += 2;
-        self.cycle(time, 2 + success + self.extra_cycle);
+        self.cycle(time, self.extra_cycle + 2 + success);
     }
 
     pub fn increment(self: *Cpu, time: i128) void {
@@ -804,7 +808,7 @@ pub const Cpu = struct {
         } else {
             self.status.zero = 0;
         }
-        self.status.negative = value >> 7;
+        self.status.negative = @truncate(value >> 7);
     }
 
     pub fn incrementXRegister(self: *Cpu, time: i128) void {
@@ -814,7 +818,7 @@ pub const Cpu = struct {
         } else {
             self.status.zero = 0;
         }
-        self.status.negative = self.x_register >> 7;
+        self.status.negative = @truncate(self.x_register >> 7);
 
         self.pc += 1;
         self.cycle(time, 2);
@@ -827,7 +831,7 @@ pub const Cpu = struct {
         } else {
             self.status.zero = 0;
         }
-        self.status.negative = self.y_register >> 7;
+        self.status.negative = @truncate(self.y_register >> 7);
 
         self.pc += 1;
         self.cycle(time, 2);
@@ -883,7 +887,7 @@ pub const Cpu = struct {
         } else {
             self.status.zero = 0;
         }
-        self.status.negative = value >> 7;
+        self.status.negative = @truncate(value >> 7);
     }
 
     pub fn decrementY(self: *Cpu, time: i128) void {
@@ -894,7 +898,7 @@ pub const Cpu = struct {
         } else {
             self.status.zero = 0;
         }
-        self.status.negative = self.y_register >> 7;
+        self.status.negative = @truncate(self.y_register >> 7);
 
         self.pc += 1;
         self.cycle(time, 2);
@@ -965,7 +969,7 @@ pub const Cpu = struct {
         } else {
             self.status.zero = 0;
         }
-        self.status.negative = self.y_register >> 7;
+        self.status.negative = @truncate(self.y_register >> 7);
     }
 
     pub fn loadYRegister(self: *Cpu, time: i128) void {
@@ -1019,7 +1023,7 @@ pub const Cpu = struct {
         } else {
             self.status.zero = 0;
         }
-        self.status.negative = self.y_register >> 7;
+        self.status.negative = @truncate(self.y_register >> 7);
     }
 
     pub fn forceInterrupt(self: *Cpu, time: i128) void {
@@ -1031,12 +1035,12 @@ pub const Cpu = struct {
         self.pc = 0xFFFD;
 
         var address: u16 = self.GetImmediate();
-        address << 8;
+        address <<= 8;
         self.pc += 1;
         address |= self.GetImmediate();
 
         self.pc = address;
-        self.self.cycle(new_time, 4);
+        self.cycle(new_time, 4);
     }
 
     pub fn interruptRequest(self: *Cpu, time: i128, vector: u16) void {
@@ -1055,14 +1059,14 @@ pub const Cpu = struct {
     }
 
     pub fn returnInterrupt(self: *Cpu, time: i128) void {
-        const status = self.stackPopAddress();
-        self.status.negative = status >> 7;
-        self.status.overflow = (status >> 6) & 0b1;
-        self.status.break_inter = (status >> 5);
-        self.status.decimal = (status >> 4) & 0b1;
-        self.status.interrupt_dsble = (status >> 3) & 0b1;
-        self.status.zero = (status >> 2) & 0b1;
-        self.status.carry = status & 0b1;
+        const status = self.stackPop();
+        self.status.negative = @truncate(status >> 7);
+        self.status.overflow = @truncate((status >> 6) & 0b1);
+        self.status.break_inter = @truncate(status >> 5);
+        self.status.decimal = @truncate((status >> 4) & 0b1);
+        self.status.interrupt_dsble = @truncate((status >> 3) & 0b1);
+        self.status.zero = @truncate((status >> 2) & 0b1);
+        self.status.carry = @truncate(status & 0b1);
         self.pc = self.stackPopAddress();
         self.cycle(time, 6);
     }
@@ -1073,7 +1077,9 @@ pub const Cpu = struct {
         self.bus.addr_bus = self.pc + 2;
         self.bus.getMmo();
 
-        var addr: u16 = self.bus.data_bus << 8;
+        var addr: u16 = self.bus.data_bus;
+
+        addr <<= 8;
 
         self.bus.addr_bus = self.pc + 1;
         self.bus.getMmo();
@@ -1082,7 +1088,7 @@ pub const Cpu = struct {
 
         self.pc = addr;
 
-        self.self.cycle(time, 6);
+        self.cycle(time, 6);
     }
 
     pub fn returnSubroutine(self: *Cpu, time: i128) void {
@@ -1441,7 +1447,7 @@ pub const Cpu = struct {
                     break :default;
                 },
             }
-            self.status.negative = self.accumulator >> 7;
+            self.status.negative = @truncate(self.accumulator >> 7);
         }
     }
 
@@ -1640,7 +1646,7 @@ pub const Cpu = struct {
                     result = value >> 1;
                     self.setZeroPageX(result);
 
-                    self.status.carry = value & 0b1;
+                    self.status.carry = @truncate(value & 0b1);
 
                     self.pc += 2;
                     self.cycle(time, 6);
@@ -1652,7 +1658,7 @@ pub const Cpu = struct {
                     result = value >> 1;
                     self.setAbsoluteIndexed(0, result);
 
-                    self.status.carry = value & 0b1;
+                    self.status.carry = @truncate(value & 0b1);
 
                     self.pc += 3;
                     self.cycle(time, 7);
@@ -1671,7 +1677,7 @@ pub const Cpu = struct {
                     result = value >> 1;
                     self.setZeroPage(result);
 
-                    self.status.carry = value & 0b1;
+                    self.status.carry = @truncate(value & 0b1);
 
                     self.pc += 2;
                     self.cycle(time, 5);
@@ -1679,7 +1685,7 @@ pub const Cpu = struct {
                     break :zeropage;
                 },
                 0xA => accumulator: {
-                    self.status.carry = self.accumulator & 0b1;
+                    self.status.carry = @truncate(self.accumulator & 0b1);
                     result = self.accumulator >> 1;
                     self.accumulator = result;
 
@@ -1692,7 +1698,7 @@ pub const Cpu = struct {
                     result = value >> 1;
                     self.setAbsolute(result);
 
-                    self.status.carry = value & 0b1;
+                    self.status.carry = @truncate(value & 0b1);
 
                     self.pc += 3;
                     self.cycle(time, 6);
@@ -1710,7 +1716,7 @@ pub const Cpu = struct {
         } else {
             self.status.zero = 0;
         }
-        self.status.negative = result >> 7;
+        self.status.negative = @truncate(result >> 7);
     }
 
     pub fn rotateLeft(self: *Cpu, time: i128) void {
@@ -1722,7 +1728,7 @@ pub const Cpu = struct {
                     result = value << 1;
                     result |= self.status.carry;
 
-                    self.status.carry = (value & 0b10000000) >> 7;
+                    self.status.carry = @truncate(value >> 7);
 
                     self.setZeroPageX(result);
 
@@ -1736,7 +1742,7 @@ pub const Cpu = struct {
                     result = value << 1;
                     result |= self.status.carry;
 
-                    self.status.carry = (value & 0b10000000) >> 7;
+                    self.status.carry = @truncate(value >> 7);
 
                     self.setAbsoluteIndexed(0, result);
 
@@ -1757,7 +1763,7 @@ pub const Cpu = struct {
                     result = value << 1;
                     result |= self.status.carry;
 
-                    self.status.carry = (value & 0b10000000) >> 7;
+                    self.status.carry = @truncate(value >> 7);
 
                     self.setZeroPage(result);
 
@@ -1768,7 +1774,7 @@ pub const Cpu = struct {
                 },
                 0xA => accumulator: {
                     const carry = self.status.carry;
-                    self.status.carry = (self.accumulator & 0b10000000) >> 7;
+                    self.status.carry = @truncate(self.accumulator >> 7);
 
                     result = self.accumulator << 1;
                     result |= carry;
@@ -1783,7 +1789,7 @@ pub const Cpu = struct {
                     result = value << 1;
                     result |= self.status.carry;
 
-                    self.status.carry = (value & 0b10000000) >> 7;
+                    self.status.carry = @truncate(value >> 7);
 
                     self.setAbsolute(result);
 
@@ -1803,7 +1809,7 @@ pub const Cpu = struct {
         } else {
             self.status.zero = 0;
         }
-        self.status.negative = result >> 7;
+        self.status.negative = @truncate(result >> 7);
     }
 
     pub fn rotateRight(self: *Cpu, time: i128) void {
@@ -1813,9 +1819,9 @@ pub const Cpu = struct {
                 6 => zeropagex: {
                     const value = self.GetZeroPageX();
                     result = value >> 1;
-                    result |= self.status.carry << 7;
+                    result |= @as(u8, self.status.carry) << 7;
 
-                    self.status.carry = value & 0b1;
+                    self.status.carry = @truncate(value & 0b1);
 
                     self.setZeroPageX(result);
 
@@ -1827,9 +1833,9 @@ pub const Cpu = struct {
                 0xE => absolutex: {
                     const value = self.GetAbsoluteIndexed(0);
                     result = value >> 1;
-                    result |= self.status.carry << 7;
+                    result |= @as(u8, self.status.carry) << 7;
 
-                    self.status.carry = value & 0b1;
+                    self.status.carry = @truncate(value & 0b1);
 
                     self.setAbsoluteIndexed(0, result);
 
@@ -1848,9 +1854,9 @@ pub const Cpu = struct {
                 6 => zeropage: {
                     const value = self.GetZeroPage();
                     result = value >> 1;
-                    result |= self.status.carry << 7;
+                    result |= @as(u8, self.status.carry) << 7;
 
-                    self.status.carry = value & 0b1;
+                    self.status.carry = @truncate(value & 0b1);
 
                     self.setZeroPage(result);
 
@@ -1860,8 +1866,8 @@ pub const Cpu = struct {
                     break :zeropage;
                 },
                 0xA => accumulator: {
-                    const carry = self.status.carry;
-                    self.status.carry = self.accumulator & 0b1;
+                    const carry: u8 = self.status.carry;
+                    self.status.carry = @truncate(self.accumulator & 0b1);
                     result = self.accumulator >> 1;
                     result |= carry << 7;
                     self.accumulator = result;
@@ -1873,9 +1879,9 @@ pub const Cpu = struct {
                 0xE => absolute: {
                     const value = self.GetAbsolute();
                     result = value >> 1;
-                    result |= self.status.carry << 7;
+                    result |= @as(u8, self.status.carry) << 7;
 
-                    self.status.carry = value & 0b1;
+                    self.status.carry = @truncate(value & 0b1);
 
                     self.setAbsolute(result);
 
@@ -1895,7 +1901,7 @@ pub const Cpu = struct {
         } else {
             self.status.zero = 0;
         }
-        self.status.negative = result >> 7;
+        self.status.negative = @truncate(result >> 7);
     }
 
     pub fn arithmeticShiftLeft(self: *Cpu, time: i128) void {
@@ -1911,7 +1917,7 @@ pub const Cpu = struct {
                     } else {
                         self.status.zero = 0;
                     }
-                    self.status.negative = value[0] >> 7;
+                    self.status.negative = @truncate(value[0] >> 7);
 
                     self.pc += 2;
                     self.cycle(time, 6);
@@ -1928,7 +1934,7 @@ pub const Cpu = struct {
                     } else {
                         self.status.zero = 0;
                     }
-                    self.status.negative = value[0] >> 7;
+                    self.status.negative = @truncate(value[0] >> 7);
 
                     self.pc += 3;
                     self.cycle(time, 7);
@@ -1951,7 +1957,7 @@ pub const Cpu = struct {
                     } else {
                         self.status.zero = 0;
                     }
-                    self.status.negative = value[0] >> 7;
+                    self.status.negative = @truncate(value[0] >> 7);
 
                     self.pc += 2;
                     self.cycle(time, 5);
@@ -1967,7 +1973,7 @@ pub const Cpu = struct {
                     } else {
                         self.status.zero = 0;
                     }
-                    self.status.negative = self.accumulator >> 7;
+                    self.status.negative = @truncate(self.accumulator >> 7);
 
                     self.pc += 1;
                     self.cycle(time, 2);
@@ -1983,7 +1989,7 @@ pub const Cpu = struct {
                     } else {
                         self.status.zero = 0;
                     }
-                    self.status.negative = value[0] >> 7;
+                    self.status.negative = @truncate(value[0] >> 7);
 
                     self.pc += 3;
                     self.cycle(time, 6);
@@ -2233,8 +2239,8 @@ pub const Cpu = struct {
             4 => zero_page: {
                 const value = self.GetZeroPage() & self.accumulator;
 
-                self.status.negative = value >> 7;
-                self.status.overflow = (value & 0b01000000) >> 6;
+                self.status.negative = @truncate(value >> 7);
+                self.status.overflow = @truncate((value & 0b01000000) >> 6);
                 if (value == 0) {
                     self.status.zero = 1;
                 } else {
@@ -2248,8 +2254,8 @@ pub const Cpu = struct {
             0xC => absolute: {
                 const value = self.GetAbsolute() & self.accumulator;
 
-                self.status.negative = value >> 7;
-                self.status.overflow = value >> 6;
+                self.status.negative = @truncate(value >> 7);
+                self.status.overflow = @truncate(value >> 6);
                 if (value == 0) {
                     self.status.zero = 1;
                 } else {
@@ -2344,7 +2350,7 @@ pub const Cpu = struct {
         } else {
             self.status.zero = 0;
         }
-        self.status.negative = self.accumulator >> 7;
+        self.status.negative = @truncate(self.accumulator >> 7);
     }
 
     pub fn logicalOr(self: *Cpu, time: i128) void {
@@ -2424,7 +2430,7 @@ pub const Cpu = struct {
         } else {
             self.status.zero = 0;
         }
-        self.status.negative = self.accumulator >> 7;
+        self.status.negative = @truncate(self.accumulator >> 7);
     }
 
     pub fn logicalAnd(self: *Cpu, time: i128) void {
@@ -2504,7 +2510,7 @@ pub const Cpu = struct {
         } else {
             self.status.zero = 0;
         }
-        self.status.negative = self.accumulator >> 7;
+        self.status.negative = @truncate(self.accumulator >> 7);
     }
 
     pub fn operate(self: *Cpu) void {
@@ -2530,6 +2536,7 @@ pub const Cpu = struct {
         const first_nib = (self.instruction & 0xF);
         const second_nib = (self.instruction & 0xF0);
 
+        std.debug.print("Instruction: 0x{X}!\n", .{self.instruction});
         //instruction execute
         switch (first_nib % 4) {
             0 => CONTROL: {

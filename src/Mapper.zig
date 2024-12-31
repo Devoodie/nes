@@ -137,7 +137,7 @@ pub const Cartridge = struct {
     pub fn mapROM(self: *Cartridge, rom: *[]u8) void {
         switch (self.mapper) {
             Mapper.NROM => nrom: {
-                std.mem.copyForwards(u8, self.prg_rom, rom.*[16..16400]);
+                std.mem.copyForwards(u8, self.prg_rom, rom.*[16 .. self.prg_rom.len + 16]);
                 break :nrom;
             },
             //else => default: {
