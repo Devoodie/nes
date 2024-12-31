@@ -55,7 +55,7 @@ pub const Ppu = struct {
                 return self.ReadData();
             },
             else => {
-                std.debug.print("Invalid PPU Register!\n", .{});
+                std.debug.print("Invalid PPU Read Register! Address: 0x{X}\n", .{address});
                 return 0;
             },
         }
@@ -96,7 +96,7 @@ pub const Ppu = struct {
                 break :data;
             },
             else => default: {
-                std.debug.print("Invalid PPU Register!\n", .{});
+                std.debug.print("Invalid Write PPU Register! Address: 0x{X}\n", .{address});
                 break :default;
             },
         }
@@ -106,9 +106,9 @@ pub const Ppu = struct {
 
         const control = (self.control & 0b00000100) >> 3;
         if (control == 0) {
-            self.v += 1;
+            self.v +%= 1;
         } else {
-            self.v += 32;
+            self.v +%= 32;
         }
     }
 
@@ -118,9 +118,9 @@ pub const Ppu = struct {
 
         const control = (self.control & 0b00000100) >> 3;
         if (control == 0) {
-            self.v += 1;
+            self.v +%= 1;
         } else {
-            self.v += 32;
+            self.v +%= 32;
         }
         return value;
     }
@@ -493,11 +493,11 @@ pub const Ppu = struct {
             self.v &= 0x7FE0;
             self.v ^= 0x400;
         } else {
-            self.v += 1;
+            self.v +%= 1;
         }
         if (self.v & 0x7000 != 0x7000) {
             //fine y increment
-            self.v += 0x1000;
+            self.v +%= 0x1000;
         } else {
             //coarse y increment
             self.v &= 0x0FFF;
