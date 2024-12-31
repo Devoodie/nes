@@ -1,3 +1,7 @@
+const std = @import("std");
+const rl = @import("raylib");
+const picture_unit = @import("Ppu.zig");
+
 pub const Color = enum(u8) {
     darkGray = 0,
     silver = 0x10,
@@ -71,3 +75,26 @@ pub const Color = enum(u8) {
 
     Black = 0x0E,
 };
+
+pub fn draw(ppu: *picture_unit.Ppu) !void {
+    const width = 1280;
+    const height = 1200;
+    rl.initWindow(width, height, "Devooty's Nes");
+    defer rl.closeWindow();
+
+    while (true) {
+        if (ppu.status & 0x80 == 0x80) {
+            for (ppu.bitmap, 0..) |row, y_pos| {
+                for (row, 0..) |column, x_pos| {
+                    if (column > 0) {
+                        rl.drawRectangle(@intCast(x_pos * 5), @intCast(y_pos * 5), 5, 5, rl.Color.white);
+                        rl.drawText("Drew\n", 190, 200, 20, rl.Color.white);
+                    }
+                }
+            }
+            rl.beginDrawing();
+        }
+        rl.clearBackground(rl.Color.black);
+        rl.endDrawing();
+    }
+}

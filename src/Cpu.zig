@@ -349,10 +349,11 @@ pub const Cpu = struct {
     }
 
     pub fn branchRelative(self: *Cpu) void {
-        const low_byte: u8 = @as(u8, @truncate(self.pc)) & 0xFF;
+        const low_byte: u8 = @truncate(self.pc & 0xFF);
         const offset: u8 = self.GetImmediate();
         const signed_value: u7 = @intCast(offset & 0b1111111);
         var unsigned_value: u8 = undefined;
+        std.debug.print("Previous Address: {d}!\n", .{self.pc});
 
         if (offset >> 7 == 1) {
             unsigned_value = ~(signed_value);
@@ -369,7 +370,8 @@ pub const Cpu = struct {
             self.extra_cycle = sum[1];
             self.pc &= 0xFF00;
             self.pc |= sum[0];
-            self.pc += @as(u16, @intCast(self.extra_cycle)) << 8;
+            self.pc += @as(u16, self.extra_cycle) << 8;
+            std.debug.print("New Address: {d}!\n\n", .{self.pc});
         }
     }
 
@@ -677,6 +679,8 @@ pub const Cpu = struct {
         var success: u1 = undefined;
         self.extra_cycle = 0;
 
+        std.debug.print("Zero Status: {d}\n\n", .{self.status.zero});
+
         if (self.status.zero == 1) {
             self.branchRelative();
             success = 1;
@@ -691,6 +695,8 @@ pub const Cpu = struct {
         var success: u1 = undefined;
         self.extra_cycle = 0;
 
+        std.debug.print("Zero Status: {d}\n\n", .{self.status.zero});
+
         if (self.status.zero == 0) {
             self.branchRelative();
             success = 1;
@@ -698,7 +704,7 @@ pub const Cpu = struct {
             success = 0;
         }
         self.pc += 2;
-        const cycles = 2 + @as(u8, @intCast(success)) + self.extra_cycle;
+        const cycles = 2 + @as(u8, success) + self.extra_cycle;
         self.cycle(time, cycles);
     }
 
@@ -1050,12 +1056,12 @@ pub const Cpu = struct {
         const new_time = std.time.nanoTimestamp();
         self.pc = vector - 1;
         var address: u16 = self.GetImmediate();
-        address << 8;
+        address <<= 8;
         self.pc += 1;
         address |= self.GetImmediate();
 
         self.pc = address;
-        self.self.cycle(new_time, 4);
+        self.cycle(new_time, 4);
     }
 
     pub fn returnInterrupt(self: *Cpu, time: i128) void {
@@ -2536,7 +2542,7 @@ pub const Cpu = struct {
         const first_nib = (self.instruction & 0xF);
         const second_nib = (self.instruction & 0xF0);
 
-        std.debug.print("Instruction: 0x{X}!\n", .{self.instruction});
+        std.debug.print("Instruction: 0x{X}, Address: 0x{X}!\n", .{ self.instruction, self.pc });
         //instruction execute
         switch (first_nib % 4) {
             0 => CONTROL: {

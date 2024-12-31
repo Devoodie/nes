@@ -37,6 +37,7 @@ pub const Ppu = struct {
     sprites: [64]Sprite = undefined,
     nmi: u1 = 0,
     cartridge: *mapper.Cartridge = undefined,
+    mutex: *std.Thread.Mutex = undefined,
 
     pub fn PpuMmo(self: *Ppu, address: u16) u8 {
         switch (address % 8) {
@@ -519,6 +520,7 @@ pub const Ppu = struct {
         self.scanline = 0;
         var time: i128 = std.time.nanoTimestamp();
         //aquire lock
+        self.mutex.lock();
         for (0..262) |_| {
             if (self.scanline == 261) {
                 self.scanline = 0;
@@ -529,6 +531,7 @@ pub const Ppu = struct {
                 //release lock
                 //handle post render scanline
                 if (self.scanline == 241) {
+                    self.mutex.unlock();
                     self.status |= 0x80;
                     if (self.control == 0x80) self.nmi = 1;
                 }
@@ -541,6 +544,14 @@ pub const Ppu = struct {
                 time = std.time.nanoTimestamp();
             }
             self.scanline += 1;
+        }
+    }
+
+    pub fn operate(self: *Ppu) void {
+        while (true) {
+            if (self.status & 0x4 == 0x4 or self.status & 0x10 == 0x10) {
+                self.drawBitmap();
+            }
         }
     }
 };

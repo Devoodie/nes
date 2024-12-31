@@ -1,11 +1,16 @@
 const std = @import("std");
 const components = @import("Nes.zig");
+const cpu = @import("Cpu.zig");
+const ppu = @import("Ppu.zig");
 const rl = @import("raylib");
+const display = @import("Display.zig");
 
 pub fn main() !void {
     std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
 
-    var nes: components.Nes = .{ .Cpu = .{}, .Ppu = .{}, .Bus = .{} };
+    var lock: std.Thread.Mutex = .{};
+
+    var nes: components.Nes = .{ .Cpu = .{}, .Ppu = .{ .mutex = &lock }, .Bus = .{ .mutex = &lock } };
     nes.init();
 
     var gpa = std.heap.GeneralPurposeAllocator(.{}).init;
@@ -58,8 +63,15 @@ pub fn main() !void {
         nes.Bus.addr_bus |= lsb;
     }
 
-    while (true) {
-        nes.Cpu.execute();
+    {
+        var cpu_thread = try std.Thread.spawn(.{}, cpu.Cpu.operate, .{&nes.Cpu});
+        defer cpu_thread.join();
+
+        var ppu_thread = try std.Thread.spawn(.{}, ppu.Ppu.operate, .{&nes.Ppu});
+        defer ppu_thread.join();
+
+        var display_thread = try std.Thread.spawn(.{}, display.draw, .{&nes.Ppu});
+        defer display_thread.join();
     }
     try nes.Mapper.deinit(allocator);
 }
