@@ -2524,9 +2524,12 @@ pub const Cpu = struct {
             self.execute();
             //if there's a non-maskable interrupt /detect and handle
             if (self.bus.ppu_ptr.nmi == 1) {
+                std.debug.print("Non-maskable Interrupt!\n\n", .{});
                 self.interruptRequest(std.time.nanoTimestamp(), 0xFFFA);
             } else if (self.irq_line == 1 and self.status.interrupt_dsble != 1) {
+                std.debug.print("Interrupt Request!\n\n", .{});
                 self.interruptRequest(std.time.nanoTimestamp(), 0xFFFE);
+                self.irq_line = 0;
             }
         }
     }

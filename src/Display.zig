@@ -84,6 +84,7 @@ pub fn draw(ppu: *picture_unit.Ppu) !void {
 
     while (true) {
         if (ppu.status & 0x80 == 0x80) {
+            rl.beginDrawing();
             for (ppu.bitmap, 0..) |row, y_pos| {
                 for (row, 0..) |column, x_pos| {
                     if (column > 0) {
@@ -92,7 +93,6 @@ pub fn draw(ppu: *picture_unit.Ppu) !void {
                     }
                 }
             }
-            rl.beginDrawing();
         }
         rl.clearBackground(rl.Color.black);
         rl.endDrawing();

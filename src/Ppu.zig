@@ -525,6 +525,7 @@ pub const Ppu = struct {
             if (self.scanline == 261) {
                 self.scanline = 0;
                 self.status = 0;
+                self.nmi = 0;
                 //cycle
                 break;
             } else if (self.scanline >= 240) {

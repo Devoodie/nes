@@ -61,6 +61,8 @@ pub fn main() !void {
 
         nes.Bus.addr_bus = msb << 8;
         nes.Bus.addr_bus |= lsb;
+
+        nes.Cpu.pc = nes.Bus.addr_bus;
     }
 
     {
