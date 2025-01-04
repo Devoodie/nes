@@ -315,7 +315,7 @@ test "Ppu Draw Coarse X " {
     //test right table capabilities
     nes.Ppu.control = 0b10000;
 
-    var gpa = std.heap.GeneralPurposeAllocator(.{}).init;
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
     var allocator = gpa.allocator();
     nes.Mapper.chr_rom = try allocator.alloc(u8, 8192);
@@ -347,7 +347,7 @@ test "Fill Sprites" {
     std.debug.print("Fill Sprites!\n", .{});
     nes.init();
 
-    var gpa = std.heap.GeneralPurposeAllocator(.{}).init;
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
     var allocator = gpa.allocator();
     nes.Mapper.chr_rom = try allocator.alloc(u8, 8192);
@@ -473,7 +473,7 @@ test "Get Sprite Pixel" {
     nes.Ppu.oam[6] = 0x23;
     nes.Ppu.oam[7] = 0;
 
-    var gpa = std.heap.GeneralPurposeAllocator(.{}).init;
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
     var allocator = gpa.allocator();
     nes.Mapper.chr_rom = try allocator.alloc(u8, 8192);
@@ -608,7 +608,7 @@ test "Draw Scanline" {
     std.debug.print("Draw Scanline!\n", .{});
     nes.init();
 
-    var gpa = std.heap.GeneralPurposeAllocator(.{}).init;
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
     var allocator = gpa.allocator();
     nes.Mapper.chr_rom = try allocator.alloc(u8, 8192);
