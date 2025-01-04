@@ -71,12 +71,11 @@ pub const Cpu = struct {
         self.bus.addr_bus = @as(u16, self.stack_pointer) + 0x100;
         self.bus.getMmo();
         self.stack_pointer +%= 1;
-        const highbyte: u16 = self.bus.data_bus;
+        const lowbyte: u16 = self.bus.data_bus;
 
         self.bus.addr_bus +%= 1;
         self.bus.getMmo();
-        self.stack_pointer +%= 1;
-        const lowbyte: u16 = self.bus.data_bus;
+        const highbyte: u16 = self.bus.data_bus;
 
         address = (highbyte << 8) | lowbyte;
         return address;
@@ -1080,19 +1079,7 @@ pub const Cpu = struct {
     pub fn jumpSubroutine(self: *Cpu, time: i128) void {
         self.stackPushAddress(self.pc + 3);
 
-        self.bus.addr_bus = self.pc + 2;
-        self.bus.getMmo();
-
-        var addr: u16 = self.bus.data_bus;
-
-        addr <<= 8;
-
-        self.bus.addr_bus = self.pc + 1;
-        self.bus.getMmo();
-
-        addr |= self.bus.data_bus;
-
-        self.pc = addr;
+        self.pc = self.GetAbsolute();
 
         self.cycle(time, 6);
     }

@@ -93,7 +93,9 @@ pub const Cartridge = struct {
         self.chr_rom = try allocator.alloc(u8, chr_rom_size * 8192);
         self.prg_ram = try allocator.alloc(u8, prg_ram_size);
 
-        std.log.defaultLog(.info, std.log.default_log_scope, "Mapper Initialized to PRG_RAM: {d}KiB, PRG_ROM: {d}KiB, CHR_ROM: {d}KiB\n", .{ self.prg_ram.len, self.prg_rom.len, self.chr_rom.len });
+        //        std.log.defaultLog(.info, std.log.default_log_scope, "Mapper Initialized to PRG_RAM: {d}KiB, PRG_ROM: {d}KiB, CHR_ROM: {d}KiB\n", .{ self.prg_ram.len, self.prg_rom.len, self.chr_rom.len });
+
+        std.debug.print("Mapper Initialized to PRG_RAM: {d}KiB, PRG_ROM: {d}KiB, CHR_ROM: {d}KiB\n", .{ self.prg_ram.len, self.prg_rom.len, self.chr_rom.len });
         self.mapROM(file);
 
         //intialize every array according to their size values in the headers
