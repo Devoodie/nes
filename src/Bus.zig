@@ -19,7 +19,7 @@ pub const Bus = struct {
         } else if (self.addr_bus <= 0x3FFF) {
             if (self.mutex.tryLock()) {
                 self.data_bus = self.ppu_ptr.*.PpuMmo(self.addr_bus);
-                std.debug.print("Mutex Read Aquired! data:{d}, address: {d}\n\n", .{ self.data_bus, self.addr_bus });
+                std.debug.print("Mutex Read Aquired! data: 0x{X}, address: 0x{X}\n\n", .{ self.data_bus, self.addr_bus });
                 self.mutex.unlock();
             }
         } else if (self.addr_bus <= 0x401F) {
@@ -34,7 +34,7 @@ pub const Bus = struct {
             self.cpu_ptr.memory[self.addr_bus % 0x800] = self.data_bus;
         } else if (self.addr_bus <= 0x3FFF) {
             if (self.mutex.tryLock()) {
-                std.debug.print("Mutex Aquired! data:{d}, address: {d}\n\n", .{ self.data_bus, self.addr_bus });
+                //               std.debug.print("Mutex Aquired! data:{d}, address: {d}\n\n", .{ self.data_bus, self.addr_bus });
                 self.ppu_ptr.ppuMmi(self.addr_bus, self.data_bus);
                 self.mutex.unlock();
             }

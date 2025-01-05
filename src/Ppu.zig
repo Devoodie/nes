@@ -550,7 +550,7 @@ pub const Ppu = struct {
 
     pub fn operate(self: *Ppu) void {
         while (true) {
-            if (self.status & 0x4 == 0x4 or self.status & 0x10 == 0x10) {
+            if (self.mask & 0x8 == 0x8 or self.mask & 0x10 == 0x10) {
                 self.drawBitmap();
             }
         }
