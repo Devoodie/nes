@@ -92,7 +92,7 @@ pub const Cartridge = struct {
         self.prg_rom = try allocator.alloc(u8, prg_rom_size * 16384);
         self.chr_rom = try allocator.alloc(u8, chr_rom_size * 8192);
         self.prg_ram = try allocator.alloc(u8, prg_ram_size);
-
+        self.trainer = try allocator.alloc(u8, 512 * @as(u12, self.trainer_bit));
         //        std.log.defaultLog(.info, std.log.default_log_scope, "Mapper Initialized to PRG_RAM: {d}KiB, PRG_ROM: {d}KiB, CHR_ROM: {d}KiB\n", .{ self.prg_ram.len, self.prg_rom.len, self.chr_rom.len });
 
         std.debug.print("Mapper Initialized to PRG_RAM: {d}KiB, PRG_ROM: {d}KiB, CHR_ROM: {d}KiB\n", .{ self.prg_ram.len, self.prg_rom.len, self.chr_rom.len });
@@ -139,8 +139,14 @@ pub const Cartridge = struct {
     pub fn mapROM(self: *Cartridge, rom: *[]u8) void {
         switch (self.mapper) {
             Mapper.NROM => nrom: {
-                std.mem.copyForwards(u8, self.prg_rom, rom.*[16 .. self.prg_rom.len + 16]);
-                std.mem.copyForwards(u8, self.chr_rom, rom.*[self.prg_rom.len + 16 .. self.prg_rom.len + 16 + self.chr_rom.len]);
+                if (self.trainer_bit == 1) {
+                    std.mem.copyForwards(u8, self.trainer, rom.*[16..528]);
+                    std.mem.copyForwards(u8, self.prg_rom, rom.*[528 .. self.prg_rom.len + 528]);
+                    std.mem.copyForwards(u8, self.chr_rom, rom.*[self.prg_rom.len + 528 .. self.prg_rom.len + 528 + self.chr_rom.len]);
+                } else {
+                    std.mem.copyForwards(u8, self.prg_rom, rom.*[16 .. self.prg_rom.len + 16]);
+                    std.mem.copyForwards(u8, self.chr_rom, rom.*[self.prg_rom.len + 16 .. self.prg_rom.len + 16 + self.chr_rom.len]);
+                }
                 break :nrom;
             },
             //else => default: {

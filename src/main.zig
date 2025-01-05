@@ -44,6 +44,8 @@ pub fn main() !void {
     const ines_file = try working_directory.openFile(path.?, .{});
     defer ines_file.close();
 
+    try ines_file.seekTo(0);
+
     const rom = try ines_file.readToEndAlloc(allocator, 768000);
     defer allocator.free(rom);
 
@@ -65,18 +67,18 @@ pub fn main() !void {
         nes.Cpu.pc = nes.Bus.addr_bus;
     }
 
-    nes.Cpu.operate();
+    //  nes.Cpu.operate();
 
-    //   {
-    //        var cpu_thread = try std.Thread.spawn(.{}, cpu.Cpu.operate, .{&nes.Cpu});
-    //      defer cpu_thread.join();
+    {
+        var cpu_thread = try std.Thread.spawn(.{}, cpu.Cpu.operate, .{&nes.Cpu});
+        defer cpu_thread.join();
 
-    //     var ppu_thread = try std.Thread.spawn(.{}, ppu.Ppu.operate, .{&nes.Ppu});
-    //    defer ppu_thread.join();
+        var ppu_thread = try std.Thread.spawn(.{}, ppu.Ppu.operate, .{&nes.Ppu});
+        defer ppu_thread.join();
 
-    //   var display_thread = try std.Thread.spawn(.{}, display.draw, .{&nes.Ppu});
-    //  defer display_thread.join();
-    // }
+        var display_thread = try std.Thread.spawn(.{}, display.draw, .{&nes.Ppu});
+        defer display_thread.join();
+    }
     try nes.Mapper.deinit(allocator);
 }
 

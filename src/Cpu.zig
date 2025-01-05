@@ -45,17 +45,17 @@ pub const Cpu = struct {
 
     pub fn stackPushAddress(self: *Cpu, address: u16) void {
         const highbyte: u8 = @truncate(address >> 8);
-        const lowbyte: u8 = @truncate(address & 0xFF);
+        const lowbyte: u8 = @truncate(address & 0xF);
 
         self.bus.addr_bus = @as(u16, self.stack_pointer) + 0x100;
-        self.stack_pointer -%= 1;
-        self.bus.data_bus = highbyte;
-        self.bus.putMmi();
-
-        self.bus.addr_bus = @as(u16, self.stack_pointer) + 0x100;
-        self.stack_pointer -%= 1;
         self.bus.data_bus = lowbyte;
         self.bus.putMmi();
+        self.stack_pointer -%= 1;
+
+        self.bus.data_bus = highbyte;
+        self.bus.addr_bus = @as(u16, self.stack_pointer) + 0x100;
+        self.bus.putMmi();
+        self.stack_pointer -%= 1;
     }
 
     pub fn stackPop(self: *Cpu) u8 {
@@ -71,11 +71,11 @@ pub const Cpu = struct {
         self.bus.addr_bus = @as(u16, self.stack_pointer) + 0x100;
         self.bus.getMmo();
         self.stack_pointer +%= 1;
-        const lowbyte: u16 = self.bus.data_bus;
+        const highbyte: u16 = self.bus.data_bus;
 
         self.bus.addr_bus +%= 1;
         self.bus.getMmo();
-        const highbyte: u16 = self.bus.data_bus;
+        const lowbyte: u16 = self.bus.data_bus;
 
         address = (highbyte << 8) | lowbyte;
         return address;
