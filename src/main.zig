@@ -57,9 +57,10 @@ pub fn main() !void {
     //boostrap sequence
     {
         nes.Cpu.pc -= 1;
-        const msb: u16 = nes.Cpu.GetImmediate();
-        nes.Cpu.pc += 1;
         const lsb: u16 = nes.Cpu.GetImmediate();
+
+        nes.Cpu.pc += 1;
+        const msb: u16 = nes.Cpu.GetImmediate();
 
         //this is pulling the wrong address
         nes.Bus.addr_bus = msb << 8;
@@ -67,8 +68,6 @@ pub fn main() !void {
         std.debug.print("Initialization Address: 0x{x}\n\n", .{nes.Bus.addr_bus});
 
         nes.Cpu.pc = nes.Bus.addr_bus;
-        //artificially pulling the start sequence
-        nes.Cpu.pc = 0x8000;
     }
 
     //  nes.Cpu.operate();

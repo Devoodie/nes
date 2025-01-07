@@ -131,6 +131,50 @@ pub const Cpu = struct {
         self.bus.putMmi();
     }
     //GOOD
+    pub fn GetIndirectX(self: *Cpu) u8 {
+        self.bus.addr_bus = self.pc + 1;
+        self.bus.getMmo();
+
+        self.bus.addr_bus = self.bus.data_bus +% self.x_register;
+        self.bus.getMmo();
+
+        const low_bytes = self.bus.data_bus;
+
+        //high bytes
+        self.bus.addr_bus += 1;
+        self.bus.getMmo();
+
+        self.bus.addr_bus = self.bus.data_bus;
+        self.bus.addr_bus <<= 8;
+        self.bus.addr_bus |= low_bytes;
+
+        self.bus.getMmo();
+
+        return self.bus.data_bus;
+    }
+    //GOOD
+    pub fn setIndirectX(self: *Cpu, data: u8) void {
+        self.bus.addr_bus = self.pc + 1;
+        self.bus.getMmo();
+
+        self.bus.addr_bus = self.bus.data_bus +% self.x_register;
+        self.bus.getMmo();
+
+        const low_bytes = self.bus.data_bus;
+
+        //high bytes
+        self.bus.addr_bus += 1;
+        self.bus.getMmo();
+
+        self.bus.addr_bus = self.bus.data_bus;
+        self.bus.addr_bus <<= 8;
+        self.bus.addr_bus |= low_bytes;
+
+        self.bus.data_bus = data;
+        self.bus.putMmi();
+    }
+
+    //GOOD
     pub fn GetZeroPageY(self: *Cpu) u8 {
         self.bus.addr_bus = self.pc + 1;
         self.bus.getMmo();
@@ -234,50 +278,7 @@ pub const Cpu = struct {
         self.bus.data_bus = data;
         self.bus.putMmi();
     }
-
-    pub fn GetIndirectX(self: *Cpu) u8 {
-        self.bus.addr_bus = self.pc + 1;
-        self.bus.getMmo();
-
-        self.bus.addr_bus = self.bus.data_bus +% self.x_register;
-        self.bus.getMmo();
-
-        const low_bytes = self.bus.data_bus;
-
-        //high bytes
-        self.bus.addr_bus += 1;
-        self.bus.getMmo();
-
-        self.bus.addr_bus = self.bus.data_bus;
-        self.bus.addr_bus <<= 8;
-        self.bus.addr_bus |= low_bytes;
-
-        self.bus.getMmo();
-
-        return self.bus.data_bus;
-    }
-
-    pub fn setIndirectX(self: *Cpu, data: u8) void {
-        self.bus.addr_bus = self.pc + 1;
-        self.bus.getMmo();
-
-        self.bus.addr_bus = self.bus.data_bus +% self.x_register;
-        self.bus.getMmo();
-
-        const low_bytes = self.bus.data_bus;
-
-        //high bytes
-        self.bus.addr_bus += 1;
-        self.bus.getMmo();
-
-        self.bus.addr_bus = self.bus.data_bus;
-        self.bus.addr_bus <<= 8;
-        self.bus.addr_bus |= low_bytes;
-
-        self.bus.data_bus = data;
-        self.bus.putMmi();
-    }
-
+    //GOOD
     pub fn GetZeroPage(self: *Cpu) u8 {
         self.bus.addr_bus = self.pc + 1;
         self.bus.getMmo();
@@ -287,21 +288,23 @@ pub const Cpu = struct {
 
         return self.bus.data_bus;
     }
-
+    //GOOD
     pub fn setZeroPage(self: *Cpu, data: u8) void {
         self.bus.addr_bus = self.pc + 1;
-        self.bus.data_bus = data;
+        self.bus.getMmo();
 
+        self.bus.addr_bus = self.bus.data_bus;
+        self.bus.data_bus = data;
         self.bus.putMmi();
     }
-
+    //GOOD
     pub fn GetImmediate(self: *Cpu) u8 {
         self.bus.addr_bus = self.pc + 1;
         self.bus.getMmo();
 
         return self.bus.data_bus;
     }
-
+    //GOOD
     pub fn setImmediate(self: *Cpu, data: u8) void {
         self.bus.addr_bus = self.pc + 1;
         self.bus.data_bus = data;
@@ -316,13 +319,11 @@ pub const Cpu = struct {
         var addr: u16 = self.bus.data_bus;
         std.debug.print("Data Bus: 0x{x}!\n\n", .{self.bus.data_bus});
 
-        addr <<= 8;
-
         self.bus.addr_bus = self.pc + 2;
         self.bus.getMmo();
         std.debug.print("Data Bus: 0x{x}!\n\n", .{self.bus.data_bus});
 
-        addr |= self.bus.data_bus;
+        addr |= @as(u16, self.bus.data_bus) << 8;
         self.bus.addr_bus = addr;
         self.bus.getMmo();
 
@@ -335,12 +336,10 @@ pub const Cpu = struct {
 
         var addr: u16 = self.bus.data_bus;
 
-        addr <<= 8;
-
         self.bus.addr_bus = self.pc + 2;
         self.bus.getMmo();
 
-        addr |= self.bus.data_bus;
+        addr |= @as(u16, self.bus.data_bus) << 8;
 
         self.bus.addr_bus = addr;
         self.bus.data_bus = data;
@@ -377,12 +376,12 @@ pub const Cpu = struct {
 
     pub fn jump(self: *Cpu, time: i128) void {
         if (self.instruction & 0xF0 == 0x60) {
-            self.bus.addr_bus = self.pc + 2;
+            self.bus.addr_bus = self.pc + 1;
             self.bus.getMmo();
 
             const low_byte = self.bus.data_bus;
 
-            self.bus.addr_bus = self.pc + 1;
+            self.bus.addr_bus = self.pc + 2;
             self.bus.getMmo();
 
             self.pc = self.bus.data_bus;
