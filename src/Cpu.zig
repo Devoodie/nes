@@ -315,11 +315,13 @@ pub const Cpu = struct {
         self.bus.getMmo();
 
         var addr: u16 = self.bus.data_bus;
+        std.debug.print("Data Bus: 0x{x}!\n\n", .{self.bus.data_bus});
 
         addr <<= 8;
 
         self.bus.addr_bus = self.pc + 2;
         self.bus.getMmo();
+        std.debug.print("Data Bus: 0x{x}!\n\n", .{self.bus.data_bus});
 
         addr |= self.bus.data_bus;
         self.bus.addr_bus = addr;
@@ -2511,6 +2513,7 @@ pub const Cpu = struct {
     pub fn operate(self: *Cpu) void {
         while (true) {
             self.execute();
+            std.debug.print("Ppu Status: 0x{X}\n\n", .{self.bus.ppu_ptr.status});
             //if there's a non-maskable interrupt /detect and handle
             if (self.bus.ppu_ptr.nmi == 1) {
                 std.debug.print("Non-maskable Interrupt!\n\n", .{});
