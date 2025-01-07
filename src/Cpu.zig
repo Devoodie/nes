@@ -80,7 +80,7 @@ pub const Cpu = struct {
         address = (highbyte << 8) | lowbyte;
         return address;
     }
-
+    //GOOD
     pub fn GetIndirectY(self: *Cpu) u8 {
         self.bus.addr_bus = self.pc + 1;
         self.bus.getMmo();
@@ -107,7 +107,7 @@ pub const Cpu = struct {
 
         return self.bus.data_bus;
     }
-
+    //GOOD
     pub fn setIndirectY(self: *Cpu, data: u8) void {
         self.bus.addr_bus = self.pc + 1;
         self.bus.getMmo();
@@ -130,7 +130,7 @@ pub const Cpu = struct {
         self.bus.data_bus = data;
         self.bus.putMmi();
     }
-
+    //GOOD
     pub fn GetZeroPageY(self: *Cpu) u8 {
         self.bus.addr_bus = self.pc + 1;
         self.bus.getMmo();
@@ -141,7 +141,7 @@ pub const Cpu = struct {
 
         return self.bus.data_bus;
     }
-
+    //GOOD
     pub fn setZeroPageY(self: *Cpu, data: u8) void {
         self.bus.addr_bus = self.pc + 1;
         self.bus.getMmo();
@@ -152,7 +152,7 @@ pub const Cpu = struct {
 
         self.bus.putMmi();
     }
-
+    // GOOD
     pub fn GetZeroPageX(self: *Cpu) u8 {
         self.bus.addr_bus = self.pc + 1;
         self.bus.getMmo();
@@ -163,7 +163,7 @@ pub const Cpu = struct {
 
         return self.bus.data_bus;
     }
-
+    //GOOD
     pub fn setZeroPageX(self: *Cpu, data: u8) void {
         self.bus.addr_bus = self.pc + 1;
         self.bus.getMmo();
@@ -174,23 +174,23 @@ pub const Cpu = struct {
 
         self.bus.putMmi();
     }
-
+    //GOOD
     pub fn GetAbsoluteIndexed(self: *Cpu, xory: u1) u8 {
         self.bus.addr_bus = self.pc + 1;
         self.bus.getMmo();
         var addr: u16 = self.bus.data_bus;
-        addr <<= 8;
         self.extra_cycle = 0;
         var addend: u8 = undefined;
 
-        self.bus.addr_bus = self.pc + 2;
-        self.bus.getMmo();
         if (xory == 0) {
             addend = self.x_register;
         } else {
             addend = self.y_register;
         }
         const sum = @addWithOverflow(self.bus.data_bus, addend);
+
+        self.bus.addr_bus = self.pc + 2;
+        self.bus.getMmo();
 
         if (sum[1] == 1) {
             self.extra_cycle = 1;
@@ -199,6 +199,7 @@ pub const Cpu = struct {
         } else {
             addr += sum[0];
         }
+
         self.bus.addr_bus = addr;
         self.bus.getMmo();
         return self.bus.data_bus;
@@ -208,12 +209,8 @@ pub const Cpu = struct {
         self.bus.addr_bus = self.pc + 1;
         self.bus.getMmo();
         var addr: u16 = self.bus.data_bus;
-        addr <<= 8;
         self.extra_cycle = 0;
         var addend: u8 = undefined;
-
-        self.bus.addr_bus = self.pc + 2;
-        self.bus.getMmo();
 
         if (xory == 0) {
             addend = self.x_register;
@@ -221,6 +218,9 @@ pub const Cpu = struct {
             addend = self.y_register;
         }
         const sum = @addWithOverflow(self.bus.data_bus, addend);
+
+        self.bus.addr_bus = self.pc + 2;
+        self.bus.getMmo();
 
         if (sum[1] == 1) {
             self.extra_cycle = 1;
@@ -232,7 +232,6 @@ pub const Cpu = struct {
 
         self.bus.addr_bus = addr;
         self.bus.data_bus = data;
-
         self.bus.putMmi();
     }
 
