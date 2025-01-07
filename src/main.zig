@@ -61,10 +61,14 @@ pub fn main() !void {
         nes.Cpu.pc += 1;
         const lsb: u16 = nes.Cpu.GetImmediate();
 
+        //this is pulling the wrong address
         nes.Bus.addr_bus = msb << 8;
         nes.Bus.addr_bus |= lsb;
+        std.debug.print("Initialization Address: 0x{x}\n\n", .{nes.Bus.addr_bus});
 
         nes.Cpu.pc = nes.Bus.addr_bus;
+        //artificially pulling the start sequence
+        nes.Cpu.pc = 0x8000;
     }
 
     //  nes.Cpu.operate();
@@ -79,6 +83,7 @@ pub fn main() !void {
         var display_thread = try std.Thread.spawn(.{}, display.draw, .{&nes.Ppu});
         defer display_thread.join();
     }
+
     try nes.Mapper.deinit(allocator);
 }
 

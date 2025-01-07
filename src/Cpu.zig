@@ -352,7 +352,7 @@ pub const Cpu = struct {
         const offset: u8 = self.GetImmediate();
         const signed_value: u7 = @intCast(offset & 0b1111111);
         var unsigned_value: u8 = undefined;
-        std.debug.print("Previous Address: {d}!\n", .{self.pc});
+        std.debug.print("Previous Address: 0x{X}!\n", .{self.pc});
 
         if (offset >> 7 == 1) {
             unsigned_value = ~(signed_value);
@@ -370,7 +370,7 @@ pub const Cpu = struct {
             self.pc &= 0xFF00;
             self.pc |= sum[0];
             self.pc += @as(u16, self.extra_cycle) << 8;
-            std.debug.print("New Address: {d}!\n\n", .{self.pc});
+            std.debug.print("New Address: 0x{X}!\n\n", .{self.pc});
         }
     }
 
@@ -524,6 +524,153 @@ pub const Cpu = struct {
     pub fn nop(self: *Cpu, time: i128) void {
         self.pc += 1;
         self.cycle(time, 2);
+    }
+
+    pub fn compareAccumulator(self: *Cpu, time: i128) void {
+        if (self.instruction & 0xF0 == 0x50) {
+            switch (self.instruction & 0xF) {
+                1 => indirecty: {
+                    const value = self.GetIndirectY();
+                    if (self.accumulator == value) {
+                        self.status.carry = 1;
+                        self.status.zero = 1;
+                    } else if (self.accumulator > value) {
+                        self.status.carry = 1;
+                        self.status.zero = 0;
+                    } else {
+                        self.status.zero = 0;
+                    }
+
+                    self.pc += 2;
+                    self.cycle(time, 5 + self.extra_cycle);
+                    break :indirecty;
+                },
+                5 => zero_pagex: {
+                    const value = self.GetIndirectX();
+                    if (self.accumulator == value) {
+                        self.status.carry = 1;
+                        self.status.zero = 1;
+                    } else if (self.accumulator > value) {
+                        self.status.carry = 1;
+                        self.status.zero = 0;
+                    } else {
+                        self.status.zero = 0;
+                    }
+
+                    self.pc += 2;
+                    self.cycle(time, 4);
+                    break :zero_pagex;
+                },
+                9 => absolutey: {
+                    const value = self.GetAbsoluteIndexed(1);
+                    if (self.accumulator == value) {
+                        self.status.carry = 1;
+                        self.status.zero = 1;
+                    } else if (self.accumulator > value) {
+                        self.status.carry = 1;
+                        self.status.zero = 0;
+                    } else {
+                        self.status.zero = 0;
+                    }
+
+                    self.pc += 3;
+                    self.cycle(time, 4 + self.extra_cycle);
+                    break :absolutey;
+                },
+                0xD => absolutex: {
+                    const value = self.GetAbsoluteIndexed(1);
+                    if (self.accumulator == value) {
+                        self.status.carry = 1;
+                        self.status.zero = 1;
+                    } else if (self.accumulator > value) {
+                        self.status.carry = 1;
+                        self.status.zero = 0;
+                    } else {
+                        self.status.zero = 0;
+                    }
+
+                    self.pc += 3;
+                    self.cycle(time, 4 + self.extra_cycle);
+                    break :absolutex;
+                },
+                else => default: {
+                    std.debug.print("No Addressing Mode found (Logical XOR)!\n", .{});
+                    break :default;
+                },
+            }
+        } else {
+            switch (self.instruction & 0xF) {
+                1 => indirectx: {
+                    const value = self.GetIndirectX();
+                    if (self.accumulator == value) {
+                        self.status.carry = 1;
+                        self.status.zero = 1;
+                    } else if (self.accumulator > value) {
+                        self.status.carry = 1;
+                        self.status.zero = 0;
+                    } else {
+                        self.status.zero = 0;
+                    }
+
+                    self.pc += 2;
+                    self.cycle(time, 6);
+                    break :indirectx;
+                },
+                5 => zero_page: {
+                    const value = self.GetZeroPage();
+                    if (self.accumulator == value) {
+                        self.status.carry = 1;
+                        self.status.zero = 1;
+                    } else if (self.accumulator > value) {
+                        self.status.carry = 1;
+                        self.status.zero = 0;
+                    } else {
+                        self.status.zero = 0;
+                    }
+
+                    self.pc += 2;
+                    self.cycle(time, 3);
+                    break :zero_page;
+                },
+                9 => immediate: {
+                    const value = self.GetImmediate();
+                    if (self.accumulator == value) {
+                        self.status.carry = 1;
+                        self.status.zero = 1;
+                    } else if (self.accumulator > value) {
+                        self.status.carry = 1;
+                        self.status.zero = 0;
+                    } else {
+                        self.status.zero = 0;
+                    }
+
+                    self.pc += 2;
+                    self.cycle(time, 2);
+                    break :immediate;
+                },
+                0xD => absolute: {
+                    const value = self.GetAbsolute();
+                    if (self.accumulator == value) {
+                        self.status.carry = 1;
+                        self.status.zero = 1;
+                    } else if (self.accumulator > value) {
+                        self.status.carry = 1;
+                        self.status.zero = 0;
+                    } else {
+                        self.status.zero = 0;
+                    }
+
+                    self.pc += 3;
+                    self.cycle(time, 4);
+                    break :absolute;
+                },
+                else => default: {
+                    std.debug.print("No Addressing Mode found (Logical XOR)!\n", .{});
+                    break :default;
+                },
+            }
+            self.status.negative = @truncate(self.accumulator >> 7);
+        }
     }
 
     pub fn compareYRegister(self: *Cpu, time: i128) void {
@@ -1297,153 +1444,6 @@ pub const Cpu = struct {
         self.status.negative = @truncate(self.accumulator >> 7);
     }
 
-    pub fn compareAccumulator(self: *Cpu, time: i128) void {
-        if (self.instruction & 0xF0 == 0x50) {
-            switch (self.instruction & 0xF) {
-                1 => indirecty: {
-                    const value = self.GetIndirectY();
-                    if (self.accumulator == value) {
-                        self.status.carry = 1;
-                        self.status.zero = 1;
-                    } else if (self.accumulator > value) {
-                        self.status.carry = 1;
-                        self.status.zero = 0;
-                    } else {
-                        self.status.zero = 0;
-                    }
-
-                    self.pc += 2;
-                    self.cycle(time, 5 + self.extra_cycle);
-                    break :indirecty;
-                },
-                5 => zero_pagex: {
-                    const value = self.GetIndirectX();
-                    if (self.accumulator == value) {
-                        self.status.carry = 1;
-                        self.status.zero = 1;
-                    } else if (self.accumulator > value) {
-                        self.status.carry = 1;
-                        self.status.zero = 0;
-                    } else {
-                        self.status.zero = 0;
-                    }
-
-                    self.pc += 2;
-                    self.cycle(time, 4);
-                    break :zero_pagex;
-                },
-                9 => absolutey: {
-                    const value = self.GetAbsoluteIndexed(1);
-                    if (self.accumulator == value) {
-                        self.status.carry = 1;
-                        self.status.zero = 1;
-                    } else if (self.accumulator > value) {
-                        self.status.carry = 1;
-                        self.status.zero = 0;
-                    } else {
-                        self.status.zero = 0;
-                    }
-
-                    self.pc += 3;
-                    self.cycle(time, 4 + self.extra_cycle);
-                    break :absolutey;
-                },
-                0xD => absolutex: {
-                    const value = self.GetAbsoluteIndexed(1);
-                    if (self.accumulator == value) {
-                        self.status.carry = 1;
-                        self.status.zero = 1;
-                    } else if (self.accumulator > value) {
-                        self.status.carry = 1;
-                        self.status.zero = 0;
-                    } else {
-                        self.status.zero = 0;
-                    }
-
-                    self.pc += 3;
-                    self.cycle(time, 4 + self.extra_cycle);
-                    break :absolutex;
-                },
-                else => default: {
-                    std.debug.print("No Addressing Mode found (Logical XOR)!\n", .{});
-                    break :default;
-                },
-            }
-        } else {
-            switch (self.instruction & 0xF) {
-                1 => indirectx: {
-                    const value = self.GetIndirectX();
-                    if (self.accumulator == value) {
-                        self.status.carry = 1;
-                        self.status.zero = 1;
-                    } else if (self.accumulator > value) {
-                        self.status.carry = 1;
-                        self.status.zero = 0;
-                    } else {
-                        self.status.zero = 0;
-                    }
-
-                    self.pc += 2;
-                    self.cycle(time, 6);
-                    break :indirectx;
-                },
-                5 => zero_page: {
-                    const value = self.GetZeroPage();
-                    if (self.accumulator == value) {
-                        self.status.carry = 1;
-                        self.status.zero = 1;
-                    } else if (self.accumulator > value) {
-                        self.status.carry = 1;
-                        self.status.zero = 0;
-                    } else {
-                        self.status.zero = 0;
-                    }
-
-                    self.pc += 2;
-                    self.cycle(time, 3);
-                    break :zero_page;
-                },
-                9 => immediate: {
-                    const value = self.GetImmediate();
-                    if (self.accumulator == value) {
-                        self.status.carry = 1;
-                        self.status.zero = 1;
-                    } else if (self.accumulator > value) {
-                        self.status.carry = 1;
-                        self.status.zero = 0;
-                    } else {
-                        self.status.zero = 0;
-                    }
-
-                    self.pc += 2;
-                    self.cycle(time, 2);
-                    break :immediate;
-                },
-                0xD => absolute: {
-                    const value = self.GetAbsolute();
-                    if (self.accumulator == value) {
-                        self.status.carry = 1;
-                        self.status.zero = 1;
-                    } else if (self.accumulator > value) {
-                        self.status.carry = 1;
-                        self.status.zero = 0;
-                    } else {
-                        self.status.zero = 0;
-                    }
-
-                    self.pc += 3;
-                    self.cycle(time, 4);
-                    break :absolute;
-                },
-                else => default: {
-                    std.debug.print("No Addressing Mode found (Logical XOR)!\n", .{});
-                    break :default;
-                },
-            }
-            self.status.negative = @truncate(self.accumulator >> 7);
-        }
-    }
-
     pub fn loadAccumulator(self: *Cpu, time: i128) void {
         if (self.instruction & 0xF0 == 0xB0) {
             switch (self.instruction & 0xF) {
@@ -1507,13 +1507,15 @@ pub const Cpu = struct {
                     break :default;
                 },
             }
-            if (self.accumulator == 0) {
-                self.status.zero = 1;
-            } else {
-                self.status.zero = 0;
-            }
-            self.status.negative = @intCast(self.accumulator >> 7);
         }
+        //big fucking issue and if this is in every instruction this has scary implications
+        if (self.accumulator == 0) {
+            self.status.zero = 1;
+        } else {
+            self.status.zero = 0;
+        }
+        self.status.negative = @truncate(self.accumulator >> 7);
+        std.debug.print("Accumulator: 0x{X}\n\n", .{self.accumulator});
     }
 
     pub fn storeYRegister(self: *Cpu, time: i128) void {

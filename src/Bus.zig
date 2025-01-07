@@ -17,11 +17,11 @@ pub const Bus = struct {
         if (self.addr_bus <= 0x1FFF) {
             self.data_bus = self.cpu_ptr.*.memory[self.addr_bus % 0x800];
         } else if (self.addr_bus <= 0x3FFF) {
-            if (self.mutex.tryLock()) {
-                self.data_bus = self.ppu_ptr.*.PpuMmo(self.addr_bus);
-                //                std.debug.print("Mutex Read Aquired! data: 0x{X}, address: 0x{X}\n\n", .{ self.data_bus, self.addr_bus });
-                self.mutex.unlock();
-            }
+            //            if (self.mutex.tryLock()) {
+            self.data_bus = self.ppu_ptr.PpuMmo(self.addr_bus);
+            //                std.debug.print("Mutex Read Aquired! data: 0x{X}, address: 0x{X}\n\n", .{ self.data_bus, self.addr_bus });
+            //               self.mutex.unlock();
+            //          }
         } else if (self.addr_bus <= 0x401F) {
             return;
         } else if (self.addr_bus >= 0x6000) {
