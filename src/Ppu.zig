@@ -228,7 +228,7 @@ pub const Ppu = struct {
         }
     }
 
-    pub fn cycle(prev_time: i128, count: u8) void {
+    pub fn cycle(prev_time: i128, count: u16) void {
         const wait_time: i128 = 186 * @as(i128, count);
         const goal_time = wait_time + prev_time;
 
@@ -472,20 +472,20 @@ pub const Ppu = struct {
         }
     }
 
+    //GOOD
     pub fn drawScanLine(self: *Ppu, prev_time: i128) void {
         //cycle after this function in the main loop
         var time = prev_time;
         if (self.mask & 0x18 == 0) {
             return;
         }
-        for (0..33) |_| {
+        for (0..43) |_| {
             if (self.cycles == 0) {
                 self.cycles += 1;
                 cycle(time, 1);
                 continue;
-            }
-            self.drawCoarseX();
-            if (self.cycles > 256) {
+            } else if (self.cycles < 257 or (self.cycles <= 321 and self.cycles < 337)) {
+                self.drawCoarseX();
                 if (self.v & 0x1F == 31) {
                     //coarse x increment
                     self.v &= 0x7FE0;
@@ -494,12 +494,13 @@ pub const Ppu = struct {
                     self.v +%= 1;
                 }
             }
-
             self.cycles += 8;
             //            std.debug.print("Cycles: {d}!, X_Position: {d}\n", .{ self.cycles, self.x_pos });
             cycle(time, 8);
             time = std.time.nanoTimestamp();
         }
+
+        cycle(time, 3);
         var coarse_y = self.v & 0x3E0 >> 5;
         if (self.v & 0x7000 != 0x7000) {
             //fine y increment
@@ -527,7 +528,7 @@ pub const Ppu = struct {
         var time: i128 = std.time.nanoTimestamp();
         //aquire lock
         //       self.mutex.lock();
-        std.debug.print("YOU'RE IN IT BUDDY!\n\n", .{});
+        //std.debug.print("YOU'RE IN IT BUDDY!\n\n", .{});
         for (0..262) |_| {
             if (self.scanline == 261) {
                 self.scanline = 0;
@@ -544,7 +545,7 @@ pub const Ppu = struct {
                     self.status |= 0x80;
                     if (self.control == 0x80) self.nmi = 1;
                 }
-                self.cycle(time, 33);
+                cycle(time, 340);
             } else {
                 //handle rendering
                 self.fillSprites();
