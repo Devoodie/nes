@@ -42,7 +42,6 @@ pub const Ppu = struct {
     pub fn PpuMmo(self: *Ppu, address: u16) u8 {
         switch (address % 8) {
             2 => {
-                std.debug.print("Pulling status!\n\n", .{});
                 self.write_reg = 0;
                 self.status &= 0x60;
                 return self.status;
@@ -473,8 +472,9 @@ pub const Ppu = struct {
         }
     }
 
-    pub fn drawScanLine(self: *Ppu, time: i128) void {
+    pub fn drawScanLine(self: *Ppu, prev_time: i128) void {
         //cycle after this function in the main loop
+        var time = prev_time;
         if (self.mask & 0x18 == 0) {
             return;
         }
@@ -485,18 +485,22 @@ pub const Ppu = struct {
                 continue;
             }
             self.drawCoarseX();
+            if (self.cycles > 256) {
+                if (self.v & 0x1F == 31) {
+                    //coarse x increment
+                    self.v &= 0x7FE0;
+                    self.v ^= 0x400;
+                } else {
+                    self.v +%= 1;
+                }
+            }
+
             self.cycles += 8;
             //            std.debug.print("Cycles: {d}!, X_Position: {d}\n", .{ self.cycles, self.x_pos });
             cycle(time, 8);
+            time = std.time.nanoTimestamp();
         }
         var coarse_y = self.v & 0x3E0 >> 5;
-        if (self.v & 0x1F == 31) {
-            //coarse x increment
-            self.v &= 0x7FE0;
-            self.v ^= 0x400;
-        } else {
-            self.v +%= 1;
-        }
         if (self.v & 0x7000 != 0x7000) {
             //fine y increment
             self.v +%= 0x1000;
@@ -515,6 +519,7 @@ pub const Ppu = struct {
         }
 
         self.x_pos = 0;
+        self.cycles = 0;
     }
 
     pub fn drawBitmap(self: *Ppu) void {
@@ -522,6 +527,7 @@ pub const Ppu = struct {
         var time: i128 = std.time.nanoTimestamp();
         //aquire lock
         //       self.mutex.lock();
+        std.debug.print("YOU'RE IN IT BUDDY!\n\n", .{});
         for (0..262) |_| {
             if (self.scanline == 261) {
                 self.scanline = 0;
@@ -538,13 +544,15 @@ pub const Ppu = struct {
                     self.status |= 0x80;
                     if (self.control == 0x80) self.nmi = 1;
                 }
+                self.cycle(time, 33);
             } else {
                 //handle rendering
                 self.fillSprites();
                 self.drawScanLine(std.time.nanoTimestamp());
-                time = std.time.nanoTimestamp();
             }
             self.scanline += 1;
+            std.debug.print("PPU Status: 0x{X}!\n\n", .{});
+            time = std.time.nanoTimestamp();
         }
     }
 
