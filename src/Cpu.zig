@@ -24,16 +24,18 @@ pub const Cpu = struct {
     irq_line: u1 = 1,
     extra_cycle: u8 = 0,
     odd_cycle: u1 = 0,
+    wait_time: i128 = 0,
 
     pub fn cycle(self: *Cpu, prev_time: i128, cycles: u16) void {
         const wait_time: i128 = 559 * @as(i128, @intCast(cycles));
         const goal_time = wait_time + prev_time;
         self.odd_cycle +%= @intCast(cycles % 2);
+        self.wait_time = goal_time;
         //        std.debug.print("The cycles are {d}!\n", .{self.odd_cycle});
 
-        while (std.time.nanoTimestamp() <= goal_time) {
-            continue;
-        }
+        //        while (std.time.nanoTimestamp() <= goal_time) {
+        //           continue;
+        //      }
     }
 
     pub fn stackPush(self: *Cpu, data: u8) void {
@@ -322,6 +324,7 @@ pub const Cpu = struct {
         self.bus.getMmo();
 
         addr |= @as(u16, self.bus.data_bus) << 8;
+        std.debug.print("Absolute Address: 0x{X}!\n", .{addr});
         self.bus.addr_bus = addr;
         self.bus.getMmo();
 
@@ -359,7 +362,7 @@ pub const Cpu = struct {
             self.extra_cycle = difference[1];
             self.pc &= 0xFF00;
             self.pc |= difference[0];
-            std.debug.print("{d}\n", .{difference[0]});
+            std.debug.print("Difference: {d}\n", .{difference[0]});
 
             self.pc -= @as(u16, @intCast(self.extra_cycle)) << 8;
         } else {
@@ -2507,17 +2510,15 @@ pub const Cpu = struct {
     }
 
     pub fn operate(self: *Cpu) void {
-        while (true) {
-            self.execute();
-            //if there's a non-maskable interrupt /detect and handle
-            if (self.bus.ppu_ptr.nmi == 1) {
-                std.debug.print("Non-maskable Interrupt!\n\n", .{});
-                self.interruptRequest(std.time.nanoTimestamp(), 0xFFFA);
-            } else if (self.irq_line == 1 and self.status.interrupt_dsble != 1) {
-                std.debug.print("Interrupt Request!\n\n", .{});
-                self.interruptRequest(std.time.nanoTimestamp(), 0xFFFE);
-                self.irq_line = 0;
-            }
+        self.execute();
+        //if there's a non-maskable interrupt /detect and handle
+        if (self.bus.ppu_ptr.nmi == 1) {
+            std.debug.print("Non-maskable Interrupt!\n\n", .{});
+            self.interruptRequest(std.time.nanoTimestamp(), 0xFFFA);
+        } else if (self.irq_line == 1 and self.status.interrupt_dsble != 1) {
+            std.debug.print("Interrupt Request!\n\n", .{});
+            self.interruptRequest(std.time.nanoTimestamp(), 0xFFFE);
+            self.irq_line = 0;
         }
     }
 
@@ -2878,6 +2879,8 @@ pub const Cpu = struct {
                             self.nop(time);
                             std.debug.print("6502: NOP Found!\n", .{});
                             break :RMW;
+                        } else if (self.instruction == 0xCA) {
+                            std.debug.print("6502: DEX found!\n", .{self.decrementX(time)});
                         } else {
                             self.decrement(time);
                             std.debug.print("6502: DEC Found!\n", .{});
