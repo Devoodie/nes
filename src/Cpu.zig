@@ -72,9 +72,9 @@ pub const Cpu = struct {
         self.stack_pointer +%= 1;
         self.bus.addr_bus = @as(u16, self.stack_pointer) + 0x100;
         self.bus.getMmo();
-        self.stack_pointer +%= 1;
         const highbyte: u16 = self.bus.data_bus;
 
+        self.stack_pointer +%= 1;
         self.bus.addr_bus +%= 1;
         self.bus.getMmo();
         const lowbyte: u16 = self.bus.data_bus;
@@ -1226,14 +1226,27 @@ pub const Cpu = struct {
 
     pub fn jumpSubroutine(self: *Cpu, time: i128) void {
         self.stackPushAddress(self.pc + 3);
+        std.debug.print("Return Address: 0x{X}\n\n", .{self.pc + 3});
 
-        self.pc = self.GetAbsolute();
+        self.bus.addr_bus = self.pc + 1;
+        self.bus.getMmo();
+
+        var addr: u16 = self.bus.data_bus;
+
+        self.bus.addr_bus = self.pc + 2;
+        self.bus.getMmo();
+
+        addr |= @as(u16, self.bus.data_bus) << 8;
+
+        self.pc = addr;
+        std.debug.print("Stack Pointer: 0x{X}\n", .{self.stack_pointer});
 
         self.cycle(time, 6);
     }
 
     pub fn returnSubroutine(self: *Cpu, time: i128) void {
         self.pc = self.stackPopAddress();
+        std.debug.print("Stack Pointer: 0x{X}\n", .{self.stack_pointer});
         self.cycle(time, 6);
     }
 
