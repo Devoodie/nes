@@ -1044,7 +1044,7 @@ pub const Cpu = struct {
     }
 
     pub fn decrementY(self: *Cpu, time: i128) void {
-        self.y_register -= 1;
+        self.y_register -%= 1;
 
         if (self.y_register == 0) {
             self.status.zero = 1;
@@ -1058,14 +1058,14 @@ pub const Cpu = struct {
     }
 
     pub fn decrementX(self: *Cpu, time: i128) void {
-        self.x_register -= 1;
+        self.x_register -%= 1;
 
         if (self.x_register == 0) {
             self.status.zero = 1;
         } else {
             self.status.zero = 0;
         }
-        self.status.negative = self.x_register >> 7;
+        self.status.negative = @truncate(self.x_register >> 7);
 
         self.pc += 1;
         self.cycle(time, 2);
@@ -2880,7 +2880,8 @@ pub const Cpu = struct {
                             std.debug.print("6502: NOP Found!\n", .{});
                             break :RMW;
                         } else if (self.instruction == 0xCA) {
-                            std.debug.print("6502: DEX found!\n", .{self.decrementX(time)});
+                            self.decrementX(time);
+                            std.debug.print("6502: DEX found!\n", .{});
                         } else {
                             self.decrement(time);
                             std.debug.print("6502: DEC Found!\n", .{});
