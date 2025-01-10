@@ -80,6 +80,7 @@ pub const Cpu = struct {
         const lowbyte: u16 = self.bus.data_bus;
 
         address = (highbyte << 8) | lowbyte;
+        std.debug.print("Pop Address: 0x{X}\n\n", .{address});
         return address;
     }
     //GOOD
@@ -528,10 +529,11 @@ pub const Cpu = struct {
     }
 
     pub fn compareAccumulator(self: *Cpu, time: i128) void {
+        var value: u8 = 0;
         if (self.instruction & 0xF0 == 0x50) {
             switch (self.instruction & 0xF) {
                 1 => indirecty: {
-                    const value = self.GetIndirectY();
+                    value = self.GetIndirectY();
                     if (self.accumulator == value) {
                         self.status.carry = 1;
                         self.status.zero = 1;
@@ -547,7 +549,7 @@ pub const Cpu = struct {
                     break :indirecty;
                 },
                 5 => zero_pagex: {
-                    const value = self.GetIndirectX();
+                    value = self.GetIndirectX();
                     if (self.accumulator == value) {
                         self.status.carry = 1;
                         self.status.zero = 1;
@@ -563,7 +565,7 @@ pub const Cpu = struct {
                     break :zero_pagex;
                 },
                 9 => absolutey: {
-                    const value = self.GetAbsoluteIndexed(1);
+                    value = self.GetAbsoluteIndexed(1);
                     if (self.accumulator == value) {
                         self.status.carry = 1;
                         self.status.zero = 1;
@@ -579,7 +581,7 @@ pub const Cpu = struct {
                     break :absolutey;
                 },
                 0xD => absolutex: {
-                    const value = self.GetAbsoluteIndexed(1);
+                    value = self.GetAbsoluteIndexed(1);
                     if (self.accumulator == value) {
                         self.status.carry = 1;
                         self.status.zero = 1;
@@ -602,7 +604,7 @@ pub const Cpu = struct {
         } else {
             switch (self.instruction & 0xF) {
                 1 => indirectx: {
-                    const value = self.GetIndirectX();
+                    value = self.GetIndirectX();
                     if (self.accumulator == value) {
                         self.status.carry = 1;
                         self.status.zero = 1;
@@ -618,7 +620,7 @@ pub const Cpu = struct {
                     break :indirectx;
                 },
                 5 => zero_page: {
-                    const value = self.GetZeroPage();
+                    value = self.GetZeroPage();
                     if (self.accumulator == value) {
                         self.status.carry = 1;
                         self.status.zero = 1;
@@ -634,7 +636,7 @@ pub const Cpu = struct {
                     break :zero_page;
                 },
                 9 => immediate: {
-                    const value = self.GetImmediate();
+                    value = self.GetImmediate();
                     if (self.accumulator == value) {
                         self.status.carry = 1;
                         self.status.zero = 1;
@@ -650,7 +652,7 @@ pub const Cpu = struct {
                     break :immediate;
                 },
                 0xD => absolute: {
-                    const value = self.GetAbsolute();
+                    value = self.GetAbsolute();
                     if (self.accumulator == value) {
                         self.status.carry = 1;
                         self.status.zero = 1;
@@ -670,14 +672,19 @@ pub const Cpu = struct {
                     break :default;
                 },
             }
-            self.status.negative = @truncate(self.accumulator >> 7);
+        }
+        if (self.accumulator == value) {
+            self.status.negative = 0;
+        } else {
+            self.status.negative = @truncate(self.accumulator - value >> 7);
         }
     }
 
     pub fn compareYRegister(self: *Cpu, time: i128) void {
+        var value: u8 = 0;
         switch (self.instruction & 0xF) {
             0 => immediate: {
-                const value = self.GetImmediate();
+                value = self.GetImmediate();
                 if (self.y_register == value) {
                     self.status.carry = 1;
                     self.status.zero = 1;
@@ -687,14 +694,13 @@ pub const Cpu = struct {
                 } else {
                     self.status.zero = 0;
                 }
-                self.status.negative = @truncate(value >> 7);
 
                 self.pc += 2;
                 self.cycle(time, 2);
                 break :immediate;
             },
             4 => zeropage: {
-                const value = self.GetZeroPage();
+                value = self.GetZeroPage();
                 if (self.y_register == value) {
                     self.status.carry = 1;
                     self.status.zero = 1;
@@ -704,14 +710,13 @@ pub const Cpu = struct {
                 } else {
                     self.status.zero = 0;
                 }
-                self.status.negative = @truncate(value >> 7);
 
                 self.pc += 2;
                 self.cycle(time, 3);
                 break :zeropage;
             },
             0xC => absolute: {
-                const value = self.GetAbsolute();
+                value = self.GetAbsolute();
                 if (self.y_register == value) {
                     self.status.carry = 1;
                     self.status.zero = 1;
@@ -721,7 +726,6 @@ pub const Cpu = struct {
                 } else {
                     self.status.zero = 0;
                 }
-                self.status.negative = @truncate(value >> 7);
 
                 self.pc += 3;
                 self.cycle(time, 4);
@@ -732,12 +736,18 @@ pub const Cpu = struct {
                 break :default;
             },
         }
+        if (self.y_register == value) {
+            self.status.negative = 0;
+        } else {
+            self.status.negative = @truncate(self.y_register - value >> 7);
+        }
     }
 
     pub fn compareXRegister(self: *Cpu, time: i128) void {
+        var value: u8 = 0;
         switch (self.instruction & 0xF) {
             0 => immediate: {
-                const value = self.GetImmediate();
+                value = self.GetImmediate();
                 if (self.x_register == value) {
                     self.status.carry = 1;
                     self.status.zero = 1;
@@ -747,14 +757,13 @@ pub const Cpu = struct {
                 } else {
                     self.status.zero = 0;
                 }
-                self.status.negative = @truncate(value >> 7);
 
                 self.pc += 2;
                 self.cycle(time, 2);
                 break :immediate;
             },
             4 => zeropage: {
-                const value = self.GetZeroPage();
+                value = self.GetZeroPage();
                 if (self.x_register == value) {
                     self.status.carry = 1;
                     self.status.zero = 1;
@@ -764,14 +773,13 @@ pub const Cpu = struct {
                 } else {
                     self.status.zero = 0;
                 }
-                self.status.negative = @truncate(value >> 7);
 
                 self.pc += 2;
                 self.cycle(time, 3);
                 break :zeropage;
             },
             0xC => absolute: {
-                const value = self.GetAbsolute();
+                value = self.GetAbsolute();
                 if (self.x_register == value) {
                     self.status.carry = 1;
                     self.status.zero = 1;
@@ -781,7 +789,6 @@ pub const Cpu = struct {
                 } else {
                     self.status.zero = 0;
                 }
-                self.status.negative = @truncate(value >> 7);
 
                 self.pc += 3;
                 self.cycle(time, 4);
@@ -791,6 +798,11 @@ pub const Cpu = struct {
                 std.debug.print("No Valid Addressing Mode Found (Compare X Register)!\n", .{});
                 break :default;
             },
+        }
+        if (self.x_register == value) {
+            self.status.negative = 0;
+        } else {
+            self.status.negative = @truncate(self.x_register - value >> 7);
         }
     }
 
