@@ -1228,11 +1228,10 @@ pub const Cpu = struct {
         const new_time = std.time.nanoTimestamp();
         self.status.break_inter = 1;
         self.pc = 0xFFFD;
-
+        //little endian
         var address: u16 = self.GetImmediate();
-        address <<= 8;
         self.pc += 1;
-        address |= self.GetImmediate();
+        address |= @as(u16, self.GetImmediate()) << 8;
 
         self.pc = address;
         self.cycle(new_time, 4);
@@ -1245,9 +1244,8 @@ pub const Cpu = struct {
         const new_time = std.time.nanoTimestamp();
         self.pc = vector - 1;
         var address: u16 = self.GetImmediate();
-        address <<= 8;
         self.pc += 1;
-        address |= self.GetImmediate();
+        address |= @as(u16, self.GetImmediate()) << 8;
 
         self.pc = address;
         self.cycle(new_time, 4);
@@ -2570,6 +2568,7 @@ pub const Cpu = struct {
         if (self.bus.ppu_ptr.nmi == 1) {
             std.debug.print("Non-maskable Interrupt!\n\n", .{});
             self.interruptRequest(std.time.nanoTimestamp(), 0xFFFA);
+            self.bus.ppu_ptr.nmi = 0;
         } else if (self.irq_line == 1 and self.status.interrupt_dsble != 1) {
             std.debug.print("Interrupt Request!\n\n", .{});
             self.interruptRequest(std.time.nanoTimestamp(), 0xFFFE);

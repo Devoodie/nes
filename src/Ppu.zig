@@ -534,7 +534,6 @@ pub const Ppu = struct {
         if (self.scanline == 261) {
             self.scanline = 0;
             self.status = 0;
-            self.nmi = 0;
             //cycle
         } else if (self.scanline >= 240) {
             //release lock
@@ -543,7 +542,7 @@ pub const Ppu = struct {
                 std.debug.print("Lock Released!\n\n", .{});
                 //                    self.mutex.unlock();
                 self.status |= 0x80;
-                if (self.control == 0x80) self.nmi = 1;
+                if (self.control & 0x80 == 0x80) self.nmi = 1;
             }
             std.debug.print("PPU Status: 0x{X}!\n\n", .{self.status});
             self.cycle(time, 340);
@@ -553,7 +552,7 @@ pub const Ppu = struct {
             self.drawScanLine();
         }
         self.scanline += 1;
-        std.debug.print("Scanline: {d}!\n\n", .{self.scanline});
+        std.debug.print("Scanline: {d}, NMI Status: {d}, Control Register: 0x{X}!\n\n", .{ self.scanline, self.nmi, self.control });
         self.cycle(time, 340);
     }
 
