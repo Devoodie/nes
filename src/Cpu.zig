@@ -385,6 +385,32 @@ pub const Cpu = struct {
 
     pub fn jump(self: *Cpu, time: i128) void {
         if (self.instruction & 0xF0 == 0x60) {
+            //indirect
+            self.bus.addr_bus = self.pc + 1;
+            self.bus.getMmo();
+
+            const low_byte = self.bus.data_bus;
+
+            self.bus.addr_bus = self.pc + 2;
+            self.bus.getMmo();
+
+            self.bus.addr_bus = self.bus.data_bus;
+            self.bus.addr_bus <<= 8;
+            self.bus.addr_bus |= low_byte;
+            self.bus.getMmo();
+
+            var addr: u16 = self.bus.data_bus;
+            addr <<= 8;
+
+            self.bus.addr_bus += 1;
+            self.bus.getMmo();
+
+            addr |= self.bus.data_bus;
+            self.pc = addr;
+
+            self.cycle(time, 5);
+        } else {
+            //absolute
             self.bus.addr_bus = self.pc + 1;
             self.bus.getMmo();
 
@@ -395,10 +421,7 @@ pub const Cpu = struct {
 
             self.pc = self.bus.data_bus;
             self.pc <<= 8;
-            self.pc += low_byte;
-            self.cycle(time, 5);
-        } else {
-            self.pc = self.GetAbsolute();
+            self.pc |= low_byte;
             self.cycle(time, 3);
         }
     }
@@ -2268,7 +2291,7 @@ pub const Cpu = struct {
                 const value = self.GetZeroPage() & self.accumulator;
 
                 self.status.negative = @truncate(value >> 7);
-                self.status.overflow = @truncate((value & 0b01000000) >> 6);
+                self.status.overflow = @truncate((value & 0x40) >> 6);
                 if (value == 0) {
                     self.status.zero = 1;
                 } else {
@@ -2283,7 +2306,7 @@ pub const Cpu = struct {
                 const value = self.GetAbsolute() & self.accumulator;
 
                 self.status.negative = @truncate(value >> 7);
-                self.status.overflow = @truncate(value >> 6);
+                self.status.overflow = @truncate((value & 0x40) >> 6);
                 if (value == 0) {
                     self.status.zero = 1;
                 } else {
