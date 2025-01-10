@@ -45,12 +45,23 @@ pub const Cpu = struct {
         self.stack_pointer -%= 1;
     }
 
+    pub fn stackPop(self: *Cpu) u8 {
+        self.stack_pointer +%= 1;
+        self.bus.addr_bus = @as(u16, self.stack_pointer) + 0x100;
+        self.bus.getMmo();
+        return self.bus.data_bus;
+    }
+
     pub fn stackPushAddress(self: *Cpu, address: u16) void {
         const highbyte: u8 = @truncate(address >> 8);
-        const lowbyte: u8 = @truncate(address & 0xF);
+        const lowbyte: u8 = @truncate(address & 0xFF);
+
+        std.debug.print("Push Address Low Byte: 0x{X}\n", .{lowbyte});
+        std.debug.print("Push Address High Byte: 0x{X}\n", .{highbyte});
 
         self.bus.addr_bus = @as(u16, self.stack_pointer) + 0x100;
         self.bus.data_bus = lowbyte;
+
         self.bus.putMmi();
         self.stack_pointer -%= 1;
 
@@ -58,13 +69,6 @@ pub const Cpu = struct {
         self.bus.addr_bus = @as(u16, self.stack_pointer) + 0x100;
         self.bus.putMmi();
         self.stack_pointer -%= 1;
-    }
-
-    pub fn stackPop(self: *Cpu) u8 {
-        self.stack_pointer +%= 1;
-        self.bus.addr_bus = @as(u16, self.stack_pointer) + 0x100;
-        self.bus.getMmo();
-        return self.bus.data_bus;
     }
 
     pub fn stackPopAddress(self: *Cpu) u16 {
@@ -78,6 +82,9 @@ pub const Cpu = struct {
         self.bus.addr_bus +%= 1;
         self.bus.getMmo();
         const lowbyte: u16 = self.bus.data_bus;
+
+        std.debug.print("Pop Address Low Byte: 0x{X}\n", .{lowbyte});
+        std.debug.print("Pop Address High Byte: 0x{X}\n", .{highbyte});
 
         address = (highbyte << 8) | lowbyte;
         std.debug.print("Pop Address: 0x{X}\n\n", .{address});
@@ -676,7 +683,7 @@ pub const Cpu = struct {
         if (self.accumulator == value) {
             self.status.negative = 0;
         } else {
-            self.status.negative = @truncate(self.accumulator - value >> 7);
+            self.status.negative = @truncate(self.accumulator -% value >> 7);
         }
     }
 
@@ -739,7 +746,7 @@ pub const Cpu = struct {
         if (self.y_register == value) {
             self.status.negative = 0;
         } else {
-            self.status.negative = @truncate(self.y_register - value >> 7);
+            self.status.negative = @truncate(self.y_register -% value >> 7);
         }
     }
 
@@ -802,7 +809,7 @@ pub const Cpu = struct {
         if (self.x_register == value) {
             self.status.negative = 0;
         } else {
-            self.status.negative = @truncate(self.x_register - value >> 7);
+            self.status.negative = @truncate(self.x_register -% value >> 7);
         }
     }
 
@@ -928,14 +935,14 @@ pub const Cpu = struct {
         if (self.instruction & 0xF0 == 0xF0) {
             switch (self.instruction & 0xF) {
                 6 => zeropagex: {
-                    value = self.GetZeroPageX() + 1;
+                    value = self.GetZeroPageX() +% 1;
                     self.setZeroPageX(value);
                     self.pc += 2;
                     self.cycle(time, 6);
                     break :zeropagex;
                 },
                 0xE => absolutex: {
-                    value = self.GetAbsoluteIndexed(0) + 1;
+                    value = self.GetAbsoluteIndexed(0) +% 1;
                     self.setAbsoluteIndexed(0, value);
                     self.pc += 3;
                     self.cycle(time, 7);
@@ -949,14 +956,14 @@ pub const Cpu = struct {
         } else {
             switch (self.instruction & 0xF) {
                 6 => zeropage: {
-                    value = self.GetZeroPageX() + 1;
+                    value = self.GetZeroPageX() +% 1;
                     self.setZeroPage(value);
                     self.pc += 2;
                     self.cycle(time, 5);
                     break :zeropage;
                 },
                 0xE => absolute: {
-                    value = self.GetAbsolute() + 1;
+                    value = self.GetAbsolute() +% 1;
                     self.setAbsolute(value);
                     self.pc += 3;
                     self.cycle(time, 6);
@@ -977,7 +984,7 @@ pub const Cpu = struct {
     }
 
     pub fn incrementXRegister(self: *Cpu, time: i128) void {
-        self.x_register += 1;
+        self.x_register +%= 1;
         if (self.x_register == 0) {
             self.status.zero = 1;
         } else {
@@ -990,7 +997,7 @@ pub const Cpu = struct {
     }
 
     pub fn incrementYRegister(self: *Cpu, time: i128) void {
-        self.y_register += 1;
+        self.y_register +%= 1;
         if (self.y_register == 0) {
             self.status.zero = 1;
         } else {
@@ -1007,14 +1014,14 @@ pub const Cpu = struct {
         if (self.instruction & 0xF0 == 0xD0) {
             switch (self.instruction & 0xF) {
                 6 => zeropagex: {
-                    value = self.GetZeroPageX() - 1;
+                    value = self.GetZeroPageX() -% 1;
                     self.setZeroPageX(value);
                     self.pc += 2;
                     self.cycle(time, 6);
                     break :zeropagex;
                 },
                 0xE => absolutex: {
-                    value = self.GetAbsoluteIndexed(0) - 1;
+                    value = self.GetAbsoluteIndexed(0) -% 1;
                     self.setAbsoluteIndexed(0, value);
                     self.pc += 3;
                     self.cycle(time, 7);
@@ -1028,14 +1035,14 @@ pub const Cpu = struct {
         } else {
             switch (self.instruction & 0xF) {
                 6 => zeropage: {
-                    value = self.GetZeroPageX() - 1;
+                    value = self.GetZeroPageX() -% 1;
                     self.setZeroPage(value);
                     self.pc += 2;
                     self.cycle(time, 5);
                     break :zeropage;
                 },
                 0xE => absolute: {
-                    value = self.GetAbsolute() - 1;
+                    value = self.GetAbsolute() -% 1;
                     self.setAbsolute(value);
                     self.pc += 3;
                     self.cycle(time, 6);
