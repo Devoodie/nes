@@ -72,6 +72,7 @@ pub fn main() !void {
     //
     const width = 1280;
     const height = 1200;
+    var cpu_timer = std.time.Timer.start()
     rl.initWindow(width, height, "Devooty's Nes");
     defer rl.closeWindow();
 
@@ -79,7 +80,7 @@ pub fn main() !void {
     while (true) {
         if (nes.Cpu.wait_time <= std.time.nanoTimestamp()) {
             nes.Cpu.operate();
-            std.debug.print("Cpu Wait Time: {d}!\n", .{nes.Cpu.wait_time});
+            //    std.debug.print("Cpu Wait Time: {d}!\n", .{nes.Cpu.wait_time});
         }
         if (nes.Ppu.wait_time <= std.time.nanoTimestamp()) {
             nes.Ppu.operate();
