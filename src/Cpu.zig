@@ -24,36 +24,24 @@ pub const Cpu = struct {
     irq_line: u1 = 1,
     extra_cycle: u8 = 0,
     odd_cycle: u1 = 0,
+    wait_time: i128 = 0,
 
     pub fn cycle(self: *Cpu, prev_time: i128, cycles: u16) void {
         const wait_time: i128 = 559 * @as(i128, @intCast(cycles));
+        std.debug.print("Cpu Wait Time: {d}!\n", .{wait_time});
         const goal_time = wait_time + prev_time;
         self.odd_cycle +%= @intCast(cycles % 2);
+        self.wait_time = goal_time;
         //        std.debug.print("The cycles are {d}!\n", .{self.odd_cycle});
 
-        while (std.time.nanoTimestamp() <= goal_time) {
-            continue;
-        }
+        //        while (std.time.nanoTimestamp() <= goal_time) {
+        //           continue;
+        //      }
     }
 
     pub fn stackPush(self: *Cpu, data: u8) void {
         self.bus.addr_bus = @as(u16, self.stack_pointer) + 0x100;
         self.bus.data_bus = data;
-        self.bus.putMmi();
-        self.stack_pointer -%= 1;
-    }
-
-    pub fn stackPushAddress(self: *Cpu, address: u16) void {
-        const highbyte: u8 = @truncate(address >> 8);
-        const lowbyte: u8 = @truncate(address & 0xF);
-
-        self.bus.addr_bus = @as(u16, self.stack_pointer) + 0x100;
-        self.bus.data_bus = lowbyte;
-        self.bus.putMmi();
-        self.stack_pointer -%= 1;
-
-        self.bus.data_bus = highbyte;
-        self.bus.addr_bus = @as(u16, self.stack_pointer) + 0x100;
         self.bus.putMmi();
         self.stack_pointer -%= 1;
     }
@@ -65,19 +53,42 @@ pub const Cpu = struct {
         return self.bus.data_bus;
     }
 
+    pub fn stackPushAddress(self: *Cpu, address: u16) void {
+        const highbyte: u8 = @truncate(address >> 8);
+        const lowbyte: u8 = @truncate(address & 0xFF);
+
+        std.debug.print("Push Address Low Byte: 0x{X}\n", .{lowbyte});
+        std.debug.print("Push Address High Byte: 0x{X}\n", .{highbyte});
+
+        self.bus.addr_bus = @as(u16, self.stack_pointer) + 0x100;
+        self.bus.data_bus = lowbyte;
+
+        self.bus.putMmi();
+        self.stack_pointer -%= 1;
+
+        self.bus.data_bus = highbyte;
+        self.bus.addr_bus = @as(u16, self.stack_pointer) + 0x100;
+        self.bus.putMmi();
+        self.stack_pointer -%= 1;
+    }
+
     pub fn stackPopAddress(self: *Cpu) u16 {
         var address: u16 = 0;
         self.stack_pointer +%= 1;
         self.bus.addr_bus = @as(u16, self.stack_pointer) + 0x100;
         self.bus.getMmo();
-        self.stack_pointer +%= 1;
         const highbyte: u16 = self.bus.data_bus;
 
+        self.stack_pointer +%= 1;
         self.bus.addr_bus +%= 1;
         self.bus.getMmo();
         const lowbyte: u16 = self.bus.data_bus;
 
+        std.debug.print("Pop Address Low Byte: 0x{X}\n", .{lowbyte});
+        std.debug.print("Pop Address High Byte: 0x{X}\n", .{highbyte});
+
         address = (highbyte << 8) | lowbyte;
+        std.debug.print("Pop Address: 0x{X}\n\n", .{address});
         return address;
     }
     //GOOD
@@ -322,6 +333,7 @@ pub const Cpu = struct {
         self.bus.getMmo();
 
         addr |= @as(u16, self.bus.data_bus) << 8;
+        std.debug.print("Absolute Address: 0x{X}!\n", .{addr});
         self.bus.addr_bus = addr;
         self.bus.getMmo();
 
@@ -359,7 +371,7 @@ pub const Cpu = struct {
             self.extra_cycle = difference[1];
             self.pc &= 0xFF00;
             self.pc |= difference[0];
-            std.debug.print("{d}\n", .{difference[0]});
+            std.debug.print("Difference: {d}\n", .{difference[0]});
 
             self.pc -= @as(u16, @intCast(self.extra_cycle)) << 8;
         } else {
@@ -374,6 +386,32 @@ pub const Cpu = struct {
 
     pub fn jump(self: *Cpu, time: i128) void {
         if (self.instruction & 0xF0 == 0x60) {
+            //indirect
+            self.bus.addr_bus = self.pc + 1;
+            self.bus.getMmo();
+
+            const low_byte = self.bus.data_bus;
+
+            self.bus.addr_bus = self.pc + 2;
+            self.bus.getMmo();
+
+            self.bus.addr_bus = self.bus.data_bus;
+            self.bus.addr_bus <<= 8;
+            self.bus.addr_bus |= low_byte;
+            self.bus.getMmo();
+
+            var addr: u16 = self.bus.data_bus;
+            addr <<= 8;
+
+            self.bus.addr_bus += 1;
+            self.bus.getMmo();
+
+            addr |= self.bus.data_bus;
+            self.pc = addr;
+
+            self.cycle(time, 5);
+        } else {
+            //absolute
             self.bus.addr_bus = self.pc + 1;
             self.bus.getMmo();
 
@@ -384,10 +422,7 @@ pub const Cpu = struct {
 
             self.pc = self.bus.data_bus;
             self.pc <<= 8;
-            self.pc += low_byte;
-            self.cycle(time, 5);
-        } else {
-            self.pc = self.GetAbsolute();
+            self.pc |= low_byte;
             self.cycle(time, 3);
         }
     }
@@ -525,10 +560,11 @@ pub const Cpu = struct {
     }
 
     pub fn compareAccumulator(self: *Cpu, time: i128) void {
+        var value: u8 = 0;
         if (self.instruction & 0xF0 == 0x50) {
             switch (self.instruction & 0xF) {
                 1 => indirecty: {
-                    const value = self.GetIndirectY();
+                    value = self.GetIndirectY();
                     if (self.accumulator == value) {
                         self.status.carry = 1;
                         self.status.zero = 1;
@@ -544,7 +580,7 @@ pub const Cpu = struct {
                     break :indirecty;
                 },
                 5 => zero_pagex: {
-                    const value = self.GetIndirectX();
+                    value = self.GetIndirectX();
                     if (self.accumulator == value) {
                         self.status.carry = 1;
                         self.status.zero = 1;
@@ -560,7 +596,7 @@ pub const Cpu = struct {
                     break :zero_pagex;
                 },
                 9 => absolutey: {
-                    const value = self.GetAbsoluteIndexed(1);
+                    value = self.GetAbsoluteIndexed(1);
                     if (self.accumulator == value) {
                         self.status.carry = 1;
                         self.status.zero = 1;
@@ -576,7 +612,7 @@ pub const Cpu = struct {
                     break :absolutey;
                 },
                 0xD => absolutex: {
-                    const value = self.GetAbsoluteIndexed(1);
+                    value = self.GetAbsoluteIndexed(1);
                     if (self.accumulator == value) {
                         self.status.carry = 1;
                         self.status.zero = 1;
@@ -599,7 +635,7 @@ pub const Cpu = struct {
         } else {
             switch (self.instruction & 0xF) {
                 1 => indirectx: {
-                    const value = self.GetIndirectX();
+                    value = self.GetIndirectX();
                     if (self.accumulator == value) {
                         self.status.carry = 1;
                         self.status.zero = 1;
@@ -615,7 +651,7 @@ pub const Cpu = struct {
                     break :indirectx;
                 },
                 5 => zero_page: {
-                    const value = self.GetZeroPage();
+                    value = self.GetZeroPage();
                     if (self.accumulator == value) {
                         self.status.carry = 1;
                         self.status.zero = 1;
@@ -631,7 +667,7 @@ pub const Cpu = struct {
                     break :zero_page;
                 },
                 9 => immediate: {
-                    const value = self.GetImmediate();
+                    value = self.GetImmediate();
                     if (self.accumulator == value) {
                         self.status.carry = 1;
                         self.status.zero = 1;
@@ -647,7 +683,7 @@ pub const Cpu = struct {
                     break :immediate;
                 },
                 0xD => absolute: {
-                    const value = self.GetAbsolute();
+                    value = self.GetAbsolute();
                     if (self.accumulator == value) {
                         self.status.carry = 1;
                         self.status.zero = 1;
@@ -667,14 +703,19 @@ pub const Cpu = struct {
                     break :default;
                 },
             }
-            self.status.negative = @truncate(self.accumulator >> 7);
+        }
+        if (self.accumulator == value) {
+            self.status.negative = 0;
+        } else {
+            self.status.negative = @truncate(self.accumulator -% value >> 7);
         }
     }
 
     pub fn compareYRegister(self: *Cpu, time: i128) void {
+        var value: u8 = 0;
         switch (self.instruction & 0xF) {
             0 => immediate: {
-                const value = self.GetImmediate();
+                value = self.GetImmediate();
                 if (self.y_register == value) {
                     self.status.carry = 1;
                     self.status.zero = 1;
@@ -684,14 +725,13 @@ pub const Cpu = struct {
                 } else {
                     self.status.zero = 0;
                 }
-                self.status.negative = @truncate(value >> 7);
 
                 self.pc += 2;
                 self.cycle(time, 2);
                 break :immediate;
             },
             4 => zeropage: {
-                const value = self.GetZeroPage();
+                value = self.GetZeroPage();
                 if (self.y_register == value) {
                     self.status.carry = 1;
                     self.status.zero = 1;
@@ -701,14 +741,13 @@ pub const Cpu = struct {
                 } else {
                     self.status.zero = 0;
                 }
-                self.status.negative = @truncate(value >> 7);
 
                 self.pc += 2;
                 self.cycle(time, 3);
                 break :zeropage;
             },
             0xC => absolute: {
-                const value = self.GetAbsolute();
+                value = self.GetAbsolute();
                 if (self.y_register == value) {
                     self.status.carry = 1;
                     self.status.zero = 1;
@@ -718,7 +757,6 @@ pub const Cpu = struct {
                 } else {
                     self.status.zero = 0;
                 }
-                self.status.negative = @truncate(value >> 7);
 
                 self.pc += 3;
                 self.cycle(time, 4);
@@ -729,12 +767,18 @@ pub const Cpu = struct {
                 break :default;
             },
         }
+        if (self.y_register == value) {
+            self.status.negative = 0;
+        } else {
+            self.status.negative = @truncate(self.y_register -% value >> 7);
+        }
     }
 
     pub fn compareXRegister(self: *Cpu, time: i128) void {
+        var value: u8 = 0;
         switch (self.instruction & 0xF) {
             0 => immediate: {
-                const value = self.GetImmediate();
+                value = self.GetImmediate();
                 if (self.x_register == value) {
                     self.status.carry = 1;
                     self.status.zero = 1;
@@ -744,14 +788,13 @@ pub const Cpu = struct {
                 } else {
                     self.status.zero = 0;
                 }
-                self.status.negative = @truncate(value >> 7);
 
                 self.pc += 2;
                 self.cycle(time, 2);
                 break :immediate;
             },
             4 => zeropage: {
-                const value = self.GetZeroPage();
+                value = self.GetZeroPage();
                 if (self.x_register == value) {
                     self.status.carry = 1;
                     self.status.zero = 1;
@@ -761,14 +804,13 @@ pub const Cpu = struct {
                 } else {
                     self.status.zero = 0;
                 }
-                self.status.negative = @truncate(value >> 7);
 
                 self.pc += 2;
                 self.cycle(time, 3);
                 break :zeropage;
             },
             0xC => absolute: {
-                const value = self.GetAbsolute();
+                value = self.GetAbsolute();
                 if (self.x_register == value) {
                     self.status.carry = 1;
                     self.status.zero = 1;
@@ -778,7 +820,6 @@ pub const Cpu = struct {
                 } else {
                     self.status.zero = 0;
                 }
-                self.status.negative = @truncate(value >> 7);
 
                 self.pc += 3;
                 self.cycle(time, 4);
@@ -788,6 +829,11 @@ pub const Cpu = struct {
                 std.debug.print("No Valid Addressing Mode Found (Compare X Register)!\n", .{});
                 break :default;
             },
+        }
+        if (self.x_register == value) {
+            self.status.negative = 0;
+        } else {
+            self.status.negative = @truncate(self.x_register -% value >> 7);
         }
     }
 
@@ -913,14 +959,14 @@ pub const Cpu = struct {
         if (self.instruction & 0xF0 == 0xF0) {
             switch (self.instruction & 0xF) {
                 6 => zeropagex: {
-                    value = self.GetZeroPageX() + 1;
+                    value = self.GetZeroPageX() +% 1;
                     self.setZeroPageX(value);
                     self.pc += 2;
                     self.cycle(time, 6);
                     break :zeropagex;
                 },
                 0xE => absolutex: {
-                    value = self.GetAbsoluteIndexed(0) + 1;
+                    value = self.GetAbsoluteIndexed(0) +% 1;
                     self.setAbsoluteIndexed(0, value);
                     self.pc += 3;
                     self.cycle(time, 7);
@@ -934,14 +980,14 @@ pub const Cpu = struct {
         } else {
             switch (self.instruction & 0xF) {
                 6 => zeropage: {
-                    value = self.GetZeroPageX() + 1;
+                    value = self.GetZeroPageX() +% 1;
                     self.setZeroPage(value);
                     self.pc += 2;
                     self.cycle(time, 5);
                     break :zeropage;
                 },
                 0xE => absolute: {
-                    value = self.GetAbsolute() + 1;
+                    value = self.GetAbsolute() +% 1;
                     self.setAbsolute(value);
                     self.pc += 3;
                     self.cycle(time, 6);
@@ -962,7 +1008,7 @@ pub const Cpu = struct {
     }
 
     pub fn incrementXRegister(self: *Cpu, time: i128) void {
-        self.x_register += 1;
+        self.x_register +%= 1;
         if (self.x_register == 0) {
             self.status.zero = 1;
         } else {
@@ -975,7 +1021,7 @@ pub const Cpu = struct {
     }
 
     pub fn incrementYRegister(self: *Cpu, time: i128) void {
-        self.y_register += 1;
+        self.y_register +%= 1;
         if (self.y_register == 0) {
             self.status.zero = 1;
         } else {
@@ -992,14 +1038,14 @@ pub const Cpu = struct {
         if (self.instruction & 0xF0 == 0xD0) {
             switch (self.instruction & 0xF) {
                 6 => zeropagex: {
-                    value = self.GetZeroPageX() - 1;
+                    value = self.GetZeroPageX() -% 1;
                     self.setZeroPageX(value);
                     self.pc += 2;
                     self.cycle(time, 6);
                     break :zeropagex;
                 },
                 0xE => absolutex: {
-                    value = self.GetAbsoluteIndexed(0) - 1;
+                    value = self.GetAbsoluteIndexed(0) -% 1;
                     self.setAbsoluteIndexed(0, value);
                     self.pc += 3;
                     self.cycle(time, 7);
@@ -1013,14 +1059,14 @@ pub const Cpu = struct {
         } else {
             switch (self.instruction & 0xF) {
                 6 => zeropage: {
-                    value = self.GetZeroPageX() - 1;
+                    value = self.GetZeroPageX() -% 1;
                     self.setZeroPage(value);
                     self.pc += 2;
                     self.cycle(time, 5);
                     break :zeropage;
                 },
                 0xE => absolute: {
-                    value = self.GetAbsolute() - 1;
+                    value = self.GetAbsolute() -% 1;
                     self.setAbsolute(value);
                     self.pc += 3;
                     self.cycle(time, 6);
@@ -1041,7 +1087,7 @@ pub const Cpu = struct {
     }
 
     pub fn decrementY(self: *Cpu, time: i128) void {
-        self.y_register -= 1;
+        self.y_register -%= 1;
 
         if (self.y_register == 0) {
             self.status.zero = 1;
@@ -1055,14 +1101,14 @@ pub const Cpu = struct {
     }
 
     pub fn decrementX(self: *Cpu, time: i128) void {
-        self.x_register -= 1;
+        self.x_register -%= 1;
 
         if (self.x_register == 0) {
             self.status.zero = 1;
         } else {
             self.status.zero = 0;
         }
-        self.status.negative = self.x_register >> 7;
+        self.status.negative = @truncate(self.x_register >> 7);
 
         self.pc += 1;
         self.cycle(time, 2);
@@ -1183,11 +1229,10 @@ pub const Cpu = struct {
         const new_time = std.time.nanoTimestamp();
         self.status.break_inter = 1;
         self.pc = 0xFFFD;
-
+        //little endian
         var address: u16 = self.GetImmediate();
-        address <<= 8;
         self.pc += 1;
-        address |= self.GetImmediate();
+        address |= @as(u16, self.GetImmediate()) << 8;
 
         self.pc = address;
         self.cycle(new_time, 4);
@@ -1200,9 +1245,8 @@ pub const Cpu = struct {
         const new_time = std.time.nanoTimestamp();
         self.pc = vector - 1;
         var address: u16 = self.GetImmediate();
-        address <<= 8;
         self.pc += 1;
-        address |= self.GetImmediate();
+        address |= @as(u16, self.GetImmediate()) << 8;
 
         self.pc = address;
         self.cycle(new_time, 4);
@@ -1223,14 +1267,27 @@ pub const Cpu = struct {
 
     pub fn jumpSubroutine(self: *Cpu, time: i128) void {
         self.stackPushAddress(self.pc + 3);
+        std.debug.print("Return Address: 0x{X}\n\n", .{self.pc + 3});
 
-        self.pc = self.GetAbsolute();
+        self.bus.addr_bus = self.pc + 1;
+        self.bus.getMmo();
+
+        var addr: u16 = self.bus.data_bus;
+
+        self.bus.addr_bus = self.pc + 2;
+        self.bus.getMmo();
+
+        addr |= @as(u16, self.bus.data_bus) << 8;
+
+        self.pc = addr;
+        std.debug.print("Stack Pointer: 0x{X}\n", .{self.stack_pointer});
 
         self.cycle(time, 6);
     }
 
     pub fn returnSubroutine(self: *Cpu, time: i128) void {
         self.pc = self.stackPopAddress();
+        std.debug.print("Stack Pointer: 0x{X}\n", .{self.stack_pointer});
         self.cycle(time, 6);
     }
 
@@ -2233,7 +2290,7 @@ pub const Cpu = struct {
                 const value = self.GetZeroPage() & self.accumulator;
 
                 self.status.negative = @truncate(value >> 7);
-                self.status.overflow = @truncate((value & 0b01000000) >> 6);
+                self.status.overflow = @truncate((value & 0x40) >> 6);
                 if (value == 0) {
                     self.status.zero = 1;
                 } else {
@@ -2248,7 +2305,7 @@ pub const Cpu = struct {
                 const value = self.GetAbsolute() & self.accumulator;
 
                 self.status.negative = @truncate(value >> 7);
-                self.status.overflow = @truncate(value >> 6);
+                self.status.overflow = @truncate((value & 0x40) >> 6);
                 if (value == 0) {
                     self.status.zero = 1;
                 } else {
@@ -2507,17 +2564,16 @@ pub const Cpu = struct {
     }
 
     pub fn operate(self: *Cpu) void {
-        while (true) {
-            self.execute();
-            //if there's a non-maskable interrupt /detect and handle
-            if (self.bus.ppu_ptr.nmi == 1) {
-                std.debug.print("Non-maskable Interrupt!\n\n", .{});
-                self.interruptRequest(std.time.nanoTimestamp(), 0xFFFA);
-            } else if (self.irq_line == 1 and self.status.interrupt_dsble != 1) {
-                std.debug.print("Interrupt Request!\n\n", .{});
-                self.interruptRequest(std.time.nanoTimestamp(), 0xFFFE);
-                self.irq_line = 0;
-            }
+        self.execute();
+        //if there's a non-maskable interrupt /detect and handle
+        if (self.bus.ppu_ptr.nmi == 1) {
+            std.debug.print("Non-maskable Interrupt!\n\n", .{});
+            self.interruptRequest(std.time.nanoTimestamp(), 0xFFFA);
+            self.bus.ppu_ptr.nmi = 0;
+        } else if (self.irq_line == 1 and self.status.interrupt_dsble != 1) {
+            std.debug.print("Interrupt Request!\n\n", .{});
+            self.interruptRequest(std.time.nanoTimestamp(), 0xFFFE);
+            self.irq_line = 0;
         }
     }
 
@@ -2878,6 +2934,9 @@ pub const Cpu = struct {
                             self.nop(time);
                             std.debug.print("6502: NOP Found!\n", .{});
                             break :RMW;
+                        } else if (self.instruction == 0xCA) {
+                            self.decrementX(time);
+                            std.debug.print("6502: DEX found!\n", .{});
                         } else {
                             self.decrement(time);
                             std.debug.print("6502: DEC Found!\n", .{});

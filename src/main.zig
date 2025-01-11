@@ -69,20 +69,23 @@ pub fn main() !void {
 
         nes.Cpu.pc = nes.Bus.addr_bus;
     }
+    //
+    const width = 1280;
+    const height = 1200;
+    rl.initWindow(width, height, "Devooty's Nes");
+    defer rl.closeWindow();
 
     //  nes.Cpu.operate();
-
-    {
-        var cpu_thread = try std.Thread.spawn(.{}, cpu.Cpu.operate, .{&nes.Cpu});
-        defer cpu_thread.join();
-
-        var ppu_thread = try std.Thread.spawn(.{}, ppu.Ppu.operate, .{&nes.Ppu});
-        defer ppu_thread.join();
-
-        var display_thread = try std.Thread.spawn(.{}, display.draw, .{&nes.Ppu});
-        defer display_thread.join();
+    while (true) {
+        if (nes.Cpu.wait_time <= std.time.nanoTimestamp()) {
+            nes.Cpu.operate();
+            std.debug.print("Cpu Wait Time: {d}!\n", .{nes.Cpu.wait_time});
+        }
+        if (nes.Ppu.wait_time <= std.time.nanoTimestamp()) {
+            nes.Ppu.operate();
+        }
+        //        try display.draw(&nes.Ppu);
     }
-
     try nes.Mapper.deinit(allocator);
 }
 

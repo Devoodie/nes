@@ -38,13 +38,25 @@ pub const Ppu = struct {
     nmi: u1 = 0,
     cartridge: *mapper.Cartridge = undefined,
     mutex: *std.Thread.Mutex = undefined,
+    wait_time: i128 = 0,
+
+    pub fn cycle(self: *Ppu, prev_time: i128, count: u16) void {
+        const wait_time: i128 = 186 * @as(i128, count);
+        self.wait_time = wait_time + prev_time;
+        std.debug.print("Ppu Wait Time: {d}!\n", .{wait_time});
+
+        //        while (std.time.nanoTimestamp() <= goal_time) {
+        //           continue;
+        //      }
+    }
 
     pub fn PpuMmo(self: *Ppu, address: u16) u8 {
         switch (address % 8) {
             2 => {
                 self.write_reg = 0;
+                const status = self.status;
                 self.status &= 0x60;
-                return self.status;
+                return status;
             },
             3 => {
                 return self.oam_addr;
@@ -102,6 +114,7 @@ pub const Ppu = struct {
             },
         }
     }
+
     pub fn writeData(self: *Ppu, data: u8) void {
         self.setPpuBus(data);
 
@@ -225,15 +238,6 @@ pub const Ppu = struct {
             self.nametable[index] = data;
         } else if (self.v >= 0x3EFF) {
             //pallete RAM
-        }
-    }
-
-    pub fn cycle(prev_time: i128, count: u16) void {
-        const wait_time: i128 = 186 * @as(i128, count);
-        const goal_time = wait_time + prev_time;
-
-        while (std.time.nanoTimestamp() <= goal_time) {
-            continue;
         }
     }
 
@@ -473,16 +477,16 @@ pub const Ppu = struct {
     }
 
     //GOOD
-    pub fn drawScanLine(self: *Ppu, prev_time: i128) void {
+    pub fn drawScanLine(self: *Ppu) void {
         //cycle after this function in the main loop
-        var time = prev_time;
+        //        var time = prev_time;
         if (self.mask & 0x18 == 0) {
             return;
         }
         for (0..43) |_| {
             if (self.cycles == 0) {
                 self.cycles += 1;
-                cycle(time, 1);
+                //   self.cycle(time, 1);
                 continue;
             } else if (self.cycles < 257 or (self.cycles <= 321 and self.cycles < 337)) {
                 self.drawCoarseX();
@@ -496,11 +500,11 @@ pub const Ppu = struct {
             }
             self.cycles += 8;
             //            std.debug.print("Cycles: {d}!, X_Position: {d}\n", .{ self.cycles, self.x_pos });
-            cycle(time, 8);
-            time = std.time.nanoTimestamp();
+            // self.cycle(time, 8);
+            //time = std.time.nanoTimestamp();
         }
 
-        cycle(time, 3);
+        //        self.cycle(time, 3);
         var coarse_y = self.v & 0x3E0 >> 5;
         if (self.v & 0x7000 != 0x7000) {
             //fine y increment
@@ -524,42 +528,35 @@ pub const Ppu = struct {
     }
 
     pub fn drawBitmap(self: *Ppu) void {
-        self.scanline = 0;
-        var time: i128 = std.time.nanoTimestamp();
+        const time: i128 = std.time.nanoTimestamp();
         //aquire lock
         //       self.mutex.lock();
         //std.debug.print("YOU'RE IN IT BUDDY!\n\n", .{});
-        for (0..262) |_| {
-            if (self.scanline == 261) {
-                self.scanline = 0;
-                self.status = 0;
-                self.nmi = 0;
-                //cycle
-                break;
-            } else if (self.scanline >= 240) {
-                //release lock
-                //handle post render scanline
-                if (self.scanline == 241) {
-                    std.debug.print("Lock Released!\n\n", .{});
-                    //                    self.mutex.unlock();
-                    self.status |= 0x80;
-                    if (self.control == 0x80) self.nmi = 1;
-                }
-                cycle(time, 340);
-            } else {
-                //handle rendering
-                self.fillSprites();
-                self.drawScanLine(std.time.nanoTimestamp());
+        if (self.scanline == 261) {
+            self.scanline = 0;
+            self.status = 0;
+            //cycle
+        } else if (self.scanline >= 240) {
+            //release lock
+            //handle post render scanline
+            if (self.scanline == 241) {
+                std.debug.print("Lock Released!\n\n", .{});
+                //                    self.mutex.unlock();
+                self.status |= 0x80;
+                if (self.control & 0x80 == 0x80) self.nmi = 1;
             }
-            self.scanline += 1;
-            std.debug.print("PPU Status: 0x{X}!\n\n", .{});
-            time = std.time.nanoTimestamp();
+            std.debug.print("PPU Status: 0x{X}!\n\n", .{self.status});
+        } else {
+            //handle rendering
+            self.fillSprites();
+            self.drawScanLine();
         }
+        self.scanline += 1;
+        std.debug.print("Scanline: {d}, NMI Status: {d}, Control Register: 0x{X}!\n\n", .{ self.scanline, self.nmi, self.control });
+        self.cycle(time, 340);
     }
 
     pub fn operate(self: *Ppu) void {
-        while (true) {
-            self.drawBitmap();
-        }
+        self.drawBitmap();
     }
 };
