@@ -28,6 +28,7 @@ pub const Cpu = struct {
 
     pub fn cycle(self: *Cpu, prev_time: i128, cycles: u16) void {
         const wait_time: i128 = 559 * @as(i128, @intCast(cycles));
+        std.debug.print("Cpu Wait Time: {d}!\n", .{wait_time});
         const goal_time = wait_time + prev_time;
         self.odd_cycle +%= @intCast(cycles % 2);
         self.wait_time = goal_time;

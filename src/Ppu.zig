@@ -43,6 +43,7 @@ pub const Ppu = struct {
     pub fn cycle(self: *Ppu, prev_time: i128, count: u16) void {
         const wait_time: i128 = 186 * @as(i128, count);
         self.wait_time = wait_time + prev_time;
+        std.debug.print("Ppu Wait Time: {d}!\n", .{wait_time});
 
         //        while (std.time.nanoTimestamp() <= goal_time) {
         //           continue;
@@ -545,7 +546,6 @@ pub const Ppu = struct {
                 if (self.control & 0x80 == 0x80) self.nmi = 1;
             }
             std.debug.print("PPU Status: 0x{X}!\n\n", .{self.status});
-            self.cycle(time, 340);
         } else {
             //handle rendering
             self.fillSprites();
