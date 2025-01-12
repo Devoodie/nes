@@ -82,7 +82,6 @@ pub fn main() !void {
         if (nes.Cpu.wait_time <= cpu_timer.read()) {
             cpu_timer.reset();
             nes.Cpu.operate();
-            nes.Cpu.wait_time = 0;
             //    std.debug.print("Cpu Wait Time: {d}!\n", .{nes.Cpu.wait_time});
         }
         if (nes.Ppu.wait_time <= ppu_timer.read()) {
