@@ -38,11 +38,12 @@ pub const Ppu = struct {
     nmi: u1 = 0,
     cartridge: *mapper.Cartridge = undefined,
     mutex: *std.Thread.Mutex = undefined,
-    wait_time: u64 = 0,
+    wait_time: i128 = 0,
 
-    pub fn cycle(self: *Ppu, count: u16) void {
-        self.wait_time = 187 * @as(u64, count);
-        std.debug.print("Ppu Wait Time: {d}!\n", .{self.wait_time});
+    pub fn cycle(self: *Ppu, prev_time: i128, count: u16) void {
+        const wait_time: i128 = 187 * @as(i128, count);
+        self.wait_time = wait_time + prev_time;
+        std.debug.print("Ppu Wait Time: {d}!\n", .{wait_time});
 
         //        while (std.time.nanoTimestamp() <= goal_time) {
         //           continue;
@@ -485,7 +486,7 @@ pub const Ppu = struct {
         for (0..43) |_| {
             if (self.cycles == 0) {
                 self.cycles += 1;
-                //   self.cycle(1);
+                //   self.cycle(time, 1);
                 continue;
             } else if (self.cycles < 257 or (self.cycles <= 321 and self.cycles < 337)) {
                 self.drawCoarseX();
@@ -499,11 +500,11 @@ pub const Ppu = struct {
             }
             self.cycles += 8;
             //            std.debug.print("Cycles: {d}!, X_Position: {d}\n", .{ self.cycles, self.x_pos });
-            // self.cycle(8);
+            // self.cycle(time, 8);
             //time = std.time.nanoTimestamp();
         }
 
-        //        self.cycle(3);
+        //        self.cycle(time, 3);
         var coarse_y = self.v & 0x3E0 >> 5;
         if (self.v & 0x7000 != 0x7000) {
             //fine y increment
@@ -527,6 +528,7 @@ pub const Ppu = struct {
     }
 
     pub fn drawBitmap(self: *Ppu) void {
+        const time: i128 = std.time.nanoTimestamp();
         //aquire lock
         //       self.mutex.lock();
         //std.debug.print("YOU'RE IN IT BUDDY!\n\n", .{});
@@ -551,7 +553,7 @@ pub const Ppu = struct {
         }
         self.scanline += 1;
         std.debug.print("Scanline: {d}, NMI Status: {d}, Control Register: 0x{X}!\n\n", .{ self.scanline, self.nmi, self.control });
-        self.cycle(340);
+        self.cycle(time, 340);
     }
 
     pub fn operate(self: *Ppu) void {
