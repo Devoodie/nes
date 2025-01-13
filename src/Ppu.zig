@@ -180,12 +180,9 @@ pub const Ppu = struct {
     }
 
     pub fn GetPpuBus(self: *Ppu) u8 {
-        if (self.v <= 0xFFF) {
-            //pattern table 0
-            return 1;
-        } else if (self.v <= 0x1FFF) {
+        if (self.v <= 0x1FFF) {
             //pattern table 1
-            return 1;
+            return self.cartridge.getPpuData(self.v);
         } else if (self.v <= 0x23FF) {
             //name table 0
             const index = self.v & 0x3FF;

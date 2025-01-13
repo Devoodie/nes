@@ -25,8 +25,10 @@ pub const Cpu = struct {
     extra_cycle: u8 = 0,
     odd_cycle: u1 = 0,
     wait_time: u64 = 0,
+    cycles: u16 = 0,
 
     pub fn cycle(self: *Cpu, cycles: u16) void {
+        self.cycles += cycles;
         self.wait_time = 559 * @as(u64, cycles);
         std.debug.print("Cpu Wait Time: {d}!\n", .{self.wait_time});
         self.odd_cycle +%= @intCast(cycles % 2);

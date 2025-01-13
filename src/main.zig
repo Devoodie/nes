@@ -4,7 +4,6 @@ const cpu = @import("Cpu.zig");
 const ppu = @import("Ppu.zig");
 const rl = @import("raylib");
 const display = @import("Display.zig");
-
 pub fn main() !void {
     std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
 
@@ -73,7 +72,6 @@ pub fn main() !void {
     const width = 1280;
     const height = 1200;
     var cpu_timer = try std.time.Timer.start();
-    var ppu_timer = try std.time.Timer.start();
     rl.initWindow(width, height, "Devooty's Nes");
     defer rl.closeWindow();
 
@@ -82,13 +80,13 @@ pub fn main() !void {
         if (nes.Cpu.wait_time < cpu_timer.read()) {
             cpu_timer.reset();
             nes.Cpu.operate();
-            //    std.debug.print("Cpu Wait Time: {d}!\n", .{nes.Cpu.wait_time});
         }
-        if (nes.Ppu.wait_time < ppu_timer.read()) {
-            ppu_timer.reset();
+        if (nes.Cpu.cycles >= 113) {
             nes.Ppu.operate();
+            nes.Cpu.cycles = 0;
+            std.debug.print("Nametable: {s}\n", .{nes.Ppu.nametable});
         }
-        //        try display.draw(&nes.Ppu);
+        try display.draw(&nes.Ppu);
     }
     try nes.Mapper.deinit(allocator);
 }
