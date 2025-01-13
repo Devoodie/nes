@@ -8,7 +8,7 @@ pub const Sprite = union {
 
 pub const Ppu = struct {
     control: u8 = 0,
-    mask: u8 = 0,
+    mask: u8 = 0x14,
     status: u8 = 0,
     oam_addr: u8 = 0,
     scroll: u8 = 0,

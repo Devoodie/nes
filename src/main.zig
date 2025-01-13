@@ -84,7 +84,7 @@ pub fn main() !void {
         if (nes.Cpu.cycles >= 113) {
             nes.Ppu.operate();
             nes.Cpu.cycles = 0;
-            std.debug.print("Nametable: {s}\n", .{nes.Ppu.nametable});
+            std.debug.print("PatternTable: {d}\n", .{nes.Ppu.bitmap[230][0]});
         }
         try display.draw(&nes.Ppu);
     }
