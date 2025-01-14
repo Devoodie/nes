@@ -76,6 +76,17 @@ pub fn main() !void {
     defer rl.closeWindow();
 
     //  nes.Cpu.operate();
+    {
+        var nes_thread = try std.Thread.spawn(.{}, masterClock, .{ &nes, &cpu_timer });
+        defer nes_thread.join();
+
+        var display_thread = try std.Thread.spawn(.{}, display.draw, .{&nes.Ppu});
+        defer display_thread.join();
+    }
+    try nes.Mapper.deinit(allocator);
+}
+
+pub fn masterClock(nes: *components.Nes, cpu_timer: *std.time.Timer) void {
     while (true) {
         if (nes.Cpu.wait_time < cpu_timer.read()) {
             cpu_timer.reset();
@@ -86,9 +97,7 @@ pub fn main() !void {
             nes.Cpu.cycles = 0;
             std.debug.print("PatternTable: {d}\n", .{nes.Ppu.bitmap[230][0]});
         }
-        try display.draw(&nes.Ppu);
     }
-    try nes.Mapper.deinit(allocator);
 }
 
 test "simple test" {
