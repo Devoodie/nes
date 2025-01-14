@@ -318,7 +318,7 @@ pub const Ppu = struct {
     }
 
     pub fn drawSprites(self: *Ppu, coarsex: u8, background: u5) ?u5 {
-        var oam_index: ?u6 = 0;
+        var oam_index: u8 = 0;
         var x_buffer: u8 = 0;
         var x_coord: ?u8 = null;
         var y_coord: u8 = 0;
@@ -330,7 +330,7 @@ pub const Ppu = struct {
         for (0..8) |iterations| {
             oam_index = self.secondary_oam[7 - iterations];
 
-            if (oam_index == null) {
+            if (self.secondary_oam[7 - iterations] == null) {
                 continue;
             }
 
@@ -530,6 +530,7 @@ pub const Ppu = struct {
         if (self.scanline == 261) {
             self.scanline = 0;
             self.status = 0;
+            self.bitmap = std.mem.zeroes([240][256]u5);
             //cycle
         } else if (self.scanline >= 240) {
             //release lock

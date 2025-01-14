@@ -2,20 +2,24 @@ const std = @import("std");
 const components = @import("Nes.zig");
 const cpu = @import("Cpu.zig");
 const ppu = @import("Ppu.zig");
-const rl = @import("raylib");
 const display = @import("Display.zig");
 pub fn main() !void {
     std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
 
     var lock: std.Thread.Mutex = .{};
 
-    var nes: components.Nes = .{ .Cpu = .{}, .Ppu = .{ .mutex = &lock }, .Bus = .{ .mutex = &lock } };
-    nes.init();
-
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
 
     var allocator = gpa.allocator();
+
+    //    var nes: components.Nes = .{ .Cpu = .{}, .Ppu = .{ .mutex = &lock }, .Bus = .{ .mutex = &lock } };
+    //   nes.init();
+    var nes = try allocator.create(components.Nes);
+    defer allocator.destroy(nes);
+    nes.Ppu.mutex = &lock;
+    nes.Bus.mutex = &lock;
+    nes.init();
 
     var args = std.process.args();
     var path: ?[]u8 = null;
@@ -69,19 +73,16 @@ pub fn main() !void {
         nes.Cpu.pc = nes.Bus.addr_bus;
     }
     //
-    const width = 1280;
-    const height = 1200;
     var cpu_timer = try std.time.Timer.start();
-    rl.initWindow(width, height, "Devooty's Nes");
-    defer rl.closeWindow();
 
     //  nes.Cpu.operate();
     {
-        var nes_thread = try std.Thread.spawn(.{}, masterClock, .{ &nes, &cpu_timer });
-        defer nes_thread.join();
+        //var nes_thread = try std.Thread.spawn(.{}, masterClock, .{ &nes, &cpu_timer });
+        //defer nes_thread.join();
 
         var display_thread = try std.Thread.spawn(.{}, display.draw, .{&nes.Ppu});
         defer display_thread.join();
+        masterClock(nes, &cpu_timer);
     }
     try nes.Mapper.deinit(allocator);
 }
@@ -95,7 +96,7 @@ pub fn masterClock(nes: *components.Nes, cpu_timer: *std.time.Timer) void {
         if (nes.Cpu.cycles >= 113) {
             nes.Ppu.operate();
             nes.Cpu.cycles = 0;
-            std.debug.print("PatternTable: {d}\n", .{nes.Ppu.bitmap[230][0]});
+            std.debug.print("Name Table: {s}\n", .{nes.Ppu.nametable});
         }
     }
 }
