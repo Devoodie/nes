@@ -2585,7 +2585,7 @@ pub const Cpu = struct {
         const first_nib = (self.instruction & 0xF);
         const second_nib = (self.instruction & 0xF0);
 
-        //std.debug.print("Instruction: 0x{X}, Address: 0x{X}!\n", .{ self.instruction, self.pc });
+        std.debug.print("Instruction: 0x{X}, Address: 0x{X}!\n", .{ self.instruction, self.pc });
         //instruction execute
         switch (first_nib % 4) {
             0 => CONTROL: {

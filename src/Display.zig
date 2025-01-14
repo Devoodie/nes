@@ -84,20 +84,21 @@ pub fn draw(ppu: *picture_unit.Ppu) !void {
     defer rl.closeWindow();
 
     while (true) {
-        if (ppu.status & 0x80 == 0x80) {
-            rl.beginDrawing();
-            //    rl.drawText("You're In It!\n", 190, 200, 20, rl.Color.white);
-            rl.clearBackground(rl.Color.black);
-            for (ppu.bitmap, 0..) |row, y_pos| {
-                for (row, 0..) |column, x_pos| {
-                    if (column > 0) {
-                        rl.drawRectangle(@intCast(x_pos * 5), @intCast(y_pos * 5), 5, 5, rl.Color.white);
-                        rl.drawText("Drew\n", 190, 200, 20, rl.Color.white);
-                    }
+        //        if (ppu.status & 0x80 == 0x80) {
+        rl.beginDrawing();
+        //    rl.drawText("You're In It!\n", 190, 200, 20, rl.Color.white);
+        rl.clearBackground(rl.Color.black);
+        for (ppu.bitmap, 0..) |row, y_pos| {
+            for (row, 0..) |column, x_pos| {
+                if (column > 0) {
+                    rl.drawRectangle(@intCast(x_pos * 5), @intCast(y_pos * 5), 5, 5, rl.Color.white);
+                    rl.drawText("Drew\n", 190, 200, 20, rl.Color.white);
                 }
             }
-            rl.endDrawing();
         }
+        rl.endDrawing();
+        std.debug.print("PPU bitmap: {any}!\n", .{ppu.bitmap});
+        //}
     }
     // }
 }
