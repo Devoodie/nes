@@ -328,21 +328,19 @@ pub const Ppu = struct {
         if (self.mask & 0x10 != 0x10) return null;
 
         for (0..8) |iterations| {
-            oam_index = self.secondary_oam[7 - iterations];
-
             if (self.secondary_oam[7 - iterations] == null) {
                 continue;
             }
-
-            oam_index.? *= 4;
+            oam_index = self.secondary_oam[7 - iterations].?;
+            oam_index *= 4;
             sprite_index = self.secondary_oam[7 - iterations].?;
-            x_buffer = self.oam[oam_index.? + 3];
+            x_buffer = self.oam[oam_index + 3];
 
             if (coarsex < x_buffer + 8 and coarsex >= x_buffer) {
                 x_coord = coarsex - x_buffer;
                 sprite0 = 7 - @as(u8, @intCast(iterations));
-                y_coord = @as(u8, @truncate(self.scanline)) - self.oam[oam_index.?];
-                attributes = self.oam[oam_index.? + 2];
+                y_coord = @as(u8, @truncate(self.scanline)) - self.oam[oam_index];
+                attributes = self.oam[oam_index + 2];
             }
         }
 
@@ -369,7 +367,7 @@ pub const Ppu = struct {
             if (x > 7 and sprite.large[bitmap_y][bitmap_x] & 0b11 < 0 and background & 0b11 < 0 and sprite0 == 0) {
                 self.status |= 0x40;
             }
-            // std.debug.print("X Coord: {d}, Y Coord: {d}\n", .{ bitmap_x, bitmap_y });
+            std.debug.print("X Coord: {d}, Y Coord: {d}\n", .{ bitmap_x, bitmap_y });
             return sprite.large[bitmap_y][bitmap_x];
         } else {
             if (attributes & 0x80 == 0x80) {
@@ -381,7 +379,7 @@ pub const Ppu = struct {
             if (x > 7 and sprite.small[bitmap_y][bitmap_x] & 0b11 < 0 and background & 0b11 < 0 and sprite0 == 0) {
                 self.status |= 0x40;
             }
-            //std.debug.print("X Coord: {d}, Y Coord: {d}\n", .{ bitmap_x, bitmap_y });
+            std.debug.print("X Coord: {d}, Y Coord: {d}\n", .{ bitmap_x, bitmap_y });
             return sprite.small[bitmap_y][bitmap_x];
         }
     }
@@ -445,6 +443,7 @@ pub const Ppu = struct {
                 if (sprite_pixel != null) {
                     pixel.* = sprite_pixel.?;
                 }
+                std.debug.print("Pixel: 0x{X}!\n", .{pixel.*});
             }
             if (self.cycles != 249) self.x_pos += 8;
         } else {
@@ -545,6 +544,7 @@ pub const Ppu = struct {
         } else {
             //handle rendering
             self.fillSprites();
+            self.spriteEvaluation();
             self.drawScanLine();
         }
         self.scanline += 1;
