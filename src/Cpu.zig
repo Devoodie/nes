@@ -233,7 +233,7 @@ pub const Cpu = struct {
     pub fn GetAbsoluteIndexed(self: *Cpu, xory: u1) u8 {
         self.bus.addr_bus = self.pc + 1;
         self.bus.getMmo();
-        var addr: u16 = self.bus.data_bus;
+        var addr: u16 = 0;
         self.extra_cycle = 0;
         var addend: u8 = undefined;
 
@@ -246,6 +246,7 @@ pub const Cpu = struct {
 
         self.bus.addr_bus = self.pc + 2;
         self.bus.getMmo();
+        addr |= @as(u16, self.bus.data_bus) << 8;
 
         if (sum[1] == 1) {
             self.extra_cycle = 1;
@@ -263,7 +264,7 @@ pub const Cpu = struct {
     pub fn setAbsoluteIndexed(self: *Cpu, xory: u1, data: u8) void {
         self.bus.addr_bus = self.pc + 1;
         self.bus.getMmo();
-        var addr: u16 = self.bus.data_bus;
+        var addr: u16 = 0;
         self.extra_cycle = 0;
         var addend: u8 = undefined;
 
@@ -276,6 +277,7 @@ pub const Cpu = struct {
 
         self.bus.addr_bus = self.pc + 2;
         self.bus.getMmo();
+        addr = @as(u16, self.bus.data_bus) << 8;
 
         if (sum[1] == 1) {
             self.extra_cycle = 1;
