@@ -97,7 +97,7 @@ pub fn draw(ppu: *picture_unit.Ppu) !void {
             }
         }
         rl.endDrawing();
-        std.debug.print("PPU bitmap: {any}!\n", .{ppu.bitmap});
+        //        std.debug.print("PPU bitmap: {any}!\n", .{ppu.bitmap});
         //}
     }
     // }

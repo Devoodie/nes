@@ -8,7 +8,7 @@ pub const Sprite = union {
 
 pub const Ppu = struct {
     control: u8 = 0,
-    mask: u8 = 0x14,
+    mask: u8 = 0,
     status: u8 = 0,
     oam_addr: u8 = 0,
     scroll: u8 = 0,
@@ -25,7 +25,7 @@ pub const Ppu = struct {
     fine_x: u3 = 0,
     pattern_table: [8192]u8 = undefined,
     // this is gunna cause padding
-    bitmap: [240][256]u5 = undefined,
+    bitmap: *[240][256]u5 = undefined,
     pallet_memory: [32]u8 = undefined,
     scanline: u12 = 261,
     x_pos: u8 = 0,
@@ -529,12 +529,13 @@ pub const Ppu = struct {
         if (self.scanline == 261) {
             self.scanline = 0;
             self.status = 0;
-            self.bitmap = std.mem.zeroes([240][256]u5);
+            self.bitmap.* = std.mem.zeroes([240][256]u5);
             //cycle
         } else if (self.scanline >= 240) {
             //release lock
             //handle post render scanline
             if (self.scanline == 241) {
+                //                std.debug.print("Bitmap: {any}\n", .{self.bitmap});
                 std.debug.print("Lock Released!\n\n", .{});
                 //                    self.mutex.unlock();
                 self.status |= 0x80;

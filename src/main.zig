@@ -19,7 +19,10 @@ pub fn main() !void {
     defer allocator.destroy(nes);
     nes.Ppu.mutex = &lock;
     nes.Bus.mutex = &lock;
+
     nes.init();
+
+    nes.Ppu.bitmap = try allocator.create([240][256]u5);
 
     var args = std.process.args();
     var path: ?[]u8 = null;
