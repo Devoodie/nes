@@ -2,21 +2,27 @@ const std = @import("std");
 const components = @import("Nes.zig");
 const cpu = @import("Cpu.zig");
 const ppu = @import("Ppu.zig");
-const rl = @import("raylib");
 const display = @import("Display.zig");
-
 pub fn main() !void {
     std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
 
     var lock: std.Thread.Mutex = .{};
 
-    var nes: components.Nes = .{ .Cpu = .{}, .Ppu = .{ .mutex = &lock }, .Bus = .{ .mutex = &lock } };
-    nes.init();
-
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
 
     var allocator = gpa.allocator();
+
+    //    var nes: components.Nes = .{ .Cpu = .{}, .Ppu = .{ .mutex = &lock }, .Bus = .{ .mutex = &lock } };
+    //   nes.init();
+    var nes = try allocator.create(components.Nes);
+    defer allocator.destroy(nes);
+    nes.Ppu.mutex = &lock;
+    nes.Bus.mutex = &lock;
+
+    nes.init();
+
+    nes.Ppu.bitmap = try allocator.create([240][256]u5);
 
     var args = std.process.args();
     var path: ?[]u8 = null;
@@ -70,24 +76,34 @@ pub fn main() !void {
         nes.Cpu.pc = nes.Bus.addr_bus;
     }
     //
-    const width = 1280;
-    const height = 1200;
-    var cpu_timer = std.time.Timer.start()
-    rl.initWindow(width, height, "Devooty's Nes");
-    defer rl.closeWindow();
+
+    var cpu_timer = try std.time.Timer.start();
+
 
     //  nes.Cpu.operate();
+    {
+        //var nes_thread = try std.Thread.spawn(.{}, masterClock, .{ &nes, &cpu_timer });
+        //defer nes_thread.join();
+
+        var display_thread = try std.Thread.spawn(.{}, display.draw, .{&nes.Ppu});
+        defer display_thread.join();
+        masterClock(nes, &cpu_timer);
+    }
+    try nes.Mapper.deinit(allocator);
+}
+
+pub fn masterClock(nes: *components.Nes, cpu_timer: *std.time.Timer) void {
     while (true) {
         if (nes.Cpu.wait_time <= std.time.nanoTimestamp()) {
             nes.Cpu.operate();
-            //    std.debug.print("Cpu Wait Time: {d}!\n", .{nes.Cpu.wait_time});
         }
-        if (nes.Ppu.wait_time <= std.time.nanoTimestamp()) {
+        if (nes.Cpu.cycles >= 114) {
+
             nes.Ppu.operate();
+            nes.Cpu.cycles = 0;
+            //            std.debug.print("Bitmap: {any}\n", .{nes.Ppu.bitmap});
         }
-        //        try display.draw(&nes.Ppu);
     }
-    try nes.Mapper.deinit(allocator);
 }
 
 test "simple test" {

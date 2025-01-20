@@ -65,8 +65,8 @@ test "Absolute Addressing" {
     nes.init();
 
     nes.Cpu.pc = 0;
-    nes.Cpu.memory[1] = 0xF;
-    nes.Cpu.memory[2] = 0xAF;
+    nes.Cpu.memory[1] = 0xAF;
+    nes.Cpu.memory[2] = 0xF;
 
     nes.Cpu.setAbsolute(240);
 
@@ -82,8 +82,8 @@ test "Absolute Indexed Addressing" {
     nes.Cpu.pc = 0;
     nes.Cpu.x_register = 8;
     nes.Cpu.y_register = 8;
-    nes.Cpu.memory[1] = 0xF;
-    nes.Cpu.memory[2] = 0xA7;
+    nes.Cpu.memory[1] = 0xA7;
+    nes.Cpu.memory[2] = 0xF;
 
     nes.Cpu.setAbsoluteIndexed(0, 240);
     std.debug.print("{d} provided by Absolute X!\n", .{nes.Cpu.GetAbsoluteIndexed(0)});
@@ -128,7 +128,7 @@ test "Jump Addressing" {
     nes.Cpu.memory[2] = 0xAF;
     nes.Cpu.instruction = 0x6C;
 
-    nes.Cpu.jump(std.time.nanoTimestamp());
+    nes.Cpu.jump();
     std.debug.print("Jumped to 0x{X}!\n", .{nes.Cpu.pc});
     try std.testing.expect(nes.Cpu.pc == 0xFAF);
 }
@@ -143,7 +143,7 @@ test "Branch Relative Addressing" {
     nes.Cpu.memory[257] = 0b10000000;
 
     nes.Cpu.status.zero = 0;
-    nes.Cpu.branchNoZero(std.time.nanoTimestamp());
+    nes.Cpu.branchNoZero();
     std.debug.print("Branched to {d}!\n", .{nes.Cpu.pc});
     try std.testing.expect(nes.Cpu.pc == 130);
 }
@@ -160,7 +160,7 @@ test "Multi-Byte Add With Carry" {
     nes.Cpu.memory[1] = 1;
     nes.Cpu.instruction = 0x69;
 
-    nes.Cpu.addWithCarry(std.time.nanoTimestamp());
+    nes.Cpu.addWithCarry();
     std.debug.print("Sum is {d}!\n", .{nes.Cpu.accumulator});
     try std.testing.expect(nes.Cpu.accumulator == 0);
     try std.testing.expect(nes.Cpu.status.carry == 1);
@@ -181,7 +181,7 @@ test "Multi-Byte Subtraction" {
     nes.Cpu.memory[1] = 1;
     nes.Cpu.instruction = 0xE9;
 
-    nes.Cpu.subtractWithCarry(std.time.nanoTimestamp());
+    nes.Cpu.subtractWithCarry();
     std.debug.print("Difference is {d}!\n\n", .{nes.Cpu.accumulator});
     try std.testing.expect(nes.Cpu.accumulator == 255);
     try std.testing.expect(nes.Cpu.status.carry == 0);
@@ -203,12 +203,12 @@ test "Read/Write PPU" {
     nes.Cpu.memory[1] = 0x20;
     nes.Cpu.memory[2] = 0x06;
     nes.Cpu.instruction = 0x8D;
-    nes.Cpu.storeAccumulator(std.time.nanoTimestamp());
+    nes.Cpu.storeAccumulator();
 
     nes.Cpu.pc = 0;
     nes.Cpu.accumulator = 0;
 
-    nes.Cpu.storeAccumulator(std.time.nanoTimestamp());
+    nes.Cpu.storeAccumulator();
     std.debug.print("VRAM address is {X}!\n", .{nes.Ppu.v});
     try std.testing.expect(nes.Ppu.v == 0x2000);
 
@@ -217,23 +217,23 @@ test "Read/Write PPU" {
     nes.Cpu.pc = 0;
     nes.Cpu.memory[1] = 0x20;
     nes.Cpu.memory[2] = 0x07;
-    nes.Cpu.storeAccumulator(std.time.nanoTimestamp());
+    nes.Cpu.storeAccumulator();
 
     nes.Cpu.pc = 0;
     nes.Ppu.v -= 1;
     nes.Cpu.instruction = 0xAD;
-    nes.Cpu.loadAccumulator(std.time.nanoTimestamp());
+    nes.Cpu.loadAccumulator();
 
     try std.testing.expect(nes.Cpu.accumulator == 0);
 
     nes.Cpu.pc = 0;
-    nes.Cpu.loadAccumulator(std.time.nanoTimestamp());
+    nes.Cpu.loadAccumulator();
     try std.testing.expect(nes.Cpu.accumulator == 240);
 
     //write test
     nes.Cpu.pc = 0;
     nes.Cpu.instruction = 0x8D;
-    nes.Cpu.storeAccumulator(std.time.nanoTimestamp());
+    nes.Cpu.storeAccumulator();
     std.debug.print("{d} at Cpu address 0x2002!\n\n", .{nes.Ppu.nametable[2]});
     try std.testing.expect(nes.Ppu.nametable[2] == 240);
 }
@@ -249,13 +249,13 @@ test "Read/Write Scroll" {
     nes.Cpu.memory[1] = 0x20;
     nes.Cpu.memory[2] = 0x00;
     nes.Cpu.instruction = 0x8D;
-    nes.Cpu.storeAccumulator(std.time.nanoTimestamp());
+    nes.Cpu.storeAccumulator();
 
     nes.Cpu.pc = 0;
     nes.Cpu.accumulator = 0b01111101;
     nes.Cpu.memory[1] = 0x20;
     nes.Cpu.memory[2] = 0x05;
-    nes.Cpu.storeAccumulator(std.time.nanoTimestamp());
+    nes.Cpu.storeAccumulator();
     std.debug.print("Temp Vram is: {X}!\n", .{nes.Ppu.t});
 
     try std.testing.expect(nes.Ppu.t == 0b0000100000001111);
@@ -265,7 +265,7 @@ test "Read/Write Scroll" {
     nes.Cpu.accumulator = 0b01011110;
     nes.Cpu.memory[1] = 0x20;
     nes.Cpu.memory[2] = 0x05;
-    nes.Cpu.storeAccumulator(std.time.nanoTimestamp());
+    nes.Cpu.storeAccumulator();
 
     std.debug.print("Scroll is: {X}!\n\n", .{nes.Ppu.v});
 
@@ -292,7 +292,7 @@ test "Ppu Direct Memory Access" {
         i +%= 1;
     }
 
-    nes.Cpu.storeAccumulator(std.time.nanoTimestamp());
+    nes.Cpu.storeAccumulator();
 
     for (nes.Cpu.memory[256..512], nes.Ppu.oam) |cpu, oam| {
         try std.testing.expect(cpu == oam);
@@ -688,7 +688,7 @@ test "Draw Scanline" {
     //fill sprites
     nes.Ppu.fillSprites();
     nes.Ppu.spriteEvaluation();
-    nes.Ppu.drawScanLine(std.time.nanoTimestamp());
+    nes.Ppu.drawScanLine();
 
     for (nes.Ppu.bitmap[7], 0..) |pixel, index| {
         if (index < 4) {

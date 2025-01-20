@@ -25,7 +25,7 @@ pub const Ppu = struct {
     fine_x: u3 = 0,
     pattern_table: [8192]u8 = undefined,
     // this is gunna cause padding
-    bitmap: [240][256]u5 = undefined,
+    bitmap: *[240][256]u5 = undefined,
     pallet_memory: [32]u8 = undefined,
     scanline: u12 = 261,
     x_pos: u8 = 0,
@@ -181,12 +181,9 @@ pub const Ppu = struct {
     }
 
     pub fn GetPpuBus(self: *Ppu) u8 {
-        if (self.v <= 0xFFF) {
-            //pattern table 0
-            return 1;
-        } else if (self.v <= 0x1FFF) {
+        if (self.v <= 0x1FFF) {
             //pattern table 1
-            return 1;
+            return self.cartridge.getPpuData(self.v);
         } else if (self.v <= 0x23FF) {
             //name table 0
             const index = self.v & 0x3FF;
@@ -322,7 +319,7 @@ pub const Ppu = struct {
     }
 
     pub fn drawSprites(self: *Ppu, coarsex: u8, background: u5) ?u5 {
-        var oam_index: ?u6 = 0;
+        var oam_index: u8 = 0;
         var x_buffer: u8 = 0;
         var x_coord: ?u8 = null;
         var y_coord: u8 = 0;
@@ -332,21 +329,19 @@ pub const Ppu = struct {
         if (self.mask & 0x10 != 0x10) return null;
 
         for (0..8) |iterations| {
-            oam_index = self.secondary_oam[7 - iterations];
-
-            if (oam_index == null) {
+            if (self.secondary_oam[7 - iterations] == null) {
                 continue;
             }
-
-            oam_index.? *= 4;
+            oam_index = self.secondary_oam[7 - iterations].?;
+            oam_index *= 4;
             sprite_index = self.secondary_oam[7 - iterations].?;
-            x_buffer = self.oam[oam_index.? + 3];
+            x_buffer = self.oam[oam_index + 3];
 
             if (coarsex < x_buffer + 8 and coarsex >= x_buffer) {
                 x_coord = coarsex - x_buffer;
                 sprite0 = 7 - @as(u8, @intCast(iterations));
-                y_coord = @as(u8, @truncate(self.scanline)) - self.oam[oam_index.?];
-                attributes = self.oam[oam_index.? + 2];
+                y_coord = @as(u8, @truncate(self.scanline)) - self.oam[oam_index];
+                attributes = self.oam[oam_index + 2];
             }
         }
 
@@ -373,7 +368,7 @@ pub const Ppu = struct {
             if (x > 7 and sprite.large[bitmap_y][bitmap_x] & 0b11 < 0 and background & 0b11 < 0 and sprite0 == 0) {
                 self.status |= 0x40;
             }
-            // std.debug.print("X Coord: {d}, Y Coord: {d}\n", .{ bitmap_x, bitmap_y });
+            std.debug.print("X Coord: {d}, Y Coord: {d}\n", .{ bitmap_x, bitmap_y });
             return sprite.large[bitmap_y][bitmap_x];
         } else {
             if (attributes & 0x80 == 0x80) {
@@ -385,7 +380,7 @@ pub const Ppu = struct {
             if (x > 7 and sprite.small[bitmap_y][bitmap_x] & 0b11 < 0 and background & 0b11 < 0 and sprite0 == 0) {
                 self.status |= 0x40;
             }
-            //std.debug.print("X Coord: {d}, Y Coord: {d}\n", .{ bitmap_x, bitmap_y });
+            std.debug.print("X Coord: {d}, Y Coord: {d}\n", .{ bitmap_x, bitmap_y });
             return sprite.small[bitmap_y][bitmap_x];
         }
     }
@@ -449,6 +444,7 @@ pub const Ppu = struct {
                 if (sprite_pixel != null) {
                     pixel.* = sprite_pixel.?;
                 }
+                std.debug.print("Pixel: 0x{X}!\n", .{pixel.*});
             }
             if (self.cycles != 249) self.x_pos += 8;
         } else {
@@ -535,11 +531,13 @@ pub const Ppu = struct {
         if (self.scanline == 261) {
             self.scanline = 0;
             self.status = 0;
+            self.bitmap.* = std.mem.zeroes([240][256]u5);
             //cycle
         } else if (self.scanline >= 240) {
             //release lock
             //handle post render scanline
             if (self.scanline == 241) {
+                //                std.debug.print("Bitmap: {any}\n", .{self.bitmap});
                 std.debug.print("Lock Released!\n\n", .{});
                 //                    self.mutex.unlock();
                 self.status |= 0x80;
@@ -549,6 +547,7 @@ pub const Ppu = struct {
         } else {
             //handle rendering
             self.fillSprites();
+            self.spriteEvaluation();
             self.drawScanLine();
         }
         self.scanline += 1;
