@@ -42,9 +42,9 @@ pub const Bus = struct {
             //         self.mutex.lock();
             //        self.oam_dma();
             if (self.cpu_ptr.odd_cycle == 1) {
-                self.cpu_ptr.cycle(std.time.nanoTimestamp(), 514);
+                self.cpu_ptr.cycle(514);
             } else {
-                self.cpu_ptr.cycle(std.time.nanoTimestamp(), 513);
+                self.cpu_ptr.cycle(513);
             }
             //       self.mutex.unlock();
         } else if (self.addr_bus <= 0x401F) {

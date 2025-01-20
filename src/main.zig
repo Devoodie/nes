@@ -76,9 +76,7 @@ pub fn main() !void {
         nes.Cpu.pc = nes.Bus.addr_bus;
     }
     //
-
     var cpu_timer = try std.time.Timer.start();
-
 
     //  nes.Cpu.operate();
     {
@@ -94,11 +92,11 @@ pub fn main() !void {
 
 pub fn masterClock(nes: *components.Nes, cpu_timer: *std.time.Timer) void {
     while (true) {
-        if (nes.Cpu.wait_time <= std.time.nanoTimestamp()) {
+        if (nes.Cpu.wait_time < cpu_timer.read()) {
+            cpu_timer.reset();
             nes.Cpu.operate();
         }
         if (nes.Cpu.cycles >= 114) {
-
             nes.Ppu.operate();
             nes.Cpu.cycles = 0;
             //            std.debug.print("Bitmap: {any}\n", .{nes.Ppu.bitmap});
