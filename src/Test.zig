@@ -124,8 +124,8 @@ test "Jump Addressing" {
     nes.init();
 
     nes.Cpu.pc = 0;
-    nes.Cpu.memory[1] = 0xF;
-    nes.Cpu.memory[2] = 0xAF;
+    nes.Cpu.memory[1] = 0xAF;
+    nes.Cpu.memory[2] = 0xF;
     nes.Cpu.instruction = 0x6C;
 
     nes.Cpu.jump();
@@ -200,8 +200,8 @@ test "Read/Write PPU" {
     nes.init();
     nes.Cpu.pc = 0;
     nes.Cpu.accumulator = 0x20;
-    nes.Cpu.memory[1] = 0x20;
-    nes.Cpu.memory[2] = 0x06;
+    nes.Cpu.memory[1] = 0x06;
+    nes.Cpu.memory[2] = 0x20;
     nes.Cpu.instruction = 0x8D;
     nes.Cpu.storeAccumulator();
 
@@ -215,8 +215,8 @@ test "Read/Write PPU" {
     //read delay test
     nes.Cpu.accumulator = 240;
     nes.Cpu.pc = 0;
-    nes.Cpu.memory[1] = 0x20;
-    nes.Cpu.memory[2] = 0x07;
+    nes.Cpu.memory[1] = 0x07;
+    nes.Cpu.memory[2] = 0x20;
     nes.Cpu.storeAccumulator();
 
     nes.Cpu.pc = 0;
@@ -246,15 +246,15 @@ test "Read/Write Scroll" {
     nes.init();
     nes.Cpu.pc = 0;
     nes.Cpu.accumulator = 0b00000010;
-    nes.Cpu.memory[1] = 0x20;
-    nes.Cpu.memory[2] = 0x00;
+    nes.Cpu.memory[1] = 0x00;
+    nes.Cpu.memory[2] = 0x20;
     nes.Cpu.instruction = 0x8D;
     nes.Cpu.storeAccumulator();
 
     nes.Cpu.pc = 0;
     nes.Cpu.accumulator = 0b01111101;
-    nes.Cpu.memory[1] = 0x20;
-    nes.Cpu.memory[2] = 0x05;
+    nes.Cpu.memory[1] = 0x05;
+    nes.Cpu.memory[2] = 0x20;
     nes.Cpu.storeAccumulator();
     std.debug.print("Temp Vram is: {X}!\n", .{nes.Ppu.t});
 
@@ -263,8 +263,8 @@ test "Read/Write Scroll" {
 
     nes.Cpu.pc = 0;
     nes.Cpu.accumulator = 0b01011110;
-    nes.Cpu.memory[1] = 0x20;
-    nes.Cpu.memory[2] = 0x05;
+    nes.Cpu.memory[1] = 0x05;
+    nes.Cpu.memory[2] = 0x20;
     nes.Cpu.storeAccumulator();
 
     std.debug.print("Scroll is: {X}!\n\n", .{nes.Ppu.v});
@@ -282,8 +282,8 @@ test "Ppu Direct Memory Access" {
     nes.Cpu.pc = 0;
     nes.Cpu.accumulator = 1;
     nes.Cpu.instruction = 0x8D;
-    nes.Cpu.memory[1] = 0x40;
-    nes.Cpu.memory[2] = 0x14;
+    nes.Cpu.memory[1] = 0x14;
+    nes.Cpu.memory[2] = 0x40;
 
     var i: u8 = 0;
 
@@ -295,6 +295,7 @@ test "Ppu Direct Memory Access" {
     nes.Cpu.storeAccumulator();
 
     for (nes.Cpu.memory[256..512], nes.Ppu.oam) |cpu, oam| {
+        std.debug.print("Cpu Data: {d}, OAM Data: {d}\n", .{ cpu, oam });
         try std.testing.expect(cpu == oam);
     }
 }

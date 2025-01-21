@@ -40,7 +40,7 @@ pub const Bus = struct {
             //          }
         } else if (self.addr_bus == 0x4014) {
             //         self.mutex.lock();
-            //        self.oam_dma();
+            self.oam_dma();
             if (self.cpu_ptr.odd_cycle == 1) {
                 self.cpu_ptr.cycle(514);
             } else {
