@@ -403,12 +403,11 @@ pub const Cpu = struct {
             self.bus.getMmo();
 
             var addr: u16 = self.bus.data_bus;
-            addr <<= 8;
 
             self.bus.addr_bus += 1;
             self.bus.getMmo();
 
-            addr |= self.bus.data_bus;
+            addr |= @as(u16, self.bus.data_bus) << 8;
             self.pc = addr;
 
             self.cycle(5);
@@ -515,6 +514,12 @@ pub const Cpu = struct {
 
     pub fn pullAccumulator(self: *Cpu) void {
         self.accumulator = self.stackPop();
+        if (self.accumulator == 0) {
+            self.status.zero = 1;
+        } else {
+            self.status.zero = 0;
+        }
+        self.status.negative = @truncate(self.accumulator >> 7);
         self.pc += 1;
         self.cycle(4);
     }
