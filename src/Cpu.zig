@@ -393,13 +393,17 @@ pub const Cpu = struct {
             self.bus.getMmo();
 
             const low_byte = self.bus.data_bus;
+            std.debug.print("LSB: 0x{X}\n", .{self.bus.data_bus});
 
             self.bus.addr_bus = self.pc + 2;
             self.bus.getMmo();
 
+            std.debug.print("MSB: 0x{X}\n", .{self.bus.data_bus});
+
             self.bus.addr_bus = self.bus.data_bus;
             self.bus.addr_bus <<= 8;
             self.bus.addr_bus |= low_byte;
+            std.debug.print("Address of LSB: 0x{X}\n", .{self.bus.addr_bus});
             self.bus.getMmo();
 
             var addr: u16 = self.bus.data_bus;
