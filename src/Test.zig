@@ -717,3 +717,16 @@ test "Draw Scanline" {
     }
     std.debug.print("\n\n", .{});
 }
+
+test "JSON 6502 Tests" {
+    var nes: components.Nes = .{ .Cpu = .{}, .Ppu = .{}, .Bus = .{} };
+
+    std.debug.print("Draw Scanline!\n", .{});
+    nes.init();
+
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+    var allocator = gpa.allocator();
+
+
+}
