@@ -443,7 +443,7 @@ pub const Ppu = struct {
                 if (sprite_pixel != null) {
                     pixel.* = sprite_pixel.?;
                 }
-                std.debug.print("Pixel: 0x{X}!\n", .{pixel.*});
+                //                std.debug.print("Pixel: 0x{X}!\n", .{pixel.*});
             }
             if (self.cycles != 249) self.x_pos += 8;
         } else {
@@ -462,7 +462,7 @@ pub const Ppu = struct {
         const high_pixel = self.high_shift >> fine_x_shifts & 0b1;
 
         const pixel_data: u5 = @as(u5, @truncate(low_pixel)) | @as(u5, @truncate(high_pixel << 1)) | @as(u5, @truncate(self.attribute << 2));
-        std.debug.print("You are drawing: {d}!\n From low: {d}\n From high: {d}\n Attribute: {d}\n", .{ pixel_data, self.low_shift, self.high_shift, self.attribute });
+        //        std.debug.print("You are drawing: {d}!\n From low: {d}\n From high: {d}\n Attribute: {d}\n", .{ pixel_data, self.low_shift, self.high_shift, self.attribute });
 
         if (self.mask & 0x8 != 0x8 or (self.mask & 0x2 == 0x2 and coarsex == 0)) {
             return null;

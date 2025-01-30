@@ -628,7 +628,7 @@ test "Draw Scanline" {
     defer allocator.free(nes.Ppu.bitmap);
 
     //we're on scanline 12 loading the last row of the tile
-    nes.Ppu.v = 0x700C;
+    nes.Ppu.v = 0x7000;
     nes.Ppu.scanline = 7;
     nes.Ppu.mask = 0x1E;
 
@@ -711,8 +711,8 @@ test "Draw Scanline" {
             std.debug.print("Bitmap Value: {d}, Sprite Value: {d}!\n", .{ pixel, nes.Ppu.sprites[1].small[7][@as(u3, @truncate(index - 4))] });
             try std.testing.expect(pixel == nes.Ppu.sprites[0].small[7][@as(u3, @truncate(index - 4))]);
         } else {
-            std.debug.print("Pixel: {d}, Index: {d}!\n", .{ pixel, index });
-            //try std.testing.expect(pixel == 3);
+            //            std.debug.print("Pixel: {d}, Index: {d}!\n", .{ pixel, index });
+            try std.testing.expect(pixel == 3);
         }
     }
     std.debug.print("\n\n", .{});
