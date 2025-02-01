@@ -15,14 +15,17 @@ pub fn build(b: *std.Build) void {
     // set a preferred release mode, allowing the user to decide how to optimize.
     const optimize = b.standardOptimizeOption(.{});
 
-    const bus = b.addModule("bus", .{ .root_source_file = "src/Bus.zig" });
-    const cpu = b.addModule("cpu", .{ .root_source_file = "src/Cpu.zig", .imports = .{bus} });
-    const mapper = b.addModule("mapper", .{ .root_source_file = "src/Mapper.zig" });
+    const mapper = b.addModule("mapper", .{ .root_source_file = b.path("src/Mapper.zig") });
+    const bus = b.addModule("bus", .{ .root_source_file = b.path("src/Bus.zig") });
+    const ppu = b.addModule("ppu", .{ .root_source_file = b.path("src/Ppu.zig") });
+    const cpu = b.addModule("cpu", .{ .root_source_file = b.path("src/Cpu.zig") });
+    //    const apu = b.addModule("apu", .{ .root_source_file = "src/Apu.zig"});
+    const nes = b.addModule("nes", .{ .root_source_file = b.path("src/Nes.zig") });
+    const unit_test = b.addModule("test", .{ .root_source_file = b.path("test/Test.zig") });
 
     // This declares intent for the library to be installed into the standard
     // location when the user invokes the "install" step (the default step when
     // running `zig build`).
-    b.installArtifact(cpu);
 
     const raylib_dep = b.dependency("raylib-zig", .{
         .target = target,
@@ -47,6 +50,12 @@ pub fn build(b: *std.Build) void {
     exe.linkLibrary(raylib_artifact);
     exe.root_module.addImport("raylib", raylib);
     exe.root_module.addImport("raygui", raygui);
+    exe.root_module.addImport("mapper", mapper);
+    exe.root_module.addImport("bus", bus);
+    exe.root_module.addImport("ppu", ppu);
+    exe.root_module.addImport("cpu", cpu);
+    exe.root_module.addImport("nes", nes);
+    exe.root_module.addImport("test", unit_test);
 
     // This *creates* a Run step in the build graph, to be executed when another
     // step is evaluated that depends on it. The next line below will establish
@@ -78,6 +87,12 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
+
+    lib_unit_tests.root_module.addImport("mapper", mapper);
+    lib_unit_tests.root_module.addImport("bus", bus);
+    lib_unit_tests.root_module.addImport("ppu", ppu);
+    lib_unit_tests.root_module.addImport("cpu", cpu);
+    lib_unit_tests.root_module.addImport("nes", nes);
 
     const run_lib_unit_tests = b.addRunArtifact(lib_unit_tests);
 

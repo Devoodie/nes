@@ -1,5 +1,5 @@
 const std = @import("std");
-const components = @import("nes");
+const components = @import("Nes.zig");
 
 test "Immediate Addressing" {
     std.debug.print("Cpu Testing!\n\n", .{});
@@ -103,7 +103,7 @@ test "Indirect Indexed Addressing" {
     nes.Cpu.pc = 0;
     nes.Cpu.x_register = 8;
     nes.Cpu.y_register = 8;
-    nes.Cpu.memory[1] = 1;
+    nes.Cpu.memory[1] = 0x1;
     nes.Cpu.memory[9] = 0xAF;
     nes.Cpu.memory[10] = 0xF;
 
@@ -113,10 +113,9 @@ test "Indirect Indexed Addressing" {
     // implement Indirect Y Addressing Mode!
     //
 
-    nes.Cpu.memory[1] = 9;
     nes.Cpu.setIndirectY(241);
     std.debug.print("{d} provided by Indirect Indexed Y!\n", .{nes.Cpu.GetIndirectY()});
-    try std.testing.expect(nes.Cpu.GetIndirectY() == nes.Cpu.memory[0xFB7 % 0x800]);
+    try std.testing.expect(nes.Cpu.GetIndirectY() == nes.Cpu.memory[0xFAF % 0x800]);
 }
 
 test "Jump Addressing" {
@@ -720,13 +719,15 @@ test "Draw Scanline" {
 }
 
 test "JSON 6502 Tests" {
-    // var nes: components.Nes = .{ .Cpu = .{}, .Ppu = .{}, .Bus = .{} };
+    var nes: components.Nes = .{ .Cpu = .{}, .Ppu = .{}, .Bus = .{} };
 
     std.debug.print("Draw Scanline!\n", .{});
-    //nes.init();
+    nes.init();
 
-    // var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    //defer _ = gpa.deinit();
-    //  var allocator = gpa.allocator();
-    // var
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+    var allocator = gpa.allocator();
+
+    std.fs.
+
 }
