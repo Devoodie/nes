@@ -93,25 +93,31 @@ pub const Cpu = struct {
     }
     //GOOD
     pub fn GetIndirectY(self: *Cpu) u8 {
+        // get zeropage address
         self.bus.addr_bus = self.pc + 1;
         self.bus.getMmo();
         self.extra_cycle = 0;
-        // get low order bytes
+        var lsb: u16 = self.bus.data_bus;
+
+        self.bus.addr_bus += 1;
+        self.bus.getMmo();
+        lsb |= @as(u16, self.bus.data_bus) << 8;
+
+        //get low order Bytes
+        self.bus.addr_bus = lsb;
+        self.bus.getMmo();
+
         const sum = @addWithOverflow(self.bus.data_bus, self.y_register);
         if (sum[1] == 1) {
             self.extra_cycle = 1;
         }
-        const buffer = sum[0];
 
-        self.bus.addr_bus = buffer;
-        self.bus.getMmo();
-        var addr: u16 = self.bus.data_bus;
+        var addr: u16 = sum[0];
 
         self.bus.addr_bus += 1;
         self.bus.getMmo();
 
-        const high_bytes: u16 = @as(u16, @intCast(self.bus.data_bus + sum[1])) << 8;
-        addr |= high_bytes;
+        addr |= @as(u16, self.bus.data_bus + sum[1]) << 8;
 
         self.bus.addr_bus = addr;
         self.bus.getMmo();
@@ -123,22 +129,31 @@ pub const Cpu = struct {
         self.bus.addr_bus = self.pc + 1;
         self.bus.getMmo();
         self.extra_cycle = 0;
+        var lsb: u16 = self.bus.data_bus;
 
-        // get low order bytes
+        self.bus.addr_bus += 1;
+        self.bus.getMmo();
+        lsb |= @as(u16, self.bus.data_bus) << 8;
+
+        //get low order Bytes
+        self.bus.addr_bus = lsb;
+        self.bus.getMmo();
+
         const sum = @addWithOverflow(self.bus.data_bus, self.y_register);
         if (sum[1] == 1) {
             self.extra_cycle = 1;
         }
+
         var addr: u16 = sum[0];
 
-        self.bus.addr_bus = addr + 0;
+        self.bus.addr_bus += 1;
         self.bus.getMmo();
 
-        const high_bytes: u16 = @as(u16, @intCast(self.bus.data_bus + sum[1])) << 8;
-        addr |= high_bytes;
+        addr |= @as(u16, self.bus.data_bus + sum[1]) << 8;
 
         self.bus.addr_bus = addr;
         self.bus.data_bus = data;
+
         self.bus.putMmi();
     }
     //GOOD
