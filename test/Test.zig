@@ -1,4 +1,5 @@
 const std = @import("std");
+const test_structs = @import("json");
 const components = @import("nes");
 
 test "Immediate Addressing" {
@@ -725,9 +726,9 @@ test "JSON 6502 Tests" {
     std.debug.print("Draw Scanline!\n", .{});
     nes.init();
 
-    // var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    //defer _ = gpa.deinit();
-    //var allocator = gpa.allocator();
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+    var allocator = gpa.allocator();
 
     var cwd = std.fs.cwd();
 
@@ -735,8 +736,25 @@ test "JSON 6502 Tests" {
     defer test_dir.close();
 
     var iterator = test_dir.iterate();
+    //10M allocated on the heap to avoid stack overflow
+    var json_string: []u8 = undefined;
 
-    for(iterator)|kind|{
-        std.debug.print("{any}", .{kind});
+    while (try iterator.next()) |kind| {
+        var test_file = try test_dir.openFile(kind.name, .{});
+        defer test_file.close();
+
+        json_string = try test_file.readToEndAlloc(allocator, 10000000);
+        defer allocator.free(json_string);
+
+        //        std.debug.print("{s}", .{json_string});
+
+        if (try std.json.validate(allocator, json_string)) {
+            std.debug.print("True!\n", .{});
+        } else {
+            std.debug.print("False!\n", .{});
+        }
+
+        var json = try std.json.parseFromSlice(test_structs.json_test, allocator, json_string, .{});
+        defer json.deinit();
     }
 }
