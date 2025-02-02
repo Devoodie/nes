@@ -720,13 +720,23 @@ test "Draw Scanline" {
 }
 
 test "JSON 6502 Tests" {
-    // var nes: components.Nes = .{ .Cpu = .{}, .Ppu = .{}, .Bus = .{} };
+    var nes: components.Nes = .{ .Cpu = .{}, .Ppu = .{}, .Bus = .{} };
 
     std.debug.print("Draw Scanline!\n", .{});
-    //nes.init();
+    nes.init();
 
     // var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     //defer _ = gpa.deinit();
-    //  var allocator = gpa.allocator();
-    // var
+    //var allocator = gpa.allocator();
+
+    var cwd = std.fs.cwd();
+
+    var test_dir = try cwd.openDir("test/6502_JSON_TESTS", .{ .iterate = true });
+    defer test_dir.close();
+
+    var iterator = test_dir.iterate();
+
+    for(iterator)|kind|{
+        std.debug.print("{any}", .{kind});
+    }
 }
