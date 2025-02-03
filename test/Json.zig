@@ -4,7 +4,6 @@ pub const json_test = struct {
     name: []u8,
     initial: state,
     final: state,
-    cycles: [][]u16,
 };
 
 pub const state = struct {

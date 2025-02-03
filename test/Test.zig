@@ -739,8 +739,11 @@ test "JSON 6502 Tests" {
     //10M allocated on the heap to avoid stack overflow
     var json_string: []u8 = undefined;
 
-    while (try iterator.next()) |kind| {
-        var test_file = try test_dir.openFile(kind.name, .{});
+    var kind = try iterator.next();
+    while (kind != null) {
+        const filename = kind.?.name;
+        kind = try iterator.next();
+        var test_file = try test_dir.openFile(filename, .{});
         defer test_file.close();
 
         json_string = try test_file.readToEndAlloc(allocator, 10000000);
@@ -754,7 +757,7 @@ test "JSON 6502 Tests" {
             std.debug.print("False!\n", .{});
         }
 
-        var json = try std.json.parseFromSlice(test_structs.json_test, allocator, json_string, .{});
+        var json = try std.json.parseFromSlice([]test_structs.json_test, allocator, json_string, .{ .ignore_unknown_fields = true });
         defer json.deinit();
     }
 }
