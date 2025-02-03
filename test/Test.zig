@@ -738,18 +738,18 @@ test "JSON 6502 Tests" {
     var iterator = test_dir.iterate();
     //10M allocated on the heap to avoid stack overflow
     var json_string: []u8 = undefined;
+    var iterations: u16 = 0;
 
-    var kind = try iterator.next();
-    while (kind != null) {
-        const filename = kind.?.name;
-        kind = try iterator.next();
+    while (try iterator.next()) |kind| {
+        iterations += 1;
+        std.debug.print("Iterations: {d}\n", .{iterations});
+        const filename = kind.name;
+
         var test_file = try test_dir.openFile(filename, .{});
         defer test_file.close();
 
         json_string = try test_file.readToEndAlloc(allocator, 10000000);
         defer allocator.free(json_string);
-
-        //        std.debug.print("{s}", .{json_string});
 
         if (try std.json.validate(allocator, json_string)) {
             std.debug.print("True!\n", .{});
