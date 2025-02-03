@@ -741,6 +741,7 @@ test "JSON 6502 Tests" {
     var iterations: u16 = 0;
 
     while (try iterator.next()) |kind| {
+        //get the json
         iterations += 1;
         std.debug.print("Iterations: {d}\n", .{iterations});
         const filename = kind.name;
@@ -752,7 +753,8 @@ test "JSON 6502 Tests" {
         defer allocator.free(json_string);
 
         if (try std.json.validate(allocator, json_string)) {
-            std.debug.print("True!\n", .{});
+            std.debug.print("Invalid Json Found!\n", .{});
+            break;
         } else {
             std.debug.print("False!\n", .{});
         }

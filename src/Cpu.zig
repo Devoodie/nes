@@ -1,7 +1,7 @@
 const component = @import("Bus.zig");
 const std = @import("std");
 
-const StatusRegister = struct {
+pub const StatusRegister = struct {
     carry: u1 = 0,
     zero: u1 = 0,
     interrupt_dsble: u1 = 0,
