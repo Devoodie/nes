@@ -29,6 +29,7 @@ pub const json_test = struct {
                 0 => {
                     if (nes_ptr.Cpu.pc != self.final.pc) {
                         std.debug.print("Wrong PC Value Returned Within JSON Test: {s}\n", .{self.name});
+                        std.debug.print("Expected: {d}, Recieved: {d}\n", .{ self.final.pc, nes_ptr.Cpu.pc });
                         return false;
                     }
                     break;
@@ -37,6 +38,7 @@ pub const json_test = struct {
                 1 => {
                     if (nes_ptr.Cpu.stack_pointer != self.final.s) {
                         std.debug.print("Wrong Stack Pointer Value Returned Within JSON Test: {s}\n", .{self.name});
+                        std.debug.print("Expected: {d}, Recieved: {d}\n", .{ self.final.s, nes_ptr.Cpu.stack_pointer });
                         return false;
                     }
                     break;
@@ -44,6 +46,7 @@ pub const json_test = struct {
                 2 => {
                     if (nes_ptr.Cpu.accumulator != self.final.a) {
                         std.debug.print("Wrong Accumulator Value Returned Within JSON Test: {s}\n", .{self.name});
+                        std.debug.print("Expected: {d}, Recieved: {d}\n", .{ self.final.a, nes_ptr.Cpu.accumulator });
                         return false;
                     }
                     break;
@@ -51,6 +54,7 @@ pub const json_test = struct {
                 3 => {
                     if (nes_ptr.Cpu.x_register != self.final.x) {
                         std.debug.print("Wrong X Register Value Returned Within JSON Test: {s}\n", .{self.name});
+                        std.debug.print("Expected: {d}, Recieved: {d}\n", .{ self.final.x, nes_ptr.Cpu.x_register });
                         return false;
                     }
                     break;
@@ -58,6 +62,7 @@ pub const json_test = struct {
                 4 => {
                     if (nes_ptr.Cpu.y_register != self.final.y) {
                         std.debug.print("Wrong Y Register Value Returned Within JSON Test: {s}\n", .{self.name});
+                        std.debug.print("Expected: {d}, Recieved: {d}\n", .{ self.final.y, nes_ptr.Cpu.y_register });
                         return false;
                     }
                     break;
@@ -65,6 +70,7 @@ pub const json_test = struct {
                 5 => {
                     if (std.meta.eql(nes_ptr.*.Cpu.status, extract_status(self.final.p))) {
                         std.debug.print("Wrong Status Returned Within JSON Test: {s}\n", .{self.name});
+                        std.debug.print("Expected: {any}, Recieved: {any}\n", .{ self.final.p, nes_ptr.Cpu.status });
                         return false;
                     }
                     break;
@@ -87,6 +93,7 @@ pub const json_test = struct {
                 },
             }
         }
+        std.debug.print("Test successful: {s}\n", .{self.name});
         return true;
     }
 
