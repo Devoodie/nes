@@ -1,8 +1,7 @@
 const std = @import("std");
-const components = @import("Nes.zig");
-const cpu = @import("Cpu.zig");
-const ppu = @import("Ppu.zig");
+const components = @import("nes");
 const display = @import("Display.zig");
+
 pub fn main() !void {
     std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
 

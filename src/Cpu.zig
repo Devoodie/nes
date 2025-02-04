@@ -1,4 +1,4 @@
-const component = @import("Bus.zig");
+const component = @import("bus");
 const std = @import("std");
 
 pub const StatusRegister = struct {

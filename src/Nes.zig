@@ -1,8 +1,8 @@
 const std = @import("std");
-const cpu = @import("Cpu.zig");
-const ppu = @import("Ppu.zig");
-const bus = @import("Bus.zig");
-const mapper = @import("Mapper.zig");
+const cpu = @import("cpu");
+const ppu = @import("ppu");
+const bus = @import("bus");
+const mapper = @import("mapper");
 
 pub const Nes = struct {
     Ppu: ppu.Ppu,

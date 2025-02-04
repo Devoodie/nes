@@ -21,22 +21,8 @@ pub fn build(b: *std.Build) void {
     const cpu = b.addModule("cpu", .{ .root_source_file = b.path("src/Cpu.zig") });
     //    const apu = b.addModule("apu", .{ .root_source_file = "src/Apu.zig"});
     const nes = b.addModule("nes", .{ .root_source_file = b.path("src/Nes.zig") });
-    const unit_test = b.addModule("test", .{ .root_source_file = b.path("test/JsonTests.zig") });
+    const unit_test = b.addModule("test", .{ .root_source_file = b.path("test/Test.zig") });
     const json = b.addModule("json", .{ .root_source_file = b.path("test/Json.zig") });
-
-    bus.addImport("cpu", cpu);
-    bus.addImport("ppu", ppu);
-    bus.addImport("mapper", mapper);
-
-    cpu.addImport("bus", bus);
-    ppu.addImport("ppu", ppu);
-
-    ppu.addImport("mapper", mapper);
-
-    nes.addImport("cpu", cpu);
-    nes.addImport("ppu", ppu);
-    nes.addImport("bus", bus);
-    nes.addImport("mapper", mapper);
 
     json.addImport("nes", nes);
     json.addImport("cpu", cpu);
@@ -68,6 +54,10 @@ pub fn build(b: *std.Build) void {
     exe.linkLibrary(raylib_artifact);
     exe.root_module.addImport("raylib", raylib);
     exe.root_module.addImport("raygui", raygui);
+    exe.root_module.addImport("mapper", mapper);
+    exe.root_module.addImport("bus", bus);
+    exe.root_module.addImport("ppu", ppu);
+    exe.root_module.addImport("cpu", cpu);
     exe.root_module.addImport("nes", nes);
     exe.root_module.addImport("test", unit_test);
 
@@ -103,6 +93,9 @@ pub fn build(b: *std.Build) void {
     });
     lib_unit_tests.root_module.addImport("mapper", mapper);
     lib_unit_tests.root_module.addImport("json", json);
+    lib_unit_tests.root_module.addImport("bus", bus);
+    lib_unit_tests.root_module.addImport("ppu", ppu);
+    lib_unit_tests.root_module.addImport("cpu", cpu);
     lib_unit_tests.root_module.addImport("nes", nes);
 
     const run_lib_unit_tests = b.addRunArtifact(lib_unit_tests);

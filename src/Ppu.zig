@@ -1,5 +1,5 @@
 const std = @import("std");
-const mapper = @import("Mapper.zig");
+const mapper = @import("mapper");
 
 pub const Sprite = union {
     small: [8][8]u5,

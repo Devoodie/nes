@@ -17,7 +17,7 @@ pub const json_test = struct {
 
         for (self.initial.ram) |memory| {
             nes_ptr.Bus.addr_bus = memory[0];
-            nes_ptr.Bus.data_bus = memory[1];
+            nes_ptr.Bus.data_bus = @truncate(memory[1]);
             nes_ptr.Bus.putMmi();
         }
 
@@ -35,44 +35,49 @@ pub const json_test = struct {
                 },
                 //fix these values to correspond with registers
                 1 => {
-                    if (nes_ptr.Cpu.pc != self.final.pc) {
-                        std.debug.print("Wrong PC Value Returned Within JSON Test: {s}\n", .{self.name});
+                    if (nes_ptr.Cpu.stack_pointer != self.final.s) {
+                        std.debug.print("Wrong Stack Pointer Value Returned Within JSON Test: {s}\n", .{self.name});
                         return false;
                     }
                     break;
                 },
                 2 => {
-                    if (nes_ptr.Cpu.pc != self.final.pc) {
-                        std.debug.print("Wrong PC Value Returned Within JSON Test: {s}\n", .{self.name});
+                    if (nes_ptr.Cpu.accumulator != self.final.a) {
+                        std.debug.print("Wrong Accumulator Value Returned Within JSON Test: {s}\n", .{self.name});
                         return false;
                     }
                     break;
                 },
                 3 => {
-                    if (nes_ptr.Cpu.pc != self.final.pc) {
-                        std.debug.print("Wrong PC Value Returned Within JSON Test: {s}\n", .{self.name});
+                    if (nes_ptr.Cpu.x_register != self.final.x) {
+                        std.debug.print("Wrong X Register Value Returned Within JSON Test: {s}\n", .{self.name});
                         return false;
                     }
                     break;
                 },
                 4 => {
-                    if (nes_ptr.Cpu.pc != self.final.pc) {
-                        std.debug.print("Wrong PC Value Returned Within JSON Test: {s}\n", .{self.name});
+                    if (nes_ptr.Cpu.y_register != self.final.y) {
+                        std.debug.print("Wrong Y Register Value Returned Within JSON Test: {s}\n", .{self.name});
                         return false;
                     }
                     break;
                 },
                 5 => {
-                    if (nes_ptr.Cpu.pc != self.final.pc) {
-                        std.debug.print("Wrong PC Value Returned Within JSON Test: {s}\n", .{self.name});
+                    if (std.meta.eql(nes_ptr.*.Cpu.status, extract_status(self.final.p))) {
+                        std.debug.print("Wrong Status Returned Within JSON Test: {s}\n", .{self.name});
                         return false;
                     }
                     break;
                 },
                 6 => {
-                    if (nes_ptr.Cpu.pc != self.final.pc) {
-                        std.debug.print("Wrong PC Value Returned Within JSON Test: {s}\n", .{self.name});
-                        return false;
+                    for (self.final.ram) |memory| {
+                        nes_ptr.Bus.addr_bus = memory[0];
+                        nes_ptr.Bus.getMmo();
+                        if (nes_ptr.Bus.data_bus != memory[1]) {
+                            std.debug.print("Wrong Memory Value Returned Within JSON Test: {s}\n", .{self.name});
+                            std.debug.print("Expected: {d}, Recieved: {d}\n", .{ memory[1], nes_ptr.Bus.data_bus });
+                            return false;
+                        }
                     }
                     break;
                 },
@@ -86,9 +91,9 @@ pub const json_test = struct {
     }
 
     fn extract_status(status: u8) cpu.StatusRegister {
-        var new_status = .{};
+        var new_status: cpu.StatusRegister = .{};
 
-        new_status.status.negative = @truncate(status >> 7);
+        new_status.negative = @truncate(status >> 7);
         new_status.overflow = @truncate((status >> 6) & 0b1);
         new_status.break_inter = @truncate(status >> 5);
         new_status.decimal = @truncate((status >> 4) & 0b1);

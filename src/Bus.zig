@@ -1,8 +1,8 @@
 const std = @import("std");
-const cpu = @import("Cpu.zig");
-const ppu = @import("Ppu.zig");
+const cpu = @import("cpu");
+const ppu = @import("ppu");
 const apu = @import("Apu.zig");
-const mapper = @import("Mapper.zig");
+const mapper = @import("mapper");
 
 pub const Bus = struct {
     addr_bus: u16 = 0,
