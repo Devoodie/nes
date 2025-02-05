@@ -3,6 +3,8 @@ const test_structs = @import("json");
 const components = @import("nes");
 
 test "JSON 6502 Tests" {
+
+    const unused_instructions: [8]u8 = .{"03.zig", "07.zig", "0b.zig", "0f.zig", "13.zig", "17.zig", "1b.zig", "1f.zig"};
     var nes: components.Nes = .{ .Cpu = .{}, .Ppu = .{}, .Bus = .{} };
 
     nes.init();
