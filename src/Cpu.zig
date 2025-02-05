@@ -390,7 +390,7 @@ pub const Cpu = struct {
             self.pc |= difference[0];
             std.debug.print("Difference: {d}\n", .{difference[0]});
 
-            self.pc -= @as(u16, @intCast(self.extra_cycle)) << 8;
+            self.pc -%= @as(u16, @intCast(self.extra_cycle)) << 8;
         } else {
             const sum = @addWithOverflow(low_byte, @as(u8, signed_value));
             self.extra_cycle = sum[1];
