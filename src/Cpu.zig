@@ -25,11 +25,11 @@ pub const Cpu = struct {
     extra_cycle: u8 = 0,
     odd_cycle: u1 = 0,
     wait_time: u64 = 0,
-    cycles: u16 = 0,
+    cycles: u64 = 0,
 
     pub fn cycle(self: *Cpu, cycles: u16) void {
         self.cycles += cycles;
-        self.wait_time = 559 * @as(u64, cycles);
+        self.wait_time = 559 * cycles;
         //     std.debug.print("Cpu Wait Time: {d}!\n", .{self.wait_time});
         self.odd_cycle +%= @intCast(cycles % 2);
         //        std.debug.print("The cycles are {d}!\n", .{self.odd_cycle});
@@ -423,7 +423,11 @@ pub const Cpu = struct {
 
             var addr: u16 = self.bus.data_bus;
 
-            self.bus.addr_bus += 1;
+            if (low_byte == 0xFF) {
+                self.bus.addr_bus -%= 255;
+            } else {
+                self.bus.addr_bus +%= 1;
+            }
             self.bus.getMmo();
 
             addr |= @as(u16, self.bus.data_bus) << 8;
