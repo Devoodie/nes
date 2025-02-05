@@ -9,6 +9,7 @@ pub const json_test = struct {
 
     pub fn run_test(self: *json_test, nes_ptr: *nes.Nes) bool {
         nes_ptr.Cpu.pc = self.initial.pc;
+        std.debug.print("Program Counter Initial: {d}\n", .{nes_ptr.Cpu.pc});
         nes_ptr.Cpu.stack_pointer = self.initial.s;
         nes_ptr.Cpu.accumulator = self.initial.a;
         nes_ptr.Cpu.x_register = self.initial.x;
@@ -17,12 +18,14 @@ pub const json_test = struct {
 
         for (self.initial.ram) |memory| {
             nes_ptr.Bus.addr_bus = memory[0];
+            std.debug.print("Address: {d} ", .{memory[0]});
             nes_ptr.Bus.data_bus = @truncate(memory[1]);
+            std.debug.print("Value: 0x{X}\n", .{memory[1]});
             nes_ptr.Bus.putMmi();
         }
 
         nes_ptr.Cpu.operate();
-
+        std.debug.print("Program Counter After: {d}\n", .{nes_ptr.Cpu.pc});
         //compare with final results
         for (0..7) |index| {
             switch (index) {
@@ -93,7 +96,7 @@ pub const json_test = struct {
                 },
             }
         }
-        std.debug.print("Test successful: {s}\n", .{self.name});
+        std.debug.print("Test successful: {s}\n\n", .{self.name});
         return true;
     }
 

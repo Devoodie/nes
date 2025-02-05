@@ -11,6 +11,10 @@ test "JSON 6502 Tests" {
     defer _ = gpa.deinit();
     var allocator = gpa.allocator();
 
+    nes.Bus.isTest = true;
+    nes.Bus.test_ram = try allocator.alloc(u8, 65536);
+    defer allocator.free(nes.Bus.test_ram);
+
     nes.Mapper.prg_ram = try allocator.alloc(u8, 0x2000);
     defer allocator.free(nes.Mapper.prg_ram);
 
