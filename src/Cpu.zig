@@ -296,7 +296,7 @@ pub const Cpu = struct {
 
         if (sum[1] == 1) {
             self.extra_cycle = 1;
-            addr += 0x100;
+            addr +%= 0x100;
             addr += sum[0];
         } else {
             addr += sum[0];
@@ -585,8 +585,28 @@ pub const Cpu = struct {
     }
 
     pub fn nop(self: *Cpu) void {
-        self.pc +%= 1;
-        self.cycle(2);
+        switch (self.instruction) {
+            0x04, 0x44, 0x64 => {
+                self.pc +%= 2;
+                self.cycle(3);
+            },
+            0x14, 0x34, 0x54, 0x74, 0xB4, 0xF4 => {
+                self.pc +%= 2;
+                self.cycle(4);
+            },
+            0x80, 0x89, 0x82, 0xC2, 0xE2 => {
+                self.pc +%= 2;
+                self.cycle(2);
+            },
+            0x1C, 0x3C, 0x5C, 0x7C, 0xDC, 0xFC => {
+                self.pc +%= 3;
+                self.cycle(4);
+            },
+            else => {
+                self.pc +%= 1;
+                self.cycle(2);
+            },
+        }
     }
 
     pub fn compareAccumulator(self: *Cpu) void {
@@ -2957,7 +2977,7 @@ pub const Cpu = struct {
                         if (self.instruction == 0xE2) {
                             std.debug.print("6502: No Valid Instruction 'STP' Found!\n", .{});
                             break :RMW;
-                        } else if (self.instruction == 0xC0 or self.instruction == 0xEA) {
+                        } else if (self.instruction == 0xC0 or self.instruction == 0xDA) {
                             self.nop();
                             std.debug.print("6502: NOP Found!\n", .{});
                             break :RMW;
