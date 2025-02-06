@@ -61,12 +61,12 @@ pub const Cpu = struct {
         std.debug.print("Push Address High Byte: 0x{X}\n", .{highbyte});
 
         self.bus.addr_bus = @as(u16, self.stack_pointer) + 0x100;
-        self.bus.data_bus = lowbyte;
+        self.bus.data_bus = highbyte;
 
         self.bus.putMmi();
         self.stack_pointer -%= 1;
 
-        self.bus.data_bus = highbyte;
+        self.bus.data_bus = lowbyte;
         self.bus.addr_bus = @as(u16, self.stack_pointer) + 0x100;
         self.bus.putMmi();
         self.stack_pointer -%= 1;
@@ -77,12 +77,12 @@ pub const Cpu = struct {
         self.stack_pointer +%= 1;
         self.bus.addr_bus = @as(u16, self.stack_pointer) + 0x100;
         self.bus.getMmo();
-        const highbyte: u16 = self.bus.data_bus;
+        const lowbyte: u16 = self.bus.data_bus;
 
         self.stack_pointer +%= 1;
         self.bus.addr_bus +%= 1;
         self.bus.getMmo();
-        const lowbyte: u16 = self.bus.data_bus;
+        const highbyte: u16 = self.bus.data_bus;
 
         std.debug.print("Pop Address Low Byte: 0x{X}\n", .{lowbyte});
         std.debug.print("Pop Address High Byte: 0x{X}\n", .{highbyte});
@@ -2735,7 +2735,7 @@ pub const Cpu = struct {
                         std.debug.print("6502: SEI Found!\n", .{});
                         break :CONTROL;
                     },
-                    0x84, 0x94 => {
+                    0x84, 0x8C, 0x94 => {
                         self.storeYRegister();
                         std.debug.print("6502: STY Found!\n", .{});
                         break :CONTROL;
