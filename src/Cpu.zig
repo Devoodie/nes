@@ -99,7 +99,7 @@ pub const Cpu = struct {
         self.extra_cycle = 0;
         var lsb: u16 = self.bus.data_bus;
 
-        self.bus.addr_bus += 1;
+        self.bus.addr_bus +%= 1;
         self.bus.getMmo();
         lsb |= @as(u16, self.bus.data_bus) << 8;
 
@@ -114,10 +114,10 @@ pub const Cpu = struct {
 
         var addr: u16 = sum[0];
 
-        self.bus.addr_bus += 1;
+        self.bus.addr_bus +%= 1;
         self.bus.getMmo();
 
-        addr |= @as(u16, self.bus.data_bus + sum[1]) << 8;
+        addr |= @as(u16, self.bus.data_bus +% sum[1]) << 8;
 
         self.bus.addr_bus = addr;
         self.bus.getMmo();
@@ -146,10 +146,10 @@ pub const Cpu = struct {
 
         var addr: u16 = sum[0];
 
-        self.bus.addr_bus += 1;
+        self.bus.addr_bus +%= 1;
         self.bus.getMmo();
 
-        addr |= @as(u16, self.bus.data_bus + sum[1]) << 8;
+        addr |= @as(u16, self.bus.data_bus +% sum[1]) << 8;
 
         self.bus.addr_bus = addr;
         self.bus.data_bus = data;
