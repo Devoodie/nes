@@ -66,9 +66,9 @@ pub const json_test = struct {
                     }
                 },
                 5 => {
-                    if (std.meta.eql(nes_ptr.Cpu.status, extract_status(self.final.p))) {
+                    if (!std.meta.eql(nes_ptr.Cpu.status, extract_status(self.final.p))) {
                         std.debug.print("Wrong Status Returned Within JSON Test: {s}\n", .{self.name});
-                        std.debug.print("Expected: {any}, Recieved: {any}\n", .{ self.final.p, nes_ptr.Cpu.status });
+                        std.debug.print("Expected: {any}, Recieved: {any}\n", .{ extract_status(self.final.p), nes_ptr.Cpu.status });
                         return false;
                     }
                 },
@@ -97,7 +97,7 @@ pub const json_test = struct {
 
         new_status.negative = @truncate(status >> 7);
         new_status.overflow = @truncate((status >> 6) & 0b1);
-        new_status.break_inter = @truncate(status >> 5);
+        new_status.break_inter = @truncate(status >> 4);
         new_status.decimal = @truncate((status >> 3) & 0b1);
         new_status.interrupt_dsble = @truncate((status >> 2) & 0b1);
         new_status.zero = @truncate((status >> 1) & 0b1);

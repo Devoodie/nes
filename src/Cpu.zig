@@ -2951,7 +2951,7 @@ pub const Cpu = struct {
                             std.debug.print("6502: TAX Found!\n", .{});
                             break :RMW;
                         } else if (self.instruction == 0xBA) {
-                            self.xToStackPointer();
+                            self.stackPointerToX();
                             std.debug.print("6502: TSX Found!\n", .{});
                             break :RMW;
                         } else {
