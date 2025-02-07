@@ -68,7 +68,7 @@ pub const json_test = struct {
                 5 => {
                     if (!std.meta.eql(nes_ptr.Cpu.status, extract_status(self.final.p))) {
                         std.debug.print("Wrong Status Returned Within JSON Test: {s}\n", .{self.name});
-                        std.debug.print("Expected: {any}, Recieved: {any}\n", .{ extract_status(self.final.p), nes_ptr.Cpu.status });
+                        std.debug.print("Expected: {any},\n Recieved: {any}\n", .{ extract_status(self.final.p), nes_ptr.Cpu.status });
                         return false;
                     }
                 },
