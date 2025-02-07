@@ -795,53 +795,27 @@ pub const Cpu = struct {
 
     pub fn compareXRegister(self: *Cpu) void {
         var value: u8 = 0;
+        var instr_cycle: u8 = 0;
         switch (self.instruction & 0xF) {
             0 => immediate: {
                 value = self.GetImmediate();
-                if (self.x_register == value) {
-                    self.status.carry = 1;
-                    self.status.zero = 1;
-                } else if (self.x_register > value) {
-                    self.status.carry = 1;
-                    self.status.zero = 0;
-                } else {
-                    self.status.zero = 0;
-                }
 
                 self.pc +%= 2;
-                self.cycle(2);
+                instr_cycle = 2;
                 break :immediate;
             },
             4 => zeropage: {
                 value = self.GetZeroPage();
-                if (self.x_register == value) {
-                    self.status.carry = 1;
-                    self.status.zero = 1;
-                } else if (self.x_register > value) {
-                    self.status.carry = 1;
-                    self.status.zero = 0;
-                } else {
-                    self.status.zero = 0;
-                }
 
                 self.pc +%= 2;
-                self.cycle(3);
+                instr_cycle = 3;
                 break :zeropage;
             },
             0xC => absolute: {
                 value = self.GetAbsolute();
-                if (self.x_register == value) {
-                    self.status.carry = 1;
-                    self.status.zero = 1;
-                } else if (self.x_register > value) {
-                    self.status.carry = 1;
-                    self.status.zero = 0;
-                } else {
-                    self.status.zero = 0;
-                }
 
                 self.pc +%= 3;
-                self.cycle(4);
+                instr_cycle = 4;
                 break :absolute;
             },
             else => default: {
@@ -849,11 +823,18 @@ pub const Cpu = struct {
                 break :default;
             },
         }
-        if (self.x_register == value) {
-            self.status.negative = 0;
+        const result = @subWithOverflow(self.x_register, value);
+
+        self.status.carry = ~result[1];
+
+        if (result[0] == 0) {
+            self.status.zero = 1;
+            self.status.carry = 1;
         } else {
-            self.status.negative = @truncate(self.x_register -% value >> 7);
+            self.status.zero = 0;
         }
+
+        self.status.negative = @truncate(result[0] >> 7);
     }
 
     pub fn branchNoCarry(self: *Cpu) void {
@@ -1274,9 +1255,9 @@ pub const Cpu = struct {
         self.status.negative = @truncate(status >> 7);
         self.status.overflow = @truncate((status >> 6) & 0b1);
         self.status.break_inter = @truncate(status >> 5);
-        self.status.decimal = @truncate((status >> 4) & 0b1);
-        self.status.interrupt_dsble = @truncate((status >> 3) & 0b1);
-        self.status.zero = @truncate((status >> 2) & 0b1);
+        self.status.decimal = @truncate((status >> 3) & 0b1);
+        self.status.interrupt_dsble = @truncate((status >> 2) & 0b1);
+        self.status.zero = @truncate((status >> 1) & 0b1);
         self.status.carry = @truncate(status & 0b1);
         self.pc = self.stackPopAddress();
         self.cycle(6);
@@ -1384,15 +1365,15 @@ pub const Cpu = struct {
             }
         }
 
-        const result = self.accumulator +% value +% self.status.carry;
+        const result = self.accumulator +% ~value +% self.status.carry;
 
-        if (result > self.accumulator or (self.status.carry == 1 and self.accumulator == result)) {
-            self.status.carry = 1;
-        } else {
+        if (result > self.accumulator or (self.status.carry == 0 and self.accumulator +% self.status.carry == result)) {
             self.status.carry = 0;
+        } else {
+            self.status.carry = 1;
         }
 
-        self.status.overflow = @truncate(((result ^ self.accumulator) & (result ^ value) & 0x80) >> 7);
+        self.status.overflow = @truncate(((result ^ self.accumulator) & (result ^ ~value) & 0x80) >> 7);
         self.accumulator = result;
 
         if (self.accumulator == 0) {
