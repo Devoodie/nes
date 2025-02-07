@@ -66,9 +66,7 @@ pub const json_test = struct {
                     }
                 },
                 5 => {
-                    var finalstatus: cpu.StatusRegister = extract_status(self.final.p);
-                    finalstatus.negative = 1;
-                    if (compare_status(nes_ptr.Cpu.status, finalstatus)) {
+                    if (std.meta.eql(nes_ptr.Cpu.status, extract_status(self.final.p))) {
                         std.debug.print("Wrong Status Returned Within JSON Test: {s}\n", .{self.name});
                         std.debug.print("Expected: {any}, Recieved: {any}\n", .{ self.final.p, nes_ptr.Cpu.status });
                         return false;
