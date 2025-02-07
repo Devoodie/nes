@@ -1883,7 +1883,7 @@ pub const Cpu = struct {
 
     pub fn rotateRight(self: *Cpu) void {
         var result: u8 = 0;
-        if (self.instruction & 0xF0 == 0x50) {
+        if (self.instruction & 0xF0 == 0x70) {
             switch (self.instruction & 0xF) {
                 6 => zeropagex: {
                     const value = self.GetZeroPageX();
