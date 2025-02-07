@@ -106,9 +106,9 @@ pub const json_test = struct {
         new_status.negative = @truncate(status >> 7);
         new_status.overflow = @truncate((status >> 6) & 0b1);
         new_status.break_inter = @truncate(status >> 5);
-        new_status.decimal = @truncate((status >> 4) & 0b1);
-        new_status.interrupt_dsble = @truncate((status >> 3) & 0b1);
-        new_status.zero = @truncate((status >> 2) & 0b1);
+        new_status.decimal = @truncate((status >> 3) & 0b1);
+        new_status.interrupt_dsble = @truncate((status >> 2) & 0b1);
+        new_status.zero = @truncate((status >> 1) & 0b1);
         new_status.carry = @truncate(status & 0b1);
 
         return new_status;

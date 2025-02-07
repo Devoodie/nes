@@ -80,7 +80,7 @@ pub const Cpu = struct {
         const lowbyte: u16 = self.bus.data_bus;
 
         self.stack_pointer +%= 1;
-        self.bus.addr_bus +%= 1;
+        self.bus.addr_bus = @as(u16, self.stack_pointer) + 0x100;
         self.bus.getMmo();
         const highbyte: u16 = self.bus.data_bus;
 
@@ -553,9 +553,9 @@ pub const Cpu = struct {
         self.status.negative = @truncate(status >> 7);
         self.status.overflow = @truncate((status >> 6) & 0b1);
         self.status.break_inter = @truncate(status >> 5);
-        self.status.decimal = @truncate((status >> 4) & 0b1);
-        self.status.interrupt_dsble = @truncate((status >> 3) & 0b1);
-        self.status.zero = @truncate((status >> 2) & 0b1);
+        self.status.decimal = @truncate((status >> 3) & 0b1);
+        self.status.interrupt_dsble = @truncate((status >> 2) & 0b1);
+        self.status.zero = @truncate((status >> 1) & 0b1);
         self.status.carry = @truncate(status & 0b1);
 
         self.pc +%= 1;
@@ -611,7 +611,7 @@ pub const Cpu = struct {
 
     pub fn compareAccumulator(self: *Cpu) void {
         var value: u8 = 0;
-        if (self.instruction & 0xF0 == 0x50) {
+        if (self.instruction & 0xF0 == 0xD0) {
             switch (self.instruction & 0xF) {
                 1 => indirecty: {
                     value = self.GetIndirectY();
