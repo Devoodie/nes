@@ -2092,19 +2092,17 @@ pub const Cpu = struct {
         if (self.instruction & 0xF0 == 0x70) {
             switch (self.instruction & 0xF) {
                 1 => indirecty: {
-                    const negative: u1 = @truncate(self.accumulator >> 7);
-                    const carry = @addWithOverflow(self.accumulator, self.status.carry);
-                    const sum = @addWithOverflow(self.GetIndirectY(), carry[0]);
+                    const value = self.GetIndirectY();
 
-                    if (carry[1] == 1 or sum[1] == 1) {
+                    const result = self.accumulator +% value +% self.status.carry;
+
+                    if (result < self.accumulator) {
                         self.status.carry = 1;
                     } else {
                         self.status.carry = 0;
                     }
-                    self.accumulator = sum[0];
-                    if (negative != sum[0] >> 7) {
-                        self.status.overflow = 1;
-                    }
+
+                    self.status.overflow = ((result ^ self.accumulator) & (result ^ value) & 0x80) >> 7;
 
                     self.pc +%= 2;
                     self.cycle(@as(u8, self.extra_cycle) + 5);
