@@ -24,6 +24,8 @@ pub fn build(b: *std.Build) void {
     const unit_test = b.addModule("test", .{ .root_source_file = b.path("test/JsonTests.zig") });
     const json = b.addModule("json", .{ .root_source_file = b.path("test/Json.zig") });
 
+    const display = b.addModule("display", .{ .root_source_file = b.path("src/Display.zig") });
+
     bus.addImport("cpu", cpu);
     bus.addImport("ppu", ppu);
     bus.addImport("mapper", mapper);
@@ -40,6 +42,8 @@ pub fn build(b: *std.Build) void {
 
     json.addImport("nes", nes);
     json.addImport("cpu", cpu);
+
+    display.addImport("ppu", ppu);
 
     // This declares intent for the library to be installed into the standard
     // location when the user invokes the "install" step (the default step when
@@ -70,6 +74,8 @@ pub fn build(b: *std.Build) void {
     exe.root_module.addImport("raygui", raygui);
     exe.root_module.addImport("nes", nes);
     exe.root_module.addImport("test", unit_test);
+    exe.root_module.addImport("display", display);
+    exe.root_module.addImport("ppu", ppu);
 
     // This *creates* a Run step in the build graph, to be executed when another
     // step is evaluated that depends on it. The next line below will establish

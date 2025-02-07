@@ -1,6 +1,6 @@
 const std = @import("std");
 const rl = @import("raylib");
-const picture_unit = @import("Ppu.zig");
+const picture_unit = @import("ppu");
 
 pub const Color = enum(u8) {
     darkGray = 0,

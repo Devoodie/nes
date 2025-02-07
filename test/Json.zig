@@ -35,7 +35,6 @@ pub const json_test = struct {
                         std.debug.print("Expected: {d}, Recieved: {d}\n", .{ self.final.pc, nes_ptr.Cpu.pc });
                         return false;
                     }
-                    break;
                 },
                 //fix these values to correspond with registers
                 1 => {
@@ -44,7 +43,6 @@ pub const json_test = struct {
                         std.debug.print("Expected: {d}, Recieved: {d}\n", .{ self.final.s, nes_ptr.Cpu.stack_pointer });
                         return false;
                     }
-                    break;
                 },
                 2 => {
                     if (nes_ptr.Cpu.accumulator != self.final.a) {
@@ -52,7 +50,6 @@ pub const json_test = struct {
                         std.debug.print("Expected: {d}, Recieved: {d}\n", .{ self.final.a, nes_ptr.Cpu.accumulator });
                         return false;
                     }
-                    break;
                 },
                 3 => {
                     if (nes_ptr.Cpu.x_register != self.final.x) {
@@ -60,7 +57,6 @@ pub const json_test = struct {
                         std.debug.print("Expected: {d}, Recieved: {d}\n", .{ self.final.x, nes_ptr.Cpu.x_register });
                         return false;
                     }
-                    break;
                 },
                 4 => {
                     if (nes_ptr.Cpu.y_register != self.final.y) {
@@ -68,15 +64,15 @@ pub const json_test = struct {
                         std.debug.print("Expected: {d}, Recieved: {d}\n", .{ self.final.y, nes_ptr.Cpu.y_register });
                         return false;
                     }
-                    break;
                 },
                 5 => {
-                    if (std.meta.eql(nes_ptr.*.Cpu.status, extract_status(self.final.p))) {
+                    var finalstatus: cpu.StatusRegister = extract_status(self.final.p);
+                    finalstatus.negative = 1;
+                    if (compare_status(nes_ptr.Cpu.status, finalstatus)) {
                         std.debug.print("Wrong Status Returned Within JSON Test: {s}\n", .{self.name});
                         std.debug.print("Expected: {any}, Recieved: {any}\n", .{ self.final.p, nes_ptr.Cpu.status });
                         return false;
                     }
-                    break;
                 },
                 6 => {
                     for (self.final.ram) |memory| {
@@ -88,11 +84,9 @@ pub const json_test = struct {
                             return false;
                         }
                     }
-                    break;
                 },
                 else => {
                     std.debug.print("Something Went Wrong In JSON Test!\n", .{});
-                    break;
                 },
             }
         }
@@ -112,6 +106,31 @@ pub const json_test = struct {
         new_status.carry = @truncate(status & 0b1);
 
         return new_status;
+    }
+
+    fn compare_status(nes_status: cpu.StatusRegister, final_status: cpu.StatusRegister) bool {
+        if (nes_status.negative != final_status.negative) {
+            return false;
+        }
+        if (nes_status.carry != final_status.carry) {
+            return false;
+        }
+        if (nes_status.interrupt_dsble != final_status.interrupt_dsble) {
+            return false;
+        }
+        if (nes_status.zero != final_status.zero) {
+            return false;
+        }
+        if (nes_status.decimal != final_status.decimal) {
+            return false;
+        }
+        if (nes_status.break_inter != final_status.break_inter) {
+            return false;
+        }
+        if (nes_status.overflow != final_status.overflow) {
+            return false;
+        }
+        return true;
     }
 };
 

@@ -203,8 +203,8 @@ pub const Ppu = struct {
             return self.nametable[index];
         } else if (self.v >= 0x3EFF) {
             //pallete RAM
-            //            const index = self.v & 0x1F;
-            //           return self.pallet_memory[index];
+            const index = self.v & 0x1F;
+            return self.pallet_memory[index];
         }
         return 1;
     }
@@ -233,7 +233,8 @@ pub const Ppu = struct {
             const index = self.v & 0x7FF;
             self.nametable[index] = data;
         } else if (self.v >= 0x3EFF) {
-            //pallete RAM
+            const index = self.v & 0x1F;
+            self.pallet_memory[index] = data;
         }
     }
 

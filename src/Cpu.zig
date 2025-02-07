@@ -24,12 +24,12 @@ pub const Cpu = struct {
     irq_line: u1 = 0,
     extra_cycle: u8 = 0,
     odd_cycle: u1 = 0,
-    wait_time: u64 = 0,
+    wait_time: u128 = 0,
     cycles: u64 = 0,
 
     pub fn cycle(self: *Cpu, cycles: u16) void {
         self.cycles += cycles;
-        self.wait_time = 559 * cycles;
+        self.wait_time = @as(u128, cycles) * 559;
         //     std.debug.print("Cpu Wait Time: {d}!\n", .{self.wait_time});
         self.odd_cycle +%= @intCast(cycles % 2);
         //        std.debug.print("The cycles are {d}!\n", .{self.odd_cycle});
@@ -57,8 +57,8 @@ pub const Cpu = struct {
         const highbyte: u8 = @truncate(address >> 8);
         const lowbyte: u8 = @truncate(address & 0xFF);
 
-        std.debug.print("Push Address Low Byte: 0x{X}\n", .{lowbyte});
         std.debug.print("Push Address High Byte: 0x{X}\n", .{highbyte});
+        std.debug.print("Push Address Low Byte: 0x{X}\n", .{lowbyte});
 
         self.bus.addr_bus = @as(u16, self.stack_pointer) + 0x100;
         self.bus.data_bus = highbyte;
@@ -96,26 +96,18 @@ pub const Cpu = struct {
         // get zeropage address
         self.bus.addr_bus = self.pc +% 1;
         self.bus.getMmo();
-        self.extra_cycle = 0;
-        var lsb: u16 = self.bus.data_bus;
 
-        self.bus.addr_bus +%= 1;
-        self.bus.getMmo();
-        lsb |= @as(u16, self.bus.data_bus) << 8;
+        const zero_page = self.bus.data_bus;
 
-        //get low order Bytes
-        self.bus.addr_bus = lsb;
+        self.bus.addr_bus = self.bus.data_bus;
         self.bus.getMmo();
 
         const sum = @addWithOverflow(self.bus.data_bus, self.y_register);
-        if (sum[1] == 1) {
-            self.extra_cycle = 1;
-        }
+
+        self.bus.addr_bus = zero_page +% 1;
+        self.bus.getMmo();
 
         var addr: u16 = sum[0];
-
-        self.bus.addr_bus +%= 1;
-        self.bus.getMmo();
 
         addr |= @as(u16, self.bus.data_bus +% sum[1]) << 8;
 
@@ -128,26 +120,18 @@ pub const Cpu = struct {
     pub fn setIndirectY(self: *Cpu, data: u8) void {
         self.bus.addr_bus = self.pc +% 1;
         self.bus.getMmo();
-        self.extra_cycle = 0;
-        var lsb: u16 = self.bus.data_bus;
 
-        self.bus.addr_bus +%= 1;
-        self.bus.getMmo();
-        lsb |= @as(u16, self.bus.data_bus) << 8;
+        const zero_page = self.bus.data_bus;
 
-        //get low order Bytes
-        self.bus.addr_bus = lsb;
+        self.bus.addr_bus = self.bus.data_bus;
         self.bus.getMmo();
 
         const sum = @addWithOverflow(self.bus.data_bus, self.y_register);
-        if (sum[1] == 1) {
-            self.extra_cycle = 1;
-        }
+
+        self.bus.addr_bus = zero_page +% 1;
+        self.bus.getMmo();
 
         var addr: u16 = sum[0];
-
-        self.bus.addr_bus +%= 1;
-        self.bus.getMmo();
 
         addr |= @as(u16, self.bus.data_bus +% sum[1]) << 8;
 
@@ -1314,8 +1298,8 @@ pub const Cpu = struct {
     }
 
     pub fn jumpSubroutine(self: *Cpu) void {
-        self.stackPushAddress(self.pc + 3);
-        std.debug.print("Return Address: 0x{X}\n\n", .{self.pc + 3});
+        self.stackPushAddress(self.pc + 2);
+        std.debug.print("Return Address: 0x{X}\n\n", .{self.pc + 2});
 
         self.bus.addr_bus = self.pc +% 1;
         self.bus.getMmo();
@@ -1734,6 +1718,7 @@ pub const Cpu = struct {
                 },
             }
         }
+        std.debug.print("Accumulator: {d}\n", .{self.accumulator});
     }
 
     pub fn logicalShiftRight(self: *Cpu) void {
@@ -2100,6 +2085,7 @@ pub const Cpu = struct {
                 },
             }
         }
+        std.debug.print("Accumulator: {d}!\n", .{self.accumulator});
     }
 
     pub fn addWithCarry(self: *Cpu) void {
