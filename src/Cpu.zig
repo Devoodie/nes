@@ -131,7 +131,7 @@ pub const Cpu = struct {
         self.extra_cycle = 0;
         var lsb: u16 = self.bus.data_bus;
 
-        self.bus.addr_bus += 1;
+        self.bus.addr_bus +%= 1;
         self.bus.getMmo();
         lsb |= @as(u16, self.bus.data_bus) << 8;
 
@@ -590,7 +590,7 @@ pub const Cpu = struct {
                 self.pc +%= 2;
                 self.cycle(3);
             },
-            0x14, 0x34, 0x54, 0x74, 0xB4, 0xF4 => {
+            0x14, 0x34, 0x54, 0x74, 0xB4, 0xF4, 0xD4 => {
                 self.pc +%= 2;
                 self.cycle(4);
             },
@@ -598,7 +598,7 @@ pub const Cpu = struct {
                 self.pc +%= 2;
                 self.cycle(2);
             },
-            0x1C, 0x3C, 0x5C, 0x7C, 0xDC, 0xFC => {
+            0x1C, 0x3C, 0x5C, 0x7C, 0xDC, 0xFC, 0x0C => {
                 self.pc +%= 3;
                 self.cycle(4);
             },
@@ -1335,6 +1335,7 @@ pub const Cpu = struct {
 
     pub fn returnSubroutine(self: *Cpu) void {
         self.pc = self.stackPopAddress();
+        self.pc +%= 1;
         std.debug.print("Stack Pointer: 0x{X}\n", .{self.stack_pointer});
         self.cycle(6);
     }
@@ -2937,7 +2938,7 @@ pub const Cpu = struct {
                         if (self.instruction == 0x92) {
                             std.debug.print("6502: No Valid Instruction 'STP' Found!\n", .{});
                             break :RMW;
-                        } else if (self.instruction == 0x80) {
+                        } else if (self.instruction == 0x82) {
                             self.nop();
                             std.debug.print("6502: NOP Found!\n", .{});
                             break :RMW;
@@ -2977,7 +2978,7 @@ pub const Cpu = struct {
                         if (self.instruction == 0xE2) {
                             std.debug.print("6502: No Valid Instruction 'STP' Found!\n", .{});
                             break :RMW;
-                        } else if (self.instruction == 0xC0 or self.instruction == 0xDA) {
+                        } else if (self.instruction == 0xC2 or self.instruction == 0xDA) {
                             self.nop();
                             std.debug.print("6502: NOP Found!\n", .{});
                             break :RMW;
@@ -2994,7 +2995,7 @@ pub const Cpu = struct {
                         if (self.instruction == 0xF2) {
                             std.debug.print("6502: No Valid Instruction 'STP' Found!\n", .{});
                             break :RMW;
-                        } else if (self.instruction == 0xE0 or self.instruction == 0xEA or self.instruction == 0xFA) {
+                        } else if (self.instruction == 0xE2 or self.instruction == 0xEA or self.instruction == 0xFA) {
                             self.nop();
                             std.debug.print("6502: NOP Found!\n", .{});
                             break :RMW;
