@@ -2325,8 +2325,8 @@ pub const Cpu = struct {
                 const value = self.GetZeroPage() & self.accumulator;
 
                 self.status.negative = @truncate(value >> 7);
-                self.status.overflow = @truncate((value & 0x40) >> 6);
-                if (value == 0) {
+                self.status.overflow = @truncate((value >> 6) & 0b1);
+                if (value & self.accumulator == 0) {
                     self.status.zero = 1;
                 } else {
                     self.status.zero = 0;
@@ -2337,11 +2337,11 @@ pub const Cpu = struct {
                 break :zero_page;
             },
             0xC => absolute: {
-                const value = self.GetAbsolute() & self.accumulator;
+                const value = self.GetAbsolute();
 
                 self.status.negative = @truncate(value >> 7);
-                self.status.overflow = @truncate((value & 0x40) >> 6);
-                if (value == 0) {
+                self.status.overflow = @truncate((value >> 6) & 0b1);
+                if (value & self.accumulator == 0) {
                     self.status.zero = 1;
                 } else {
                     self.status.zero = 0;
