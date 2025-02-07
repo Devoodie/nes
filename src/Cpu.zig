@@ -2089,83 +2089,38 @@ pub const Cpu = struct {
     }
 
     pub fn addWithCarry(self: *Cpu) void {
+        var value: u8 = 0;
+        var instr_cycles: u8 = 0;
         if (self.instruction & 0xF0 == 0x70) {
             switch (self.instruction & 0xF) {
                 1 => indirecty: {
-                    const value = self.GetIndirectY();
-
-                    const result = self.accumulator +% value +% self.status.carry;
-
-                    if (result < self.accumulator) {
-                        self.status.carry = 1;
-                    } else {
-                        self.status.carry = 0;
-                    }
-
-                    self.status.overflow = ((result ^ self.accumulator) & (result ^ value) & 0x80) >> 7;
+                    value = self.GetIndirectY();
 
                     self.pc +%= 2;
-                    self.cycle(@as(u8, self.extra_cycle) + 5);
+                    instr_cycles = @as(u8, self.extra_cycle) + 5;
                     break :indirecty;
                 },
                 5 => zero_pagex: {
-                    const negative: u1 = @truncate(self.accumulator >> 7);
-                    const carry = @addWithOverflow(self.accumulator, self.status.carry);
-                    const sum = @addWithOverflow(self.GetIndirectY(), carry[0]);
-
-                    if (carry[1] == 1 or sum[1] == 1) {
-                        self.status.carry = 1;
-                    } else {
-                        self.status.carry = 0;
-                    }
-
-                    self.accumulator = sum[0];
-                    if (negative != sum[0] >> 7) {
-                        self.status.overflow = 1;
-                    }
+                    value = self.GetZeroPageX();
 
                     self.pc +%= 2;
-                    self.cycle(4);
+                    instr_cycles = 4;
                     break :zero_pagex;
                 },
                 9 => absolutey: {
-                    const negative: u1 = @truncate(self.accumulator >> 7);
-                    const carry = @addWithOverflow(self.accumulator, self.status.carry);
-                    const sum = @addWithOverflow(self.GetAbsoluteIndexed(1), carry[0]);
-
-                    if (carry[1] == 1 or sum[1] == 1) {
-                        self.status.carry = 1;
-                    } else {
-                        self.status.carry = 0;
-                    }
-                    self.accumulator = sum[0];
-                    if (negative != sum[0] >> 7) {
-                        self.status.overflow = 1;
-                    } else {
-                        self.status.carry = 0;
-                    }
+                    value = self.GetAbsoluteIndexed(1);
+                    std.debug.print("Value: {d}\n", .{value});
+                    std.debug.print("Accumulator: {d}\n", .{self.accumulator});
 
                     self.pc +%= 3;
-                    self.cycle(4 + @as(u8, self.extra_cycle));
+                    instr_cycles = @as(u8, self.extra_cycle) + 4;
                     break :absolutey;
                 },
                 0xD => absolutex: {
-                    const negative: u1 = @truncate(self.accumulator >> 7);
-                    const carry = @addWithOverflow(self.accumulator, self.status.carry);
-                    const sum = @addWithOverflow(self.GetIndirectY(), carry[0]);
-
-                    if (carry[1] == 1 or sum[1] == 1) {
-                        self.status.carry = 1;
-                    } else {
-                        self.status.carry = 0;
-                    }
-                    self.accumulator = sum[0];
-                    if (negative != sum[0] >> 7) {
-                        self.status.overflow = 1;
-                    }
+                    value = self.GetAbsoluteIndexed(0);
 
                     self.pc +%= 3;
-                    self.cycle(4 + @as(u8, self.extra_cycle));
+                    instr_cycles = @as(u8, self.extra_cycle) + 4;
                     break :absolutex;
                 },
                 else => default: {
@@ -2176,89 +2131,31 @@ pub const Cpu = struct {
         } else {
             switch (self.instruction & 0xF) {
                 1 => indirectx: {
-                    const negative: u1 = @truncate(self.accumulator >> 7);
-                    const carry = @addWithOverflow(self.accumulator, self.status.carry);
-                    const sum = @addWithOverflow(self.GetIndirectY(), carry[0]);
-
-                    if (carry[1] == 1 or sum[1] == 1) {
-                        self.status.carry = 1;
-                    } else {
-                        self.status.carry = 0;
-                    }
-
-                    self.accumulator = sum[0];
-                    if (negative != sum[0] >> 7) {
-                        self.status.overflow = 1;
-                    } else {
-                        self.status.overflow = 0;
-                    }
+                    value = self.GetIndirectX();
 
                     self.pc +%= 2;
-                    self.cycle(6);
+                    instr_cycles = 6;
                     break :indirectx;
                 },
                 5 => zero_page: {
-                    const negative: u1 = @truncate(self.accumulator >> 7);
-                    const carry = @addWithOverflow(self.accumulator, self.status.carry);
-                    const sum = @addWithOverflow(self.GetIndirectY(), carry[0]);
-
-                    if (carry[1] == 1 or sum[1] == 1) {
-                        self.status.carry = 1;
-                    } else {
-                        self.status.carry = 0;
-                    }
-
-                    self.accumulator = sum[0];
-                    if (negative != sum[0] >> 7) {
-                        self.status.overflow = 1;
-                    } else {
-                        self.status.overflow = 0;
-                    }
+                    value = self.GetZeroPage();
 
                     self.pc +%= 2;
-                    self.cycle(3);
+                    instr_cycles = 3;
                     break :zero_page;
                 },
                 9 => immediate: {
-                    const negative: u1 = @truncate(self.accumulator >> 7);
-                    const carry = @addWithOverflow(self.accumulator, self.status.carry);
-                    const sum = @addWithOverflow(self.GetIndirectY(), carry[0]);
-
-                    if (carry[1] == 1 or sum[1] == 1) {
-                        self.status.carry = 1;
-                    } else {
-                        self.status.carry = 0;
-                    }
-                    self.accumulator = sum[0];
-                    if (negative != sum[0] >> 7) {
-                        self.status.overflow = 1;
-                    } else {
-                        self.status.overflow = 0;
-                    }
+                    value = self.GetImmediate();
 
                     self.pc +%= 2;
-                    self.cycle(2);
+                    instr_cycles = 2;
                     break :immediate;
                 },
                 0xD => absolute: {
-                    const negative: u1 = @truncate(self.accumulator >> 7);
-                    const carry = @addWithOverflow(self.accumulator, self.status.carry);
-                    const sum = @addWithOverflow(self.GetIndirectY(), carry[0]);
-
-                    if (carry[1] == 1 or sum[1] == 1) {
-                        self.status.carry = 1;
-                    } else {
-                        self.status.carry = 0;
-                    }
-                    self.accumulator = sum[0];
-                    if (negative != sum[0] >> 7) {
-                        self.status.overflow = 1;
-                    } else {
-                        self.status.overflow = 0;
-                    }
+                    value = self.GetAbsolute();
 
                     self.pc +%= 3;
-                    self.cycle(4);
+                    instr_cycles = 4;
                     break :absolute;
                 },
                 else => default: {
@@ -2266,13 +2163,27 @@ pub const Cpu = struct {
                     break :default;
                 },
             }
-            if (self.accumulator == 0) {
-                self.status.zero = 1;
-            } else {
-                self.status.zero = 0;
-            }
-            self.status.negative = @intCast(self.accumulator >> 7);
         }
+        const result: u8 = self.accumulator +% value +% self.status.carry;
+
+        std.debug.print("Result: {d}\n", .{result});
+
+        if (result < self.accumulator or (self.status.carry == 1 and result == self.accumulator)) {
+            self.status.carry = 1;
+        } else {
+            self.status.carry = 0;
+        }
+
+        self.status.overflow = @truncate(((result ^ self.accumulator) & (result ^ value) & 0x80) >> 7);
+
+        self.accumulator = result;
+        if (self.accumulator == 0) {
+            self.status.zero = 1;
+        } else {
+            self.status.zero = 0;
+        }
+        self.status.negative = @truncate(self.accumulator >> 7);
+        self.cycle(instr_cycles);
     }
 
     pub fn clearCarry(self: *Cpu) void {
