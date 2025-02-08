@@ -94,7 +94,7 @@ pub fn draw(ppu: *picture_unit.Ppu) !void {
             for (row, 0..) |column, x_pos| {
                 if (column > 0) {
                     rl.drawRectangle(@intCast(x_pos * 5), @intCast(y_pos * 5), 5, 5, rl.Color.white);
-                    rl.drawText("Drew\n", 190, 200, 20, rl.Color.white);
+                    //            rl.drawText("Drew\n", 190, 200, 20, rl.Color.white);
                 }
             }
         }

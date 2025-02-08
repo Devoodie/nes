@@ -93,11 +93,12 @@ pub fn masterClock(nes: *components.Nes, cpu_timer: *std.time.Timer) void {
     while (true) {
         if (nes.Cpu.wait_time < cpu_timer.read()) {
             cpu_timer.reset();
+            nes.Cpu.wait_time = 0;
             nes.Cpu.operate();
         }
         if (nes.Cpu.cycles >= 114) {
             nes.Ppu.operate();
-            nes.Cpu.cycles = 0;
+            nes.Cpu.cycles -= 114;
             //            std.debug.print("Bitmap: {any}\n", .{nes.Ppu.bitmap});
         }
     }
