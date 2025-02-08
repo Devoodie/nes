@@ -78,6 +78,7 @@ pub const json_test = struct {
                         nes_ptr.Bus.getMmo();
                         if (nes_ptr.Bus.data_bus != memory[1]) {
                             std.debug.print("Wrong Memory Value Returned Within JSON Test: {s}\n", .{self.name});
+                            std.debug.print("Address: {d}\n", .{memory[0]});
                             std.debug.print("Expected: {d}, Recieved: {d}\n", .{ memory[1], nes_ptr.Bus.data_bus });
                             return false;
                         }

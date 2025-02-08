@@ -493,12 +493,6 @@ pub const Cpu = struct {
 
     pub fn xToStackPointer(self: *Cpu) void {
         self.stack_pointer = self.x_register;
-        if (self.stack_pointer == 0) {
-            self.status.zero = 1;
-        } else {
-            self.status.zero = 0;
-        }
-        self.status.negative = @truncate(self.stack_pointer >> 7);
 
         self.pc +%= 1;
         self.cycle(2);
@@ -557,7 +551,9 @@ pub const Cpu = struct {
         status |= self.status.overflow;
         status <<= 1;
         status |= 1;
-        status <<= 2;
+        status <<= 1;
+        status |= 1;
+        status <<= 1;
         status |= self.status.decimal;
         status <<= 1;
         status |= self.status.interrupt_dsble;
@@ -598,70 +594,35 @@ pub const Cpu = struct {
 
     pub fn compareAccumulator(self: *Cpu) void {
         var value: u8 = 0;
+        var instr_cycle: u8 = 0;
         if (self.instruction & 0xF0 == 0xD0) {
             switch (self.instruction & 0xF) {
                 1 => indirecty: {
                     value = self.GetIndirectY();
-                    if (self.accumulator == value) {
-                        self.status.carry = 1;
-                        self.status.zero = 1;
-                    } else if (self.accumulator > value) {
-                        self.status.carry = 1;
-                        self.status.zero = 0;
-                    } else {
-                        self.status.zero = 0;
-                    }
 
                     self.pc +%= 2;
-                    self.cycle(5 + self.extra_cycle);
+                    instr_cycle = @as(u8, self.extra_cycle) + 5;
                     break :indirecty;
                 },
                 5 => zero_pagex: {
-                    value = self.GetIndirectX();
-                    if (self.accumulator == value) {
-                        self.status.carry = 1;
-                        self.status.zero = 1;
-                    } else if (self.accumulator > value) {
-                        self.status.carry = 1;
-                        self.status.zero = 0;
-                    } else {
-                        self.status.zero = 0;
-                    }
+                    value = self.GetZeroPageX();
 
                     self.pc +%= 2;
-                    self.cycle(4);
+                    instr_cycle = 4;
                     break :zero_pagex;
                 },
                 9 => absolutey: {
                     value = self.GetAbsoluteIndexed(1);
-                    if (self.accumulator == value) {
-                        self.status.carry = 1;
-                        self.status.zero = 1;
-                    } else if (self.accumulator > value) {
-                        self.status.carry = 1;
-                        self.status.zero = 0;
-                    } else {
-                        self.status.zero = 0;
-                    }
 
                     self.pc +%= 3;
-                    self.cycle(4 + self.extra_cycle);
+                    instr_cycle = @as(u8, self.extra_cycle) + 4;
                     break :absolutey;
                 },
                 0xD => absolutex: {
-                    value = self.GetAbsoluteIndexed(1);
-                    if (self.accumulator == value) {
-                        self.status.carry = 1;
-                        self.status.zero = 1;
-                    } else if (self.accumulator > value) {
-                        self.status.carry = 1;
-                        self.status.zero = 0;
-                    } else {
-                        self.status.zero = 0;
-                    }
+                    value = self.GetAbsoluteIndexed(0);
 
                     self.pc +%= 3;
-                    self.cycle(4 + self.extra_cycle);
+                    instr_cycle = @as(u8, self.extra_cycle) + 4;
                     break :absolutex;
                 },
                 else => default: {
@@ -673,66 +634,30 @@ pub const Cpu = struct {
             switch (self.instruction & 0xF) {
                 1 => indirectx: {
                     value = self.GetIndirectX();
-                    if (self.accumulator == value) {
-                        self.status.carry = 1;
-                        self.status.zero = 1;
-                    } else if (self.accumulator > value) {
-                        self.status.carry = 1;
-                        self.status.zero = 0;
-                    } else {
-                        self.status.zero = 0;
-                    }
 
                     self.pc +%= 2;
-                    self.cycle(6);
+                    instr_cycle = 6;
                     break :indirectx;
                 },
                 5 => zero_page: {
                     value = self.GetZeroPage();
-                    if (self.accumulator == value) {
-                        self.status.carry = 1;
-                        self.status.zero = 1;
-                    } else if (self.accumulator > value) {
-                        self.status.carry = 1;
-                        self.status.zero = 0;
-                    } else {
-                        self.status.zero = 0;
-                    }
 
                     self.pc +%= 2;
-                    self.cycle(3);
+                    instr_cycle = 3;
                     break :zero_page;
                 },
                 9 => immediate: {
                     value = self.GetImmediate();
-                    if (self.accumulator == value) {
-                        self.status.carry = 1;
-                        self.status.zero = 1;
-                    } else if (self.accumulator > value) {
-                        self.status.carry = 1;
-                        self.status.zero = 0;
-                    } else {
-                        self.status.zero = 0;
-                    }
 
                     self.pc +%= 2;
-                    self.cycle(2);
+                    instr_cycle = 2;
                     break :immediate;
                 },
                 0xD => absolute: {
                     value = self.GetAbsolute();
-                    if (self.accumulator == value) {
-                        self.status.carry = 1;
-                        self.status.zero = 1;
-                    } else if (self.accumulator > value) {
-                        self.status.carry = 1;
-                        self.status.zero = 0;
-                    } else {
-                        self.status.zero = 0;
-                    }
 
                     self.pc +%= 3;
-                    self.cycle(4);
+                    instr_cycle = 4;
                     break :absolute;
                 },
                 else => default: {
@@ -741,6 +666,21 @@ pub const Cpu = struct {
                 },
             }
         }
+
+        const result = @subWithOverflow(self.accumulator, value);
+        std.debug.print("Accumulator: {d},\n Memory Value: {d},\n Result: {d}\n", .{ self.accumulator, value, result[0] });
+
+        self.status.carry = ~result[1];
+
+        if (result[0] == 0) {
+            self.status.zero = 1;
+            self.status.carry = 1;
+        } else {
+            self.status.zero = 0;
+        }
+
+        self.status.negative = @truncate(result[0] >> 7);
+
         if (self.accumulator == value) {
             self.status.negative = 0;
         } else {
@@ -980,7 +920,7 @@ pub const Cpu = struct {
         } else {
             switch (self.instruction & 0xF) {
                 6 => zeropage: {
-                    value = self.GetZeroPageX() +% 1;
+                    value = self.GetZeroPage() +% 1;
                     self.setZeroPage(value);
                     self.pc +%= 2;
                     self.cycle(5);
@@ -1040,6 +980,7 @@ pub const Cpu = struct {
                 6 => zeropagex: {
                     value = self.GetZeroPageX() -% 1;
                     self.setZeroPageX(value);
+
                     self.pc +%= 2;
                     self.cycle(6);
                     break :zeropagex;
@@ -1047,6 +988,7 @@ pub const Cpu = struct {
                 0xE => absolutex: {
                     value = self.GetAbsoluteIndexed(0) -% 1;
                     self.setAbsoluteIndexed(0, value);
+
                     self.pc +%= 3;
                     self.cycle(7);
                     break :absolutex;
@@ -1059,8 +1001,9 @@ pub const Cpu = struct {
         } else {
             switch (self.instruction & 0xF) {
                 6 => zeropage: {
-                    value = self.GetZeroPageX() -% 1;
+                    value = self.GetZeroPage() -% 1;
                     self.setZeroPage(value);
+
                     self.pc +%= 2;
                     self.cycle(5);
                     break :zeropage;
@@ -1068,6 +1011,7 @@ pub const Cpu = struct {
                 0xE => absolute: {
                     value = self.GetAbsolute() -% 1;
                     self.setAbsolute(value);
+
                     self.pc +%= 3;
                     self.cycle(6);
                     break :absolute;
@@ -1223,10 +1167,13 @@ pub const Cpu = struct {
     }
 
     pub fn forceInterrupt(self: *Cpu) void {
-        self.stackPushAddress(self.pc + 1);
+        self.stackPushAddress(self.pc + 2);
+        self.status.break_inter = 1;
         self.pushStatus();
 
-        self.status.break_inter = 1;
+        self.status.break_inter = 0;
+        self.status.interrupt_dsble = 1;
+
         self.pc = 0xFFFD;
         //little endian
         var address: u16 = self.GetImmediate();
@@ -1254,7 +1201,6 @@ pub const Cpu = struct {
         const status = self.stackPop();
         self.status.negative = @truncate(status >> 7);
         self.status.overflow = @truncate((status >> 6) & 0b1);
-        self.status.break_inter = @truncate(status >> 5);
         self.status.decimal = @truncate((status >> 3) & 0b1);
         self.status.interrupt_dsble = @truncate((status >> 2) & 0b1);
         self.status.zero = @truncate((status >> 1) & 0b1);
@@ -1657,7 +1603,7 @@ pub const Cpu = struct {
 
     pub fn rotateLeft(self: *Cpu) void {
         var result: u8 = 0;
-        if (self.instruction & 0xF0 == 0x50) {
+        if (self.instruction & 0xF0 == 0x30) {
             switch (self.instruction & 0xF) {
                 6 => zeropagex: {
                     const value = self.GetZeroPageX();
@@ -2080,11 +2026,12 @@ pub const Cpu = struct {
     pub fn bitTest(self: *Cpu) void {
         switch (self.instruction & 0xF) {
             4 => zero_page: {
-                const value = self.GetZeroPage() & self.accumulator;
+                const value = self.GetZeroPage();
+                const result = value & self.accumulator;
 
                 self.status.negative = @truncate(value >> 7);
                 self.status.overflow = @truncate((value >> 6) & 0b1);
-                if (value & self.accumulator == 0) {
+                if (result == 0) {
                     self.status.zero = 1;
                 } else {
                     self.status.zero = 0;
@@ -2096,10 +2043,11 @@ pub const Cpu = struct {
             },
             0xC => absolute: {
                 const value = self.GetAbsolute();
+                const result = value & self.accumulator;
 
                 self.status.negative = @truncate(value >> 7);
                 self.status.overflow = @truncate((value >> 6) & 0b1);
-                if (value & self.accumulator == 0) {
+                if (result == 0) {
                     self.status.zero = 1;
                 } else {
                     self.status.zero = 0;
