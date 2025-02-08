@@ -83,6 +83,8 @@ pub fn draw(ppu: *picture_unit.Ppu) !void {
     rl.initWindow(width, height, "Devooty's Nes");
     defer rl.closeWindow();
 
+    rl.setTargetFPS(60);
+
     while (true) {
         //        if (ppu.status & 0x80 == 0x80) {
         rl.beginDrawing();
@@ -98,7 +100,7 @@ pub fn draw(ppu: *picture_unit.Ppu) !void {
         }
         rl.endDrawing();
         //        std.debug.print("PPU bitmap: {any}!\n", .{ppu.bitmap});
-        //}
+        // }
     }
     // }
 }
