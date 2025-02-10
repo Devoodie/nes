@@ -85,7 +85,9 @@ pub fn draw(ppu: *picture_unit.Ppu) !void {
 
     rl.setTargetFPS(60);
 
-    var bitmap: rl.Image = .{ .data = pixels, };
+
+    var bitmap: rl.Texture2D = .{.format = .uncompressed_r8g8b8, .mipmaps = 1, .height = 1200, .width = 1280}; 
+
 
     while (true) {
         if (ppu.status & 0x80 == 0x80) {
@@ -95,7 +97,7 @@ pub fn draw(ppu: *picture_unit.Ppu) !void {
             for (ppu.bitmap, 0..) |row, y_pos| {
                 for (row, 0..) |column, x_pos| {
                     if (column > 0) {
-                        rl.drawRectangle(@intCast(x_pos * 5), @intCast(y_pos * 5), 5, 5, rl.Color.white);
+                        bitmap.draw
                         //            rl.drawText("Drew\n", 190, 200, 20, rl.Color.white);
                     }
                 }
