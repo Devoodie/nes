@@ -355,9 +355,8 @@ pub const Ppu = struct {
     pub fn GetSpritePixel(self: *Ppu, x: u8, y: u8, attributes: u8, sprite: Sprite, background: u5, sprite0: u8) u5 {
         var bitmap_x: u8 = x;
         var bitmap_y: u8 = y;
-        if (attributes & 0x20 == 0x20) { //background has priority return background;
-            return background;
-        } else if (self.control & 0x20 == 0x20) {
+
+        if (self.control & 0x20 == 0x20) {
             if (attributes & 0x80 == 0x80) {
                 bitmap_y = ~bitmap_y & 0b1111;
                 bitmap_x = ~bitmap_x & 0b111;
@@ -365,8 +364,13 @@ pub const Ppu = struct {
             if (attributes & 0x40 == 0x40) {
                 bitmap_x = ~bitmap_x & 0b111;
             }
-            if (x > 7 and sprite.large[bitmap_y][bitmap_x] & 0b11 < 0 and background & 0b11 < 0 and sprite0 == 0) {
+            if (sprite.large[bitmap_y][bitmap_x] & 0b11 > 0 and background & 0b11 > 0 and sprite0 == 0) {
+                std.debug.print("Sprite 0 hit!\n", .{});
                 self.status |= 0x40;
+            }
+            if (attributes & 0x20 == 0x20) { //background has priority return backgrouj
+                std.debug.print("background returned!\n", .{});
+                return background;
             }
             std.debug.print("X Coord: {d}, Y Coord: {d}\n", .{ bitmap_x, bitmap_y });
             return sprite.large[bitmap_y][bitmap_x];
@@ -377,8 +381,13 @@ pub const Ppu = struct {
             if (attributes & 0x40 == 0x40) {
                 bitmap_x = ~bitmap_x & 0b111;
             }
-            if (x > 7 and sprite.small[bitmap_y][bitmap_x] & 0b11 < 0 and background & 0b11 < 0 and sprite0 == 0) {
+            if (sprite.small[bitmap_y][bitmap_x] & 0b11 > 0 and background & 0b11 > 0 and sprite0 == 0) {
+                std.debug.print("Sprite 0 hit!\n", .{});
                 self.status |= 0x40;
+            }
+            if (attributes & 0x20 == 0x20) { //background has priority return backgrouj
+                std.debug.print("background returned!\n", .{});
+                return background;
             }
             std.debug.print("X Coord: {d}, Y Coord: {d}\n", .{ bitmap_x, bitmap_y });
             return sprite.small[bitmap_y][bitmap_x];
@@ -428,21 +437,23 @@ pub const Ppu = struct {
         if (self.cycles <= 249) {
             //rendering occurs before
             for (self.bitmap[self.scanline][self.x_pos .. @as(u10, self.x_pos) + 8], self.x_pos..) |*pixel, x_index| {
-                const background_pixel: ?u5 = self.GetBackgroundPixel(coarse_x);
+                const background_pixel: ?u5 = self.GetBackGroundPixel(coarse_x);
 
                 if (background_pixel != null) {
                     pixel.* = background_pixel.?;
                     self.low_shift <<= 1;
                     self.high_shift <<= 1;
+                    //         std.debug.print("Back Ground Pixel Drawn!\n", .{});
                 } else {
                     //return backdrop color (black placeholder)
-                    pixel.* = 0x1F;
+                    pixel.* = 0;
                 }
 
                 const sprite_pixel: ?u5 = self.drawSprites(@truncate(x_index), pixel.*);
 
                 if (sprite_pixel != null) {
                     pixel.* = sprite_pixel.?;
+                    //        std.debug.print("SPRITE DRAWN!\n\n", .{});
                 }
                 //                std.debug.print("Pixel: 0x{X}!\n", .{pixel.*});
             }
@@ -456,7 +467,7 @@ pub const Ppu = struct {
         self.high_shift |= self.cartridge.getPpuData(pattern_address + 0b1000);
     }
 
-    pub fn GetBackgroundPixel(self: *Ppu, coarsex: u8) ?u5 {
+    pub fn GetBackGroundPixel(self: *Ppu, coarsex: u8) ?u5 {
         const fine_x_shifts = 14 - @as(u4, self.fine_x);
 
         const low_pixel = self.low_shift >> fine_x_shifts & 0b1;
@@ -548,10 +559,10 @@ pub const Ppu = struct {
             self.fillSprites();
             self.spriteEvaluation();
             self.drawScanLine();
+            //            std.debug.print("{any}\n", .{self.oam});
         }
+        std.debug.print("Scanline: {d}, Status: 0x{X}, NMI Status: {d}, Control Register: 0x{X}!\n\n", .{ self.scanline, self.status, self.nmi, self.control });
         self.scanline += 1;
-        std.debug.print("Scanline: {d}, NMI Status: {d}, Control Register: 0x{X}!\n\n", .{ self.scanline, self.nmi, self.control });
-        self.cycle(340);
     }
 
     pub fn operate(self: *Ppu) void {
