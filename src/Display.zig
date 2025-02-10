@@ -1,5 +1,5 @@
 const std = @import("std");
-const rl = @import("raylib");
+const rl = @import("raylib-zig");
 const picture_unit = @import("ppu");
 
 pub const Color = enum(u8) {
@@ -84,6 +84,8 @@ pub fn draw(ppu: *picture_unit.Ppu) !void {
     defer rl.closeWindow();
 
     rl.setTargetFPS(60);
+
+    var bitmap: rl.Image = .{ .data = pixels, };
 
     while (true) {
         if (ppu.status & 0x80 == 0x80) {
