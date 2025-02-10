@@ -337,7 +337,7 @@ pub const Ppu = struct {
             sprite_index = self.secondary_oam[7 - iterations].?;
             x_buffer = self.oam[oam_index + 3];
 
-            if (coarsex < x_buffer + 8 and coarsex >= x_buffer) {
+            if (coarsex < x_buffer +% 8 and coarsex >= x_buffer) {
                 x_coord = coarsex - x_buffer;
                 sprite0 = 7 - @as(u8, @intCast(iterations));
                 y_coord = @as(u8, @truncate(self.scanline)) - self.oam[oam_index];
