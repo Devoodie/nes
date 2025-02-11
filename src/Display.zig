@@ -84,14 +84,18 @@ pub fn draw(ppu: *picture_unit.Ppu) !void {
     defer rl.closeWindow();
 
     rl.setTargetFPS(60);
-    const bitmap: rl.Texture2D = .{ .format = .uncompressed_r8g8b8, .mipmaps = 1, .height = 1200, .width = 1280, .id = 1 };
+    const bitmap: rl.Texture2D = .{ .format = .uncompressed_r8g8b8, .mipmaps = 1, .height = 240, .width = 256, .id = 1 };
+    var screen: [240][2048]u8 = undefined;
 
     while (true) {
         if (ppu.status & 0x80 == 0x80) {
             rl.beginDrawing();
             //    rl.drawText("You're In It!\n", 190, 200, 20, rl.Color.white);
             rl.clearBackground(rl.Color.black);
-            rl.updateTexture(bitmap, GetScreen(ppu.bitmap, ppu.pallet_memory));
+            GetScreen(&screen, ppu.bitmap, ppu.pallet_memory);
+            rl.updateTexture(bitmap, &screen);
+            rl.drawTexture(bitmap, 0, 0, rl.Color.white);
+            //rl.drawTextureEx(bitmap, .{ .x = 0, .y = 0 }, 0, 5, rl.Color.blank);
             //            rl.drawText("Drew\n", 190, 200, 20, rl.Color.white);
             rl.endDrawing();
             //        std.debug.print("PPU bitmap: {any}!\n", .{ppu.bitmap});
@@ -100,180 +104,288 @@ pub fn draw(ppu: *picture_unit.Ppu) !void {
     // }
 }
 
-fn GetScreen(bitmap: *[240][256]u5, pallet: [32]u8) [][]rl.Color {
-    var screen: [240][256]rl.Color = undefined;
+fn GetScreen(screen: *[240][2048]u8, bitmap: *[240][256]u5, pallet: [32]u8) void {
     var pixel: u8 = 0;
     for (bitmap, 0..) |row, y_pos| {
         for (row, 0..) |column, x_pos| {
             pixel = pallet[column];
             switch (pixel) {
                 0 => {
-                    screen[y_pos][x_pos] = rl.getColor(0x626262);
+                    screen[y_pos][x_pos] = 0x62;
+                    screen[y_pos][x_pos + 1] = 0x62;
+                    screen[y_pos][x_pos + 2] = 0x62;
                 },
                 0x1 => {
-                    screen[y_pos][x_pos] = rl.getColor(0x002E98);
+                    screen[y_pos][x_pos] = 0x00;
+                    screen[y_pos][x_pos + 1] = 0x2E;
+                    screen[y_pos][x_pos + 2] = 0x98;
                 },
                 0x2 => {
-                    screen[y_pos][x_pos] = rl.getColor(0x0C11C2);
+                    screen[y_pos][x_pos] = 0x0C;
+                    screen[y_pos][x_pos + 1] = 0x11;
+                    screen[y_pos][x_pos + 2] = 0xC2;
                 },
                 0x3 => {
-                    screen[y_pos][x_pos] = rl.getColor(0x3B00C2);
+                    screen[y_pos][x_pos] = 0x3B;
+                    screen[y_pos][x_pos + 1] = 0x00;
+                    screen[y_pos][x_pos + 2] = 0xC2;
                 },
                 0x4 => {
-                    screen[y_pos][x_pos] = rl.getColor(0x650098);
+                    screen[y_pos][x_pos] = 0x65;
+                    screen[y_pos][x_pos + 1] = 0x00;
+                    screen[y_pos][x_pos + 2] = 0x98;
                 },
                 0x5 => {
-                    screen[y_pos][x_pos] = rl.getColor(0x7D004E);
+                    screen[y_pos][x_pos] = 0x7D;
+                    screen[y_pos][x_pos + 1] = 0x00;
+                    screen[y_pos][x_pos + 2] = 0x4E;
                 },
                 0x6 => {
-                    screen[y_pos][x_pos] = rl.getColor(0x7D0000);
+                    screen[y_pos][x_pos] = 0x7D;
+                    screen[y_pos][x_pos + 1] = 0x00;
+                    screen[y_pos][x_pos + 2] = 0x00;
                 },
                 0x7 => {
-                    screen[y_pos][x_pos] = rl.getColor(0x651900);
+                    screen[y_pos][x_pos] = 0x65;
+                    screen[y_pos][x_pos + 1] = 0x19;
+                    screen[y_pos][x_pos + 2] = 0x00;
                 },
                 0x8 => {
-                    screen[y_pos][x_pos] = rl.getColor(0x3B3600);
+                    screen[y_pos][x_pos] = 0x3B;
+                    screen[y_pos][x_pos + 1] = 0x36;
+                    screen[y_pos][x_pos + 2] = 0x00;
                 },
                 0x9 => {
-                    screen[y_pos][x_pos] = rl.getColor(0x0C4F00);
+                    screen[y_pos][x_pos] = 0x0C;
+                    screen[y_pos][x_pos + 1] = 0x4F;
+                    screen[y_pos][x_pos + 2] = 0x00;
                 },
                 0xA => {
-                    screen[y_pos][x_pos] = rl.getColor(0x005B00);
+                    screen[y_pos][x_pos] = 0x00;
+                    screen[y_pos][x_pos + 1] = 0x5B;
+                    screen[y_pos][x_pos + 2] = 0x00;
                 },
                 0xB => {
-                    screen[y_pos][x_pos] = rl.getColor(0x005900);
+                    screen[y_pos][x_pos] = 0x00;
+                    screen[y_pos][x_pos + 1] = 0x59;
+                    screen[y_pos][x_pos + 2] = 0x00;
                 },
                 0xC => {
-                    screen[y_pos][x_pos] = rl.getColor(0x00494E);
+                    screen[y_pos][x_pos] = 0x00;
+                    screen[y_pos][x_pos + 1] = 0x49;
+                    screen[y_pos][x_pos + 2] = 0x4E;
                 },
                 0xD, 0xE, 0xF, 0x1D, 0x1E, 0x1F, 0x2E, 0x2F, 0x3E, 0x3F => {
-                    screen[y_pos][x_pos] = rl.getColor(0x000000);
+                    screen[y_pos][x_pos] = 0x0;
+                    screen[y_pos][x_pos + 1] = 0x0;
+                    screen[y_pos][x_pos + 2] = 0x0;
                 },
                 0x10 => {
-                    screen[y_pos][x_pos] = rl.getColor(0xABABAB);
+                    screen[y_pos][x_pos] = 0xAB;
+                    screen[y_pos][x_pos + 1] = 0xAB;
+                    screen[y_pos][x_pos + 2] = 0xAB;
                 },
                 0x11 => {
-                    screen[y_pos][x_pos] = rl.getColor(0x0064F4);
+                    screen[y_pos][x_pos] = 0x00;
+                    screen[y_pos][x_pos + 1] = 0x64;
+                    screen[y_pos][x_pos + 2] = 0xF4;
                 },
                 0x12 => {
-                    screen[y_pos][x_pos] = rl.getColor(0x353CFF);
+                    screen[y_pos][x_pos] = 0x35;
+                    screen[y_pos][x_pos + 1] = 0x3C;
+                    screen[y_pos][x_pos + 2] = 0xFF;
                 },
                 0x13 => {
-                    screen[y_pos][x_pos] = rl.getColor(0x761BFF);
+                    screen[y_pos][x_pos] = 0x76;
+                    screen[y_pos][x_pos + 1] = 0x1B;
+                    screen[y_pos][x_pos + 2] = 0xFF;
                 },
                 0x14 => {
-                    screen[y_pos][x_pos] = rl.getColor(0xAE0AF4);
+                    screen[y_pos][x_pos] = 0xAE;
+                    screen[y_pos][x_pos + 1] = 0x0A;
+                    screen[y_pos][x_pos + 2] = 0xF4;
                 },
                 0x15 => {
-                    screen[y_pos][x_pos] = rl.getColor(0xCF0C8F);
+                    screen[y_pos][x_pos] = 0xCF;
+                    screen[y_pos][x_pos + 1] = 0x0C;
+                    screen[y_pos][x_pos + 2] = 0x8F;
                 },
                 0x16 => {
-                    screen[y_pos][x_pos] = rl.getColor(0xCF231C);
+                    screen[y_pos][x_pos] = 0xCF;
+                    screen[y_pos][x_pos + 1] = 0x23;
+                    screen[y_pos][x_pos + 2] = 0x1C;
                 },
                 0x17 => {
-                    screen[y_pos][x_pos] = rl.getColor(0xAE4700);
+                    screen[y_pos][x_pos] = 0xAE;
+                    screen[y_pos][x_pos + 1] = 0x47;
+                    screen[y_pos][x_pos + 2] = 0x00;
                 },
                 0x18 => {
-                    screen[y_pos][x_pos] = rl.getColor(0x766F00);
+                    screen[y_pos][x_pos] = 0x76;
+                    screen[y_pos][x_pos + 1] = 0x6F;
+                    screen[y_pos][x_pos + 2] = 0x00;
                 },
                 0x19 => {
-                    screen[y_pos][x_pos] = rl.getColor(0x359000);
+                    screen[y_pos][x_pos] = 0x35;
+                    screen[y_pos][x_pos + 1] = 0x90;
+                    screen[y_pos][x_pos + 2] = 0x00;
                 },
                 0x1A => {
-                    screen[y_pos][x_pos] = rl.getColor(0x00A100);
+                    screen[y_pos][x_pos] = 0x00;
+                    screen[y_pos][x_pos + 1] = 0xA1;
+                    screen[y_pos][x_pos + 2] = 0x00;
                 },
                 0x1B => {
-                    screen[y_pos][x_pos] = rl.getColor(0x009E1C);
+                    screen[y_pos][x_pos] = 0x00;
+                    screen[y_pos][x_pos + 1] = 0x9E;
+                    screen[y_pos][x_pos + 2] = 0x1C;
                 },
                 0x1C => {
-                    screen[y_pos][x_pos] = rl.getColor(0x00888F);
+                    screen[y_pos][x_pos] = 0x00;
+                    screen[y_pos][x_pos + 1] = 0x88;
+                    screen[y_pos][x_pos + 2] = 0x8F;
                 },
                 0x20, 0x30 => {
-                    screen[y_pos][x_pos] = rl.getColor(0xFFFFFF);
+                    screen[y_pos][x_pos] = 0xFF;
+                    screen[y_pos][x_pos + 1] = 0xFF;
+                    screen[y_pos][x_pos + 2] = 0xFF;
                 },
                 0x21 => {
-                    screen[y_pos][x_pos] = rl.getColor(0x4AB5FF);
+                    screen[y_pos][x_pos] = 0x4A;
+                    screen[y_pos][x_pos + 1] = 0xB5;
+                    screen[y_pos][x_pos + 2] = 0xFF;
                 },
                 0x22 => {
-                    screen[y_pos][x_pos] = rl.getColor(0x858CFF);
+                    screen[y_pos][x_pos] = 0x85;
+                    screen[y_pos][x_pos + 1] = 0x8C;
+                    screen[y_pos][x_pos + 2] = 0xFF;
                 },
                 0x23 => {
-                    screen[y_pos][x_pos] = rl.getColor(0xC86AFF);
+                    screen[y_pos][x_pos] = 0xC8;
+                    screen[y_pos][x_pos + 1] = 0x6A;
+                    screen[y_pos][x_pos + 2] = 0xFF;
                 },
                 0x24 => {
-                    screen[y_pos][x_pos] = rl.getColor(0xFF58FF);
+                    screen[y_pos][x_pos] = 0xFF;
+                    screen[y_pos][x_pos + 1] = 0x58;
+                    screen[y_pos][x_pos + 2] = 0xFF;
                 },
                 0x25 => {
-                    screen[y_pos][x_pos] = rl.getColor(0xFF5BE2);
+                    screen[y_pos][x_pos] = 0xFF;
+                    screen[y_pos][x_pos + 1] = 0x5B;
+                    screen[y_pos][x_pos + 2] = 0xE2;
                 },
                 0x26 => {
-                    screen[y_pos][x_pos] = rl.getColor(0xFF726A);
+                    screen[y_pos][x_pos] = 0xFF;
+                    screen[y_pos][x_pos + 1] = 0x72;
+                    screen[y_pos][x_pos + 2] = 0x6A;
                 },
                 0x27 => {
-                    screen[y_pos][x_pos] = rl.getColor(0xFF9702);
+                    screen[y_pos][x_pos] = 0xFF;
+                    screen[y_pos][x_pos + 1] = 0x97;
+                    screen[y_pos][x_pos + 2] = 0x02;
                 },
                 0x28 => {
-                    screen[y_pos][x_pos] = rl.getColor(0xC8C100);
+                    screen[y_pos][x_pos] = 0xC8;
+                    screen[y_pos][x_pos + 1] = 0xC1;
+                    screen[y_pos][x_pos + 2] = 0x00;
                 },
                 0x29 => {
-                    screen[y_pos][x_pos] = rl.getColor(0x85E300);
+                    screen[y_pos][x_pos] = 0x85;
+                    screen[y_pos][x_pos + 1] = 0xE3;
+                    screen[y_pos][x_pos + 2] = 0x00;
                 },
                 0x2A => {
-                    screen[y_pos][x_pos] = rl.getColor(0x4AF502);
+                    screen[y_pos][x_pos] = 0x4A;
+                    screen[y_pos][x_pos + 1] = 0xF5;
+                    screen[y_pos][x_pos + 2] = 0x02;
                 },
                 0x2B => {
-                    screen[y_pos][x_pos] = rl.getColor(0x29F26A);
+                    screen[y_pos][x_pos] = 0x29;
+                    screen[y_pos][x_pos + 1] = 0xF2;
+                    screen[y_pos][x_pos + 2] = 0x6A;
                 },
                 0x2C => {
-                    screen[y_pos][x_pos] = rl.getColor(0x29DBE2);
+                    screen[y_pos][x_pos] = 0x29;
+                    screen[y_pos][x_pos + 1] = 0xDB;
+                    screen[y_pos][x_pos + 2] = 0xE2;
                 },
                 0x2D => {
-                    screen[y_pos][x_pos] = rl.getColor(0x4E4E4E);
+                    screen[y_pos][x_pos] = 0x4E;
+                    screen[y_pos][x_pos + 1] = 0x4E;
+                    screen[y_pos][x_pos + 2] = 0x4E;
                 },
                 0x31 => {
-                    screen[y_pos][x_pos] = rl.getColor(0xB6E1FF);
+                    screen[y_pos][x_pos] = 0xB6;
+                    screen[y_pos][x_pos + 1] = 0xE1;
+                    screen[y_pos][x_pos + 2] = 0xFF;
                 },
                 0x32 => {
-                    screen[y_pos][x_pos] = rl.getColor(0xCED1FF);
+                    screen[y_pos][x_pos] = 0xCE;
+                    screen[y_pos][x_pos + 1] = 0xD1;
+                    screen[y_pos][x_pos + 2] = 0xFF;
                 },
                 0x33 => {
-                    screen[y_pos][x_pos] = rl.getColor(0xE9C3FF);
+                    screen[y_pos][x_pos] = 0xE9;
+                    screen[y_pos][x_pos + 1] = 0xC3;
+                    screen[y_pos][x_pos + 2] = 0xFF;
                 },
                 0x34 => {
-                    screen[y_pos][x_pos] = rl.getColor(0xFFBCFF);
+                    screen[y_pos][x_pos] = 0xFF;
+                    screen[y_pos][x_pos + 1] = 0xBC;
+                    screen[y_pos][x_pos + 2] = 0xFF;
                 },
                 0x35 => {
-                    screen[y_pos][x_pos] = rl.getColor(0xFFBDF4);
+                    screen[y_pos][x_pos] = 0xFF;
+                    screen[y_pos][x_pos + 1] = 0xBD;
+                    screen[y_pos][x_pos + 2] = 0xF4;
                 },
                 0x36 => {
-                    screen[y_pos][x_pos] = rl.getColor(0xFFC6C3);
+                    screen[y_pos][x_pos] = 0xFF;
+                    screen[y_pos][x_pos + 1] = 0xC6;
+                    screen[y_pos][x_pos + 2] = 0xC3;
                 },
                 0x37 => {
-                    screen[y_pos][x_pos] = rl.getColor(0xFFD59A);
+                    screen[y_pos][x_pos] = 0xFF;
+                    screen[y_pos][x_pos + 1] = 0xD5;
+                    screen[y_pos][x_pos + 2] = 0x9A;
                 },
                 0x38 => {
-                    screen[y_pos][x_pos] = rl.getColor(0xE9E681);
+                    screen[y_pos][x_pos] = 0xE9;
+                    screen[y_pos][x_pos + 1] = 0xE6;
+                    screen[y_pos][x_pos + 2] = 0x81;
                 },
                 0x39 => {
-                    screen[y_pos][x_pos] = rl.getColor(0xCEF481);
+                    screen[y_pos][x_pos] = 0xCE;
+                    screen[y_pos][x_pos + 1] = 0xF4;
+                    screen[y_pos][x_pos + 2] = 0x81;
                 },
                 0x3A => {
-                    screen[y_pos][x_pos] = rl.getColor(0xB6E1FF);
+                    screen[y_pos][x_pos] = 0xB6;
+                    screen[y_pos][x_pos + 1] = 0xE1;
+                    screen[y_pos][x_pos + 2] = 0xFF;
                 },
                 0x3B => {
-                    screen[y_pos][x_pos] = rl.getColor(0xA9FAC3);
+                    screen[y_pos][x_pos] = 0xA9;
+                    screen[y_pos][x_pos + 1] = 0xFA;
+                    screen[y_pos][x_pos + 2] = 0xC3;
                 },
                 0x3C => {
-                    screen[y_pos][x_pos] = rl.getColor(0xA9F0F4);
+                    screen[y_pos][x_pos] = 0xA9;
+                    screen[y_pos][x_pos + 1] = 0xF0;
+                    screen[y_pos][x_pos + 2] = 0xF4;
                 },
                 0x3D => {
-                    screen[y_pos][x_pos] = rl.getColor(0xB8B8B8);
+                    screen[y_pos][x_pos] = 0xB8;
+                    screen[y_pos][x_pos + 1] = 0xB8;
+                    screen[y_pos][x_pos + 2] = 0xB8;
                 },
                 else => {
-                    screen[y_pos][x_pos] = rl.Color.black;
+                    screen[y_pos][x_pos] = 0xFF;
+                    screen[y_pos][x_pos + 1] = 0xFF;
+                    screen[y_pos][x_pos + 2] = 0xFF;
                 },
             }
         }
-        return screen;
     }
 }
