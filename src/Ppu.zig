@@ -428,11 +428,11 @@ pub const Ppu = struct {
 
         //pattern fetch
         var pattern_address: u16 = nametable_data;
-        pattern_address <<= 3;
+        pattern_address <<= 4;
         const right_table: u16 = self.control & 0b00010000;
 
         pattern_address |= right_table << 8;
-        pattern_address |= self.v >> 12;
+        pattern_address |= (self.v >> 12) & 0b111;
 
         if (self.cycles <= 249) {
             //rendering occurs before
@@ -542,6 +542,9 @@ pub const Ppu = struct {
             self.scanline = 0;
             self.status = 0;
             self.bitmap.* = std.mem.zeroes([240][256]u5);
+            self.fillSprites();
+            self.spriteEvaluation();
+            self.drawScanLine();
             //cycle
         } else if (self.scanline >= 240) {
             //release lock
@@ -559,8 +562,10 @@ pub const Ppu = struct {
             self.fillSprites();
             self.spriteEvaluation();
             self.drawScanLine();
+
             //            std.debug.print("{any}\n", .{self.oam});
         }
+
         std.debug.print("Scanline: {d}, Status: 0x{X}, NMI Status: {d}, Control Register: 0x{X}!\n\n", .{ self.scanline, self.status, self.nmi, self.control });
         self.scanline += 1;
     }
