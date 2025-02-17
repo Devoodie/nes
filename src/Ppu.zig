@@ -527,7 +527,7 @@ pub const Ppu = struct {
             } else {
                 coarse_y += 1;
             }
-            self.v = (self.v & 0xFC1F) | (coarse_y << 5);
+            self.v = (self.v & 0x7C1F) | (coarse_y << 5);
         }
 
         self.x_pos = 0;
