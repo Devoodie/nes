@@ -11,7 +11,7 @@ pub const Cartridge = struct {
     //    nvram: []u8 = undefined,
     trainer: []u8 = undefined,
     mapper: Mapper = undefined,
-    hori_mirroring: u1 = 0,
+    mirroring: u1 = 0,
     trainer_bit: u1 = 0,
     alt_nametable: u1 = 0,
 
@@ -50,7 +50,7 @@ pub const Cartridge = struct {
                     self.alt_nametable = @truncate(header >> 3 & 0b1);
                     self.trainer_bit = @truncate(header >> 2 & 0b1);
                     //battery
-                    self.hori_mirroring = @truncate(header & 0b1);
+                    self.mirroring = @truncate(header & 0b1);
                     break :misc;
                 },
                 7 => nes2: {

@@ -58,6 +58,7 @@ pub fn main() !void {
 
     try nes.Mapper.mapper_init(@constCast(&rom), allocator);
     //program start
+    nes.Ppu.nametable_mirroring = nes.Mapper.mirroring;
 
     //boostrap sequence
     {

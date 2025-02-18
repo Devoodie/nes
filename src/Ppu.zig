@@ -180,60 +180,63 @@ pub const Ppu = struct {
     }
 
     pub fn GetPpuBus(self: *Ppu) u8 {
-        if (self.v <= 0x1FFF) {
+        const vram_addr = self.v & 0x3FFF;
+        if (vram_addr <= 0x1FFF) {
             //pattern table 1
-            return self.cartridge.getPpuData(self.v);
-        } else if (self.v <= 0x23FF) {
+            return self.cartridge.getPpuData(vram_addr);
+        } else if (vram_addr <= 0x23FF) {
             //name table 0
-            const index = self.v & 0x3FF;
+            const index = vram_addr % 0x400;
             return self.nametable[index];
-        } else if (self.v <= 0x27FF) {
+        } else if (vram_addr <= 0x27FF) {
             //name table 1
-            const offset: u12 = @as(u12, self.nametable_mirroring) * 1023;
-            const index = (self.v & 0x3FF) % 1024;
+            //1 for vertical mirroring 0 for horizontal
+            const offset: u12 = @as(u12, self.nametable_mirroring) * 1024;
+            const index = (vram_addr % 0x400);
             return self.nametable[index + offset];
-        } else if (self.v <= 0x2BFF) {
+        } else if (vram_addr <= 0x2BFF) {
             //nametable 2
-            const offset: u12 = @as(u12, self.nametable_mirroring) * 1023;
-            const index = self.v & 0x7FF;
-            return self.nametable[index - offset];
-        } else if (self.v <= 0x2FFF) {
+            const offset: u12 = @as(u12, ~self.nametable_mirroring) * 1024;
+            const index = vram_addr % 0x400;
+            return self.nametable[index + offset];
+        } else if (vram_addr <= 0x2FFF) {
             //nametable 3
-            const index = self.v & 0x7FF;
+            const index = vram_addr % 0x800;
             return self.nametable[index];
-        } else if (self.v >= 0x3EFF) {
+        } else if (vram_addr >= 0x3EFF) {
             //pallete RAM
-            const index = self.v & 0x1F;
+            const index = vram_addr & 0x1F;
             return self.pallet_memory[index];
         }
         return 1;
     }
 
     pub fn setPpuBus(self: *Ppu, data: u8) void {
-        if (self.v <= 0xFFF) {
+        const vram_addr = self.v & 0x3FFF;
+        if (vram_addr <= 0xFFF) {
             //pattern table 0
-        } else if (self.v <= 0x1FFF) {
+        } else if (vram_addr <= 0x1FFF) {
             //pattern table 1
-        } else if (self.v <= 0x23FF) {
+        } else if (vram_addr <= 0x23FF) {
             //name table 0
-            const index = self.v & 0x3FF;
+            const index = vram_addr & 0x3FF;
             self.nametable[index] = data;
-        } else if (self.v <= 0x27FF) {
+        } else if (vram_addr <= 0x27FF) {
             //name table 1
             const offset: u12 = @as(u12, self.nametable_mirroring) * 1024;
-            const index = (self.v & 0x3FF) % 1024;
+            const index = vram_addr % 0x400;
             self.nametable[index + offset] = data;
-        } else if (self.v <= 0x2BFF) {
+        } else if (vram_addr <= 0x2BFF) {
             //nametable 2
-            const offset: u12 = @as(u12, self.nametable_mirroring) * 1024;
-            const index = self.v & 0x7FF;
-            self.nametable[index - offset] = data;
-        } else if (self.v <= 0x2FFF) {
+            const offset: u12 = @as(u12, ~self.nametable_mirroring) * 1024;
+            const index = vram_addr % 0x400;
+            self.nametable[index + offset] = data;
+        } else if (vram_addr <= 0x2FFF) {
             //nametable 3
-            const index = self.v & 0x7FF;
+            const index = vram_addr % 0x800;
             self.nametable[index] = data;
-        } else if (self.v >= 0x3EFF) {
-            const index = self.v & 0x1F;
+        } else if (vram_addr >= 0x3EFF) {
+            const index = vram_addr & 0x1F;
             self.pallet_memory[index] = data;
         }
     }
@@ -402,10 +405,10 @@ pub const Ppu = struct {
         if (self.cycles == 0) {
             return;
         }
+
         self.t = self.v;
         self.v = 0x2000;
         self.v |= self.t & 0x0FFF;
-
         const nametable_data = self.GetPpuBus();
         self.v = 0x23C0 | (self.t & 0xC00) | ((self.t >> 4) & 0x38) | ((self.t >> 2) & 0x07);
         const attribute_data = self.GetPpuBus();
@@ -419,6 +422,9 @@ pub const Ppu = struct {
         const coarse_y = @as(u8, @truncate(self.v & 0b1111100000 >> 4));
         const coarse_x_bit1 = coarse_x & 0b1;
         const coarse_y_bit1 = coarse_y & 0b1;
+
+        std.debug.print("Nametable Address!: 0x{X}\n", .{self.v});
+        std.debug.print("VRAM Address!: 0x{X}\n", .{self.t});
 
         // extract attribute shifts
         const attr_shifts = @as(u3, @truncate(coarse_x_bit1 * 2 + coarse_y_bit1 * 4));
@@ -434,7 +440,7 @@ pub const Ppu = struct {
         pattern_address |= right_table << 8;
         pattern_address |= (self.v >> 12) & 0b111;
 
-        if (self.cycles <= 249) {
+        if (self.cycles <= 249 and self.scanline != 261) {
             //rendering occurs before
             for (self.bitmap[self.scanline][self.x_pos .. @as(u10, self.x_pos) + 8], self.x_pos..) |*pixel, x_index| {
                 const background_pixel: ?u5 = self.GetBackGroundPixel(coarse_x);
@@ -462,6 +468,7 @@ pub const Ppu = struct {
             self.low_shift <<= 8;
             self.high_shift <<= 8;
         }
+
         //placement into shift registers occurs after
         self.low_shift |= self.cartridge.getPpuData(pattern_address);
         self.high_shift |= self.cartridge.getPpuData(pattern_address + 0b1000);
@@ -497,6 +504,7 @@ pub const Ppu = struct {
                 continue;
             } else if (self.cycles < 257 or (self.cycles <= 321 and self.cycles < 337)) {
                 self.drawCoarseX();
+
                 if (self.v & 0x1F == 31) {
                     //coarse x increment
                     self.v &= 0x7FE0;
@@ -506,26 +514,27 @@ pub const Ppu = struct {
                 }
             }
             self.cycles += 8;
-            //            std.debug.print("Cycles: {d}!, X_Position: {d}\n", .{ self.cycles, self.x_pos });
-            // self.cycle(8);
-            //time = std.time.nanoTimestamp();
         }
 
         //        self.cycle(3);
-        var coarse_y = self.v & 0x3E0 >> 5;
+        var coarse_y = (self.v & 0x3E0) >> 5;
         if (self.v & 0x7000 != 0x7000) {
             //fine y increment
             self.v +%= 0x1000;
+            std.debug.print("fine y increment!\n", .{});
         } else {
             //coarse y increment
             self.v &= 0x0FFF;
             if (coarse_y == 29) {
                 coarse_y = 0;
                 self.v ^= 0x800;
+                std.debug.print("Verticle Flip!\n", .{});
             } else if (coarse_y == 31) {
                 coarse_y = 0;
+                std.debug.print("Coarse Y Reset!\n", .{});
             } else {
                 coarse_y += 1;
+                std.debug.print("Coarse Y Increment!\n", .{});
             }
             self.v = (self.v & 0x7C1F) | (coarse_y << 5);
         }
@@ -539,12 +548,10 @@ pub const Ppu = struct {
         //       self.mutex.lock();
         //std.debug.print("YOU'RE IN IT BUDDY!\n\n", .{});
         if (self.scanline == 261) {
+            self.drawScanLine();
             self.scanline = 0;
             self.status = 0;
             self.bitmap.* = std.mem.zeroes([240][256]u5);
-            self.fillSprites();
-            self.spriteEvaluation();
-            self.drawScanLine();
             //cycle
         } else if (self.scanline >= 240) {
             //release lock
@@ -556,18 +563,18 @@ pub const Ppu = struct {
                 self.status |= 0x80;
                 if (self.control & 0x80 == 0x80) self.nmi = 1;
             }
+            self.scanline += 1;
             std.debug.print("PPU Status: 0x{X}!\n\n", .{self.status});
         } else {
             //handle rendering
             self.fillSprites();
             self.spriteEvaluation();
             self.drawScanLine();
-
             //            std.debug.print("{any}\n", .{self.oam});
+            self.scanline += 1;
         }
 
         std.debug.print("Scanline: {d}, Status: 0x{X}, NMI Status: {d}, Control Register: 0x{X}!\n\n", .{ self.scanline, self.status, self.nmi, self.control });
-        self.scanline += 1;
     }
 
     pub fn operate(self: *Ppu) void {
