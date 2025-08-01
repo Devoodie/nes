@@ -242,6 +242,12 @@ pub const Ppu = struct {
     }
 
     pub fn spriteEvaluation(self: *Ppu) void {
+        const is_large = self.control >> 5 & 0b1;
+
+        for (0..64) |oam_index| {
+            self.sprites[oam_index] = self.GetSpriteBitmap(self.oam[oam_index * 4 + 1], self.oam[oam_index * 4 + 2], is_large);
+        }
+
         var render_index: u8 = 0;
 
         //clear secondary oam for next scanline
@@ -262,13 +268,6 @@ pub const Ppu = struct {
                     render_index += 1;
                 }
             }
-        }
-    }
-
-    pub fn fillSprites(self: *Ppu) void {
-        const is_large = self.control >> 5 & 0b1;
-        for (0..64) |oam_index| {
-            self.sprites[oam_index] = self.GetSpriteBitmap(self.oam[oam_index * 4 + 1], self.oam[oam_index * 4 + 2], is_large);
         }
     }
 
@@ -303,7 +302,7 @@ pub const Ppu = struct {
             return sprite_buffer;
         } else {
             pattern_index = tile_number * 16;
-            right_table = (@as(u16, self.status) >> 3 & 0b1) * 0x1000;
+            right_table = (@as(u16, self.control) >> 3 & 0b1) * 0x1000;
             var sprite_buffer: Sprite = .{ .small = undefined };
 
             for (0..8) |row| {
@@ -322,6 +321,7 @@ pub const Ppu = struct {
     }
 
     pub fn drawSprites(self: *Ppu, coarsex: u8, background: u5) ?u5 {
+        //the problem is here for sure without a doubt
         var oam_index: u8 = 0;
         var x_buffer: u8 = 0;
         var x_coord: ?u8 = null;
@@ -337,10 +337,10 @@ pub const Ppu = struct {
             }
             oam_index = self.secondary_oam[7 - iterations].?;
             oam_index *= 4;
-            sprite_index = self.secondary_oam[7 - iterations].?;
             x_buffer = self.oam[oam_index + 3];
-
+            if (x_buffer >= 0xF7) continue;
             if (coarsex < x_buffer +% 8 and coarsex >= x_buffer) {
+                sprite_index = self.secondary_oam[7 - iterations].?;
                 x_coord = coarsex - x_buffer;
                 sprite0 = 7 - @as(u8, @intCast(iterations));
                 y_coord = @as(u8, @truncate(self.scanline)) - self.oam[oam_index];
@@ -564,7 +564,6 @@ pub const Ppu = struct {
             //           std.debug.print("PPU Status: 0x{X}!\n\n", .{self.status});
         } else {
             //handle rendering
-            self.fillSprites();
             self.spriteEvaluation();
             self.drawScanLine();
             //            std.debug.print("{any}\n", .{self.oam});
