@@ -30,9 +30,9 @@ pub const Cpu = struct {
     pub fn cycle(self: *Cpu, cycles: u16) void {
         self.cycles += cycles;
         self.wait_time += @as(u64, cycles) * 559;
-        //     std.debug.print("Cpu Wait Time: {d}!\n", .{self.wait_time});
+        //     //std.debug.print("Cpu Wait Time: {d}!\n", .{self.wait_time});
         self.odd_cycle +%= @intCast(cycles % 2);
-        //        std.debug.print("The cycles are {d}!\n", .{self.odd_cycle});
+        //        //std.debug.print("The cycles are {d}!\n", .{self.odd_cycle});
 
         //        while (std.time.nanoTimestamp() <= goal_time) {
         //           continue;
@@ -57,8 +57,8 @@ pub const Cpu = struct {
         const highbyte: u8 = @truncate(address >> 8);
         const lowbyte: u8 = @truncate(address & 0xFF);
 
-        std.debug.print("Push Address High Byte: 0x{X}\n", .{highbyte});
-        std.debug.print("Push Address Low Byte: 0x{X}\n", .{lowbyte});
+        //std.debug.print("Push Address High Byte: 0x{X}\n", .{highbyte});
+        //std.debug.print("Push Address Low Byte: 0x{X}\n", .{lowbyte});
 
         self.bus.addr_bus = @as(u16, self.stack_pointer) + 0x100;
         self.bus.data_bus = highbyte;
@@ -84,11 +84,11 @@ pub const Cpu = struct {
         self.bus.getMmo();
         const highbyte: u16 = self.bus.data_bus;
 
-        std.debug.print("Pop Address Low Byte: 0x{X}\n", .{lowbyte});
-        std.debug.print("Pop Address High Byte: 0x{X}\n", .{highbyte});
+        //std.debug.print("Pop Address Low Byte: 0x{X}\n", .{lowbyte});
+        //std.debug.print("Pop Address High Byte: 0x{X}\n", .{highbyte});
 
         address = (highbyte << 8) | lowbyte;
-        std.debug.print("Pop Address: 0x{X}\n\n", .{address});
+        //std.debug.print("Pop Address: 0x{X}\n\n", .{address});
         return address;
     }
     //GOOD
@@ -338,7 +338,7 @@ pub const Cpu = struct {
         self.bus.getMmo();
 
         addr |= @as(u16, self.bus.data_bus) << 8;
-        std.debug.print("Absolute Address: 0x{X}!\n", .{addr});
+        //std.debug.print("Absolute Address: 0x{X}!\n", .{addr});
         self.bus.addr_bus = addr;
         self.bus.getMmo();
 
@@ -367,7 +367,7 @@ pub const Cpu = struct {
         const offset: u8 = self.GetImmediate();
         const signed_value: u7 = @intCast(offset & 0b1111111);
         var unsigned_value: u8 = undefined;
-        std.debug.print("Previous Address: 0x{X}!\n", .{self.pc});
+        //std.debug.print("Previous Address: 0x{X}!\n", .{self.pc});
 
         if (offset >> 7 == 1) {
             unsigned_value = ~(signed_value);
@@ -376,7 +376,7 @@ pub const Cpu = struct {
             self.extra_cycle = difference[1];
             self.pc &= 0xFF00;
             self.pc |= difference[0];
-            std.debug.print("Difference: {d}\n", .{difference[0]});
+            //std.debug.print("Difference: {d}\n", .{difference[0]});
 
             self.pc -%= @as(u16, @intCast(self.extra_cycle)) << 8;
         } else {
@@ -385,7 +385,7 @@ pub const Cpu = struct {
             self.pc &= 0xFF00;
             self.pc |= sum[0];
             self.pc +%= @as(u16, self.extra_cycle) << 8;
-            std.debug.print("New Address: 0x{X}!\n\n", .{self.pc});
+            //std.debug.print("New Address: 0x{X}!\n\n", .{self.pc});
         }
     }
 
@@ -396,17 +396,17 @@ pub const Cpu = struct {
             self.bus.getMmo();
 
             const low_byte = self.bus.data_bus;
-            std.debug.print("LSB: 0x{X}\n", .{self.bus.data_bus});
+            //std.debug.print("LSB: 0x{X}\n", .{self.bus.data_bus});
 
             self.bus.addr_bus = self.pc +% 2;
             self.bus.getMmo();
 
-            std.debug.print("MSB: 0x{X}\n", .{self.bus.data_bus});
+            //std.debug.print("MSB: 0x{X}\n", .{self.bus.data_bus});
 
             self.bus.addr_bus = self.bus.data_bus;
             self.bus.addr_bus <<= 8;
             self.bus.addr_bus |= low_byte;
-            std.debug.print("Address of LSB: 0x{X}\n", .{self.bus.addr_bus});
+            //std.debug.print("Address of LSB: 0x{X}\n", .{self.bus.addr_bus});
             self.bus.getMmo();
 
             var addr: u16 = self.bus.data_bus;
@@ -626,7 +626,7 @@ pub const Cpu = struct {
                     break :absolutex;
                 },
                 else => default: {
-                    std.debug.print("No Addressing Mode found (Logical XOR)!\n", .{});
+                    //std.debug.print("No Addressing Mode found (Logical XOR)!\n", .{});
                     break :default;
                 },
             }
@@ -661,14 +661,14 @@ pub const Cpu = struct {
                     break :absolute;
                 },
                 else => default: {
-                    std.debug.print("No Addressing Mode found (Logical XOR)!\n", .{});
+                    //std.debug.print("No Addressing Mode found (Logical XOR)!\n", .{});
                     break :default;
                 },
             }
         }
 
         const result = @subWithOverflow(self.accumulator, value);
-        std.debug.print("Accumulator: {d},\n Memory Value: {d},\n Result: {d}\n", .{ self.accumulator, value, result[0] });
+        //std.debug.print("Accumulator: {d},\n Memory Value: {d},\n Result: {d}\n", .{ self.accumulator, value, result[0] });
 
         self.status.carry = ~result[1];
 
@@ -714,7 +714,7 @@ pub const Cpu = struct {
                 break :absolute;
             },
             else => default: {
-                std.debug.print("No Valid Addressing Mode Found (Compare Y Register)!\n", .{});
+                //std.debug.print("No Valid Addressing Mode Found (Compare Y Register)!\n", .{});
                 break :default;
             },
         }
@@ -759,7 +759,7 @@ pub const Cpu = struct {
                 break :absolute;
             },
             else => default: {
-                std.debug.print("No Valid Addressing Mode Found (Compare X Register)!\n", .{});
+                //std.debug.print("No Valid Addressing Mode Found (Compare X Register)!\n", .{});
                 break :default;
             },
         }
@@ -809,7 +809,7 @@ pub const Cpu = struct {
         var success: u1 = undefined;
         self.extra_cycle = 0;
 
-        std.debug.print("Zero Status: {d}\n\n", .{self.status.zero});
+        //std.debug.print("Zero Status: {d}\n\n", .{self.status.zero});
 
         if (self.status.zero == 1) {
             self.branchRelative();
@@ -825,7 +825,7 @@ pub const Cpu = struct {
         var success: u1 = undefined;
         self.extra_cycle = 0;
 
-        std.debug.print("Zero Status: {d}\n\n", .{self.status.zero});
+        //std.debug.print("Zero Status: {d}\n\n", .{self.status.zero});
 
         if (self.status.zero == 0) {
             self.branchRelative();
@@ -913,7 +913,7 @@ pub const Cpu = struct {
                     break :absolutex;
                 },
                 else => default: {
-                    std.debug.print("No Valid Addressing Mode found (Increment)!\n", .{});
+                    //std.debug.print("No Valid Addressing Mode found (Increment)!\n", .{});
                     break :default;
                 },
             }
@@ -934,7 +934,7 @@ pub const Cpu = struct {
                     break :absolute;
                 },
                 else => default: {
-                    std.debug.print("No Valid Addressing Mode found (Increment)!\n", .{});
+                    //std.debug.print("No Valid Addressing Mode found (Increment)!\n", .{});
                     break :default;
                 },
             }
@@ -994,7 +994,7 @@ pub const Cpu = struct {
                     break :absolutex;
                 },
                 else => default: {
-                    std.debug.print("No Valid Addressing Mode found (Increment)!\n", .{});
+                    //std.debug.print("No Valid Addressing Mode found (Increment)!\n", .{});
                     break :default;
                 },
             }
@@ -1017,7 +1017,7 @@ pub const Cpu = struct {
                     break :absolute;
                 },
                 else => default: {
-                    std.debug.print("No Valid Addressing Mode found (Increment)!\n", .{});
+                    //std.debug.print("No Valid Addressing Mode found (Increment)!\n", .{});
                     break :default;
                 },
             }
@@ -1080,7 +1080,7 @@ pub const Cpu = struct {
                     break :absolute;
                 },
                 else => default: {
-                    std.debug.print("No Valid Addressing Mode found (Load Y Register)!\n", .{});
+                    //std.debug.print("No Valid Addressing Mode found (Load Y Register)!\n", .{});
                     break :default;
                 },
             }
@@ -1099,7 +1099,7 @@ pub const Cpu = struct {
                     break :absolutey;
                 },
                 else => default: {
-                    std.debug.print("No Valid Addressing Mode found (Load Y Register)!\n", .{});
+                    //std.debug.print("No Valid Addressing Mode found (Load Y Register)!\n", .{});
                     break :default;
                 },
             }
@@ -1134,7 +1134,7 @@ pub const Cpu = struct {
                     break :absolute;
                 },
                 else => default: {
-                    std.debug.print("No Valid Addressing Mode found (Load Y Register)!\n", .{});
+                    //std.debug.print("No Valid Addressing Mode found (Load Y Register)!\n", .{});
                     break :default;
                 },
             }
@@ -1153,7 +1153,7 @@ pub const Cpu = struct {
                     break :absolutex;
                 },
                 else => default: {
-                    std.debug.print("No Valid Addressing Mode found (Load Y Register)!\n", .{});
+                    //std.debug.print("No Valid Addressing Mode found (Load Y Register)!\n", .{});
                     break :default;
                 },
             }
@@ -1211,7 +1211,7 @@ pub const Cpu = struct {
 
     pub fn jumpSubroutine(self: *Cpu) void {
         self.stackPushAddress(self.pc + 2);
-        std.debug.print("Return Address: 0x{X}\n\n", .{self.pc + 2});
+        //std.debug.print("Return Address: 0x{X}\n\n", .{self.pc + 2});
 
         self.bus.addr_bus = self.pc +% 1;
         self.bus.getMmo();
@@ -1224,7 +1224,7 @@ pub const Cpu = struct {
         addr |= @as(u16, self.bus.data_bus) << 8;
 
         self.pc = addr;
-        std.debug.print("Stack Pointer: 0x{X}\n", .{self.stack_pointer});
+        //std.debug.print("Stack Pointer: 0x{X}\n", .{self.stack_pointer});
 
         self.cycle(6);
     }
@@ -1232,7 +1232,7 @@ pub const Cpu = struct {
     pub fn returnSubroutine(self: *Cpu) void {
         self.pc = self.stackPopAddress();
         self.pc +%= 1;
-        std.debug.print("Stack Pointer: 0x{X}\n", .{self.stack_pointer});
+        //std.debug.print("Stack Pointer: 0x{X}\n", .{self.stack_pointer});
         self.cycle(6);
     }
 
@@ -1270,7 +1270,7 @@ pub const Cpu = struct {
                     break :absolutex;
                 },
                 else => default: {
-                    std.debug.print("No Addressing Mode found (Add With Carry)!\n", .{});
+                    //std.debug.print("No Addressing Mode found (Add With Carry)!\n", .{});
                     break :default;
                 },
             }
@@ -1305,7 +1305,7 @@ pub const Cpu = struct {
                     break :absolute;
                 },
                 else => default: {
-                    std.debug.print("No Addressing Mode found (Add With Carry)!\n", .{});
+                    //std.debug.print("No Addressing Mode found (Add With Carry)!\n", .{});
                     break :default;
                 },
             }
@@ -1358,7 +1358,7 @@ pub const Cpu = struct {
                     break :absolutex;
                 },
                 else => default: {
-                    std.debug.print("No Addressing Mode found (Load Accumulator)!\n", .{});
+                    //std.debug.print("No Addressing Mode found (Load Accumulator)!\n", .{});
                     break :default;
                 },
             }
@@ -1389,7 +1389,7 @@ pub const Cpu = struct {
                     break :absolute;
                 },
                 else => default: {
-                    std.debug.print("No Addressing Mode found (Load Accumulator)!\n", .{});
+                    //std.debug.print("No Addressing Mode found (Load Accumulator)!\n", .{});
                     break :default;
                 },
             }
@@ -1401,7 +1401,7 @@ pub const Cpu = struct {
             self.status.zero = 0;
         }
         self.status.negative = @truncate(self.accumulator >> 7);
-        std.debug.print("Accumulator: 0x{X}\n\n", .{self.accumulator});
+        //std.debug.print("Accumulator: 0x{X}\n\n", .{self.accumulator});
     }
 
     pub fn storeYRegister(self: *Cpu) void {
@@ -1424,7 +1424,7 @@ pub const Cpu = struct {
                     break :absolute;
                 },
                 else => default: {
-                    std.debug.print("No Valid Addresing mode found (Store Y Register!\n", .{});
+                    //std.debug.print("No Valid Addresing mode found (Store Y Register!\n", .{});
                     break :default;
                 },
             }
@@ -1451,7 +1451,7 @@ pub const Cpu = struct {
                     break :absolute;
                 },
                 else => default: {
-                    std.debug.print("No Valid Addresing mode found (Store X Register!\n", .{});
+                    //std.debug.print("No Valid Addresing mode found (Store X Register!\n", .{});
                     break :default;
                 },
             }
@@ -1486,7 +1486,7 @@ pub const Cpu = struct {
                     break :absolutex;
                 },
                 else => default: {
-                    std.debug.print("No Addressing Mode found (Logical XOR)!\n", .{});
+                    //std.debug.print("No Addressing Mode found (Logical XOR)!\n", .{});
                     break :default;
                 },
             }
@@ -1511,12 +1511,12 @@ pub const Cpu = struct {
                     break :absolute;
                 },
                 else => default: {
-                    std.debug.print("No Addressing Mode found (Logical XOR)!\n", .{});
+                    //std.debug.print("No Addressing Mode found (Logical XOR)!\n", .{});
                     break :default;
                 },
             }
         }
-        std.debug.print("Accumulator: {d}\n", .{self.accumulator});
+        //std.debug.print("Accumulator: {d}\n", .{self.accumulator});
     }
 
     pub fn logicalShiftRight(self: *Cpu) void {
@@ -1548,7 +1548,7 @@ pub const Cpu = struct {
                     break :absolutex;
                 },
                 else => default: {
-                    std.debug.print("No Addressing Mode found (Arithmetic Shift Left)!\n", .{});
+                    //std.debug.print("No Addressing Mode found (Arithmetic Shift Left)!\n", .{});
                     break :default;
                 },
             }
@@ -1588,7 +1588,7 @@ pub const Cpu = struct {
                     break :absolute;
                 },
                 else => default: {
-                    std.debug.print("No Addressing Mode found (Arithmetic Shift Left)!\n", .{});
+                    //std.debug.print("No Addressing Mode found (Arithmetic Shift Left)!\n", .{});
                     break :default;
                 },
             }
@@ -1634,7 +1634,7 @@ pub const Cpu = struct {
                     break :absolutex;
                 },
                 else => default: {
-                    std.debug.print("No Addressing Mode found (Arithmetic Shift Left)!\n", .{});
+                    //std.debug.print("No Addressing Mode found (Arithmetic Shift Left)!\n", .{});
                     break :default;
                 },
             }
@@ -1681,7 +1681,7 @@ pub const Cpu = struct {
                     break :absolute;
                 },
                 else => default: {
-                    std.debug.print("No Addressing Mode found (Arithmetic Shift Left)!\n", .{});
+                    //std.debug.print("No Addressing Mode found (Arithmetic Shift Left)!\n", .{});
                     break :default;
                 },
             }
@@ -1727,7 +1727,7 @@ pub const Cpu = struct {
                     break :absolutex;
                 },
                 else => default: {
-                    std.debug.print("No Addressing Mode found (Arithmetic Shift Left)!\n", .{});
+                    //std.debug.print("No Addressing Mode found (Arithmetic Shift Left)!\n", .{});
                     break :default;
                 },
             }
@@ -1773,7 +1773,7 @@ pub const Cpu = struct {
                     break :absolute;
                 },
                 else => default: {
-                    std.debug.print("No Addressing Mode found (Arithmetic Shift Left)!\n", .{});
+                    //std.debug.print("No Addressing Mode found (Arithmetic Shift Left)!\n", .{});
                     break :default;
                 },
             }
@@ -1823,7 +1823,7 @@ pub const Cpu = struct {
                     break :absolutex;
                 },
                 else => default: {
-                    std.debug.print("No Addressing Mode found (Arithmetic Shift Left)!\n", .{});
+                    //std.debug.print("No Addressing Mode found (Arithmetic Shift Left)!\n", .{});
                     break :default;
                 },
             }
@@ -1878,12 +1878,12 @@ pub const Cpu = struct {
                     break :absolute;
                 },
                 else => default: {
-                    std.debug.print("No Addressing Mode found (Arithmetic Shift Left)!\n", .{});
+                    //std.debug.print("No Addressing Mode found (Arithmetic Shift Left)!\n", .{});
                     break :default;
                 },
             }
         }
-        std.debug.print("Accumulator: {d}!\n", .{self.accumulator});
+        //std.debug.print("Accumulator: {d}!\n", .{self.accumulator});
     }
 
     pub fn addWithCarry(self: *Cpu) void {
@@ -1907,7 +1907,7 @@ pub const Cpu = struct {
                 },
                 9 => absolutey: {
                     value = self.GetAbsoluteIndexed(1);
-                    std.debug.print("Accumulator: {d}\n", .{self.accumulator});
+                    //std.debug.print("Accumulator: {d}\n", .{self.accumulator});
 
                     self.pc +%= 3;
                     instr_cycles = @as(u8, self.extra_cycle) + 4;
@@ -1921,7 +1921,7 @@ pub const Cpu = struct {
                     break :absolutex;
                 },
                 else => default: {
-                    std.debug.print("No Addressing Mode found (Add With Carry)!\n", .{});
+                    //std.debug.print("No Addressing Mode found (Add With Carry)!\n", .{});
                     break :default;
                 },
             }
@@ -1956,7 +1956,7 @@ pub const Cpu = struct {
                     break :absolute;
                 },
                 else => default: {
-                    std.debug.print("No Addressing Mode found (Add With Carry)!\n", .{});
+                    //std.debug.print("No Addressing Mode found (Add With Carry)!\n", .{});
                     break :default;
                 },
             }
@@ -2058,7 +2058,7 @@ pub const Cpu = struct {
                 break :absolute;
             },
             else => default: {
-                std.debug.print("No Addressing Mode found (Bit Test)!\n", .{});
+                //std.debug.print("No Addressing Mode found (Bit Test)!\n", .{});
                 break :default;
             },
         }
@@ -2096,7 +2096,7 @@ pub const Cpu = struct {
                     break :absolutex;
                 },
                 else => default: {
-                    std.debug.print("No Addressing Mode found (Logical XOR)!\n", .{});
+                    //std.debug.print("No Addressing Mode found (Logical XOR)!\n", .{});
                     break :default;
                 },
             }
@@ -2131,7 +2131,7 @@ pub const Cpu = struct {
                     break :absolute;
                 },
                 else => default: {
-                    std.debug.print("No Addressing Mode found (Logical XOR)!\n", .{});
+                    //std.debug.print("No Addressing Mode found (Logical XOR)!\n", .{});
                     break :default;
                 },
             }
@@ -2176,7 +2176,7 @@ pub const Cpu = struct {
                     break :absolutex;
                 },
                 else => default: {
-                    std.debug.print("No Addresing Mode found (Logical Or)!\n", .{});
+                    //std.debug.print("No Addresing Mode found (Logical Or)!\n", .{});
                     break :default;
                 },
             }
@@ -2211,7 +2211,7 @@ pub const Cpu = struct {
                     break :absolute;
                 },
                 else => default: {
-                    std.debug.print("No Addressing Mode Found (Logical Or)\n!", .{});
+                    //std.debug.print("No Addressing Mode Found (Logical Or)\n!", .{});
                     break :default;
                 },
             }
@@ -2256,7 +2256,7 @@ pub const Cpu = struct {
                     break :absolute_x;
                 },
                 else => default: {
-                    std.debug.print("No Addressing mode found (Logical And)!\n", .{});
+                    //std.debug.print("No Addressing mode found (Logical And)!\n", .{});
                     break :default;
                 },
             }
@@ -2291,7 +2291,7 @@ pub const Cpu = struct {
                     break :absolute;
                 },
                 else => default: {
-                    std.debug.print("No Addressing Mode found (Logical And)!\n", .{});
+                    //std.debug.print("No Addressing Mode found (Logical And)!\n", .{});
                     break :default;
                 },
             }
@@ -2308,11 +2308,11 @@ pub const Cpu = struct {
         self.execute();
         //if there's a non-maskable interrupt /detect and handle
         if (self.bus.ppu_ptr.nmi == 1) {
-            std.debug.print("Non-maskable Interrupt!\n\n", .{});
+            //std.debug.print("Non-maskable Interrupt!\n\n", .{});
             self.interruptRequest(0xFFFA);
             self.bus.ppu_ptr.nmi = 0;
         } else if (self.irq_line == 1 and self.status.interrupt_dsble != 1) {
-            std.debug.print("Interrupt Request!\n\n", .{});
+            //std.debug.print("Interrupt Request!\n\n", .{});
             self.interruptRequest(0xFFFE);
             self.irq_line = 0;
         }
@@ -2328,186 +2328,186 @@ pub const Cpu = struct {
         const first_nib = (self.instruction & 0xF);
         const second_nib = (self.instruction & 0xF0);
 
-        std.debug.print("Instruction: 0x{X}, Address: 0x{X}!\n", .{ self.instruction, self.pc });
+        //std.debug.print("Instruction: 0x{X}, Address: 0x{X}!\n", .{ self.instruction, self.pc });
         //instruction execute
         switch (first_nib % 4) {
             0 => CONTROL: {
                 switch (self.instruction) {
                     0x00 => {
                         self.forceInterrupt();
-                        std.debug.print("6502: Force Interrupt Found!\n", .{});
+                        //std.debug.print("6502: Force Interrupt Found!\n", .{});
                         break :CONTROL;
                     },
                     0x04, 0x0C, 0x14, 0x1C, 0x34, 0x3C, 0x44, 0x54, 0x5C, 0x64, 0x74, 0x7C, 0x80, 0xD4, 0xDC, 0xF4, 0xFC => {
                         self.nop();
-                        std.debug.print("6502: NOP Found!\n", .{});
+                        //std.debug.print("6502: NOP Found!\n", .{});
                         break :CONTROL;
                     },
                     0x08 => {
                         self.pushStatus();
-                        std.debug.print("6502: PHP Found!\n", .{});
+                        //std.debug.print("6502: PHP Found!\n", .{});
                         break :CONTROL;
                     },
                     0x10 => {
                         self.branchNoNegative();
-                        std.debug.print("6502: BPL Found!\n", .{});
+                        //std.debug.print("6502: BPL Found!\n", .{});
                         break :CONTROL;
                     },
                     0x18 => {
                         self.clearCarry();
-                        std.debug.print("6502: CLC Found!\n", .{});
+                        //std.debug.print("6502: CLC Found!\n", .{});
                         break :CONTROL;
                     },
                     0x20 => {
                         self.jumpSubroutine();
-                        std.debug.print("6502: JSR Found!\n", .{});
+                        //std.debug.print("6502: JSR Found!\n", .{});
                         break :CONTROL;
                     },
                     0x24, 0x2C => {
                         self.bitTest();
-                        std.debug.print("6502: BIT Found!\n", .{});
+                        //std.debug.print("6502: BIT Found!\n", .{});
                         break :CONTROL;
                     },
                     0x28 => {
                         self.pullStatus();
-                        std.debug.print("6502: PLP Found!\n", .{});
+                        //std.debug.print("6502: PLP Found!\n", .{});
                         break :CONTROL;
                     },
                     0x30 => {
                         self.branchOnNegative();
-                        std.debug.print("6502: BMI Found!\n", .{});
+                        //std.debug.print("6502: BMI Found!\n", .{});
                         break :CONTROL;
                     },
                     0x38 => {
                         self.setCarry();
-                        std.debug.print("6502: SEC Found!\n", .{});
+                        //std.debug.print("6502: SEC Found!\n", .{});
                         break :CONTROL;
                     },
                     0x40 => {
                         self.returnInterrupt();
-                        std.debug.print("6502: RTI Found!\n", .{});
+                        //std.debug.print("6502: RTI Found!\n", .{});
                         break :CONTROL;
                     },
                     0x48 => {
                         self.pushAccumulator();
-                        std.debug.print("6502: PHA Found!\n", .{});
+                        //std.debug.print("6502: PHA Found!\n", .{});
                         break :CONTROL;
                     },
                     0x4C, 0x6C => {
                         self.jump();
-                        std.debug.print("6502: JMP Found!\n", .{});
+                        //std.debug.print("6502: JMP Found!\n", .{});
                         break :CONTROL;
                     },
                     0x50 => {
                         self.branchNoOverflow();
-                        std.debug.print("6502: BVC Found!\n", .{});
+                        //std.debug.print("6502: BVC Found!\n", .{});
                         break :CONTROL;
                     },
                     0x58 => {
                         self.clearInterrupt();
-                        std.debug.print("6502: CLI Found!\n", .{});
+                        //std.debug.print("6502: CLI Found!\n", .{});
                         break :CONTROL;
                     },
                     0x60 => {
                         self.returnSubroutine();
-                        std.debug.print("6502: RTS Found!\n", .{});
+                        //std.debug.print("6502: RTS Found!\n", .{});
                         break :CONTROL;
                     },
                     0x68 => {
                         self.pullAccumulator();
-                        std.debug.print("6502: PLA Found!\n", .{});
+                        //std.debug.print("6502: PLA Found!\n", .{});
                         break :CONTROL;
                     },
                     0x70 => {
                         self.branchOnOverflow();
-                        std.debug.print("6502: BVS Found!\n", .{});
+                        //std.debug.print("6502: BVS Found!\n", .{});
                         break :CONTROL;
                     },
                     0x78 => {
                         self.setInterrupt();
-                        std.debug.print("6502: SEI Found!\n", .{});
+                        //std.debug.print("6502: SEI Found!\n", .{});
                         break :CONTROL;
                     },
                     0x84, 0x8C, 0x94 => {
                         self.storeYRegister();
-                        std.debug.print("6502: STY Found!\n", .{});
+                        //std.debug.print("6502: STY Found!\n", .{});
                         break :CONTROL;
                     },
                     0x88 => {
                         self.decrementY();
-                        std.debug.print("6502: DEY Found!\n", .{});
+                        //std.debug.print("6502: DEY Found!\n", .{});
                         break :CONTROL;
                     },
                     0x90 => {
                         self.branchNoCarry();
-                        std.debug.print("6502: BCC Found!\n", .{});
+                        //std.debug.print("6502: BCC Found!\n", .{});
                         break :CONTROL;
                     },
                     0x98 => {
                         self.yToAccumulator();
-                        std.debug.print("6502: TYA Found!\n", .{});
+                        //std.debug.print("6502: TYA Found!\n", .{});
                         break :CONTROL;
                         //SHY is 0x9C
                     },
                     0xA0, 0xA4, 0xAC, 0xB4, 0xBC => {
                         //complete this instruction
                         self.loadYRegister();
-                        std.debug.print("6502: LDY Found!\n", .{});
+                        //std.debug.print("6502: LDY Found!\n", .{});
                         break :CONTROL;
                     },
                     0xA8 => {
                         self.accumulatorToY();
-                        std.debug.print("6502: TAY Found!\n", .{});
+                        //std.debug.print("6502: TAY Found!\n", .{});
                         break :CONTROL;
                     },
                     0xB0 => {
                         self.branchOnCarry();
-                        std.debug.print("6502: BCS Found!\n", .{});
+                        //std.debug.print("6502: BCS Found!\n", .{});
                         break :CONTROL;
                     },
                     0xB8 => {
                         self.clearOverflow();
-                        std.debug.print("6502: CLV Found!\n", .{});
+                        //std.debug.print("6502: CLV Found!\n", .{});
                         break :CONTROL;
                     },
                     0xC0, 0xC4, 0xCC => {
                         self.compareYRegister();
-                        std.debug.print("6502: CPY Found!\n", .{});
+                        //std.debug.print("6502: CPY Found!\n", .{});
                         break :CONTROL;
                     },
                     0xC8 => {
                         self.incrementYRegister();
-                        std.debug.print("6502: INY Found!\n", .{});
+                        //std.debug.print("6502: INY Found!\n", .{});
                         break :CONTROL;
                     },
                     0xD0 => {
                         self.branchNoZero();
-                        std.debug.print("6502: BNE Found!\n", .{});
+                        //std.debug.print("6502: BNE Found!\n", .{});
                         break :CONTROL;
                     },
                     0xD8 => {
                         self.clearDecimal();
-                        std.debug.print("6502: CLD Found!\n", .{});
+                        //std.debug.print("6502: CLD Found!\n", .{});
                         break :CONTROL;
                     },
                     0xE0, 0xE4, 0xEC => {
                         self.compareXRegister();
-                        std.debug.print("6502: CPX Found!\n", .{});
+                        //std.debug.print("6502: CPX Found!\n", .{});
                         break :CONTROL;
                     },
                     0xE8 => {
                         self.incrementXRegister();
-                        std.debug.print("6502: INX Found!\n", .{});
+                        //std.debug.print("6502: INX Found!\n", .{});
                         break :CONTROL;
                     },
                     0xF0 => {
                         self.branchOnZero();
-                        std.debug.print("6502: BEQ Found!\n", .{});
+                        //std.debug.print("6502: BEQ Found!\n", .{});
                         break :CONTROL;
                     },
                     0xF8 => {
                         self.setDecimal();
-                        std.debug.print("6502: SED Found!\n", .{});
+                        //std.debug.print("6502: SED Found!\n", .{});
                         break :CONTROL;
                     },
                     else => {
@@ -2519,51 +2519,51 @@ pub const Cpu = struct {
                 switch (second_nib) {
                     0x00, 0x10 => {
                         self.logicalOr();
-                        std.debug.print("6502: ORA Found!\n", .{});
+                        //std.debug.print("6502: ORA Found!\n", .{});
                         break :ALU;
                     },
                     0x20, 0x30 => {
                         self.logicalAnd();
-                        std.debug.print("6502: AND Found!\n", .{});
+                        //std.debug.print("6502: AND Found!\n", .{});
                         break :ALU;
                     },
                     0x40, 0x50 => {
                         self.exclusiveOr();
-                        std.debug.print("6502: EOR Found!\n", .{});
+                        //std.debug.print("6502: EOR Found!\n", .{});
                         break :ALU;
                     },
                     0x60, 0x70 => {
                         self.addWithCarry();
-                        std.debug.print("6502: ADC Found!\n", .{});
+                        //std.debug.print("6502: ADC Found!\n", .{});
                         break :ALU;
                     },
                     0x80, 0x90 => {
                         if (self.instruction == 0x89) {
                             self.nop();
-                            std.debug.print("6502: NOP Found!\n", .{});
+                            //std.debug.print("6502: NOP Found!\n", .{});
                         } else {
                             self.storeAccumulator();
-                            std.debug.print("6502: STA Found!\n", .{});
+                            //std.debug.print("6502: STA Found!\n", .{});
                         }
                         break :ALU;
                     },
                     0xA0, 0xB0 => {
                         self.loadAccumulator();
-                        std.debug.print("6502: LDA Found!\n", .{});
+                        //std.debug.print("6502: LDA Found!\n", .{});
                         break :ALU;
                     },
                     0xC0, 0xD0 => {
                         self.compareAccumulator();
-                        std.debug.print("6502: CMP Found!\n", .{});
+                        //std.debug.print("6502: CMP Found!\n", .{});
                         break :ALU;
                     },
                     0xE0, 0xF0 => {
                         self.subtractWithCarry();
-                        std.debug.print("6502: SBC Found!\n", .{});
+                        //std.debug.print("6502: SBC Found!\n", .{});
                         break :ALU;
                     },
                     else => {
-                        std.debug.print("6502: No Valid Instruction Found!\n", .{});
+                        //std.debug.print("6502: No Valid Instruction Found!\n", .{});
                         break :ALU;
                     },
                 }
@@ -2572,139 +2572,139 @@ pub const Cpu = struct {
                 switch (second_nib) {
                     0x00, 0x10 => {
                         if (self.instruction == 0x02 or self.instruction == 0x12) {
-                            std.debug.print("6502: No Valid Instruction 'STP' Found!\n", .{});
+                            //std.debug.print("6502: No Valid Instruction 'STP' Found!\n", .{});
                             break :RMW;
                         } else if (self.instruction == 0x1A) {
                             self.nop();
-                            std.debug.print("6502: NOP Found!\n", .{});
+                            //std.debug.print("6502: NOP Found!\n", .{});
                             break :RMW;
                         } else {
                             self.arithmeticShiftLeft();
-                            std.debug.print("6502: ASL Found!\n", .{});
+                            //std.debug.print("6502: ASL Found!\n", .{});
                             break :RMW;
                         }
                     },
                     0x20, 0x30 => {
                         if (self.instruction == 0x22 or self.instruction == 0x32) {
-                            std.debug.print("6502: No Valid Instruction 'STP' Found!\n", .{});
+                            //std.debug.print("6502: No Valid Instruction 'STP' Found!\n", .{});
                             break :RMW;
                         } else if (self.instruction == 0x3A) {
                             self.nop();
-                            std.debug.print("6502: NOP Found!\n", .{});
+                            //std.debug.print("6502: NOP Found!\n", .{});
                             break :RMW;
                         } else {
                             self.rotateLeft();
-                            std.debug.print("6502: ROL Found!\n", .{});
+                            //std.debug.print("6502: ROL Found!\n", .{});
                             break :RMW;
                         }
                     },
                     0x40, 0x50 => {
                         if (self.instruction == 0x42 or self.instruction == 0x52) {
-                            std.debug.print("6502: No Valid Instruction 'STP' Found!\n", .{});
+                            //std.debug.print("6502: No Valid Instruction 'STP' Found!\n", .{});
                             break :RMW;
                         } else if (self.instruction == 0x5A) {
                             self.nop();
-                            std.debug.print("6502: NOP Found!\n", .{});
+                            //std.debug.print("6502: NOP Found!\n", .{});
                             break :RMW;
                         } else {
                             self.logicalShiftRight();
-                            std.debug.print("6502: LSR Found!\n", .{});
+                            //std.debug.print("6502: LSR Found!\n", .{});
                             break :RMW;
                         }
                     },
                     0x60, 0x70 => {
                         if (self.instruction == 0x62 or self.instruction == 0x72) {
-                            std.debug.print("6502: No Valid Instruction 'STP' Found!\n", .{});
+                            //std.debug.print("6502: No Valid Instruction 'STP' Found!\n", .{});
                             break :RMW;
                         } else if (self.instruction == 0x7A) {
                             self.nop();
-                            std.debug.print("6502: NOP Found!\n", .{});
+                            //std.debug.print("6502: NOP Found!\n", .{});
                             break :RMW;
                         } else {
                             self.rotateRight();
-                            std.debug.print("6502: ROR Found!\n", .{});
+                            //std.debug.print("6502: ROR Found!\n", .{});
                             break :RMW;
                         }
                     },
                     0x80, 0x90 => {
                         if (self.instruction == 0x92) {
-                            std.debug.print("6502: No Valid Instruction 'STP' Found!\n", .{});
+                            //std.debug.print("6502: No Valid Instruction 'STP' Found!\n", .{});
                             break :RMW;
                         } else if (self.instruction == 0x82) {
                             self.nop();
-                            std.debug.print("6502: NOP Found!\n", .{});
+                            //std.debug.print("6502: NOP Found!\n", .{});
                             break :RMW;
                         } else if (self.instruction == 0x86 or self.instruction == 0x8E or self.instruction == 0x96) {
                             self.storeXRegister();
-                            std.debug.print("6502: STX Found!\n", .{});
+                            //std.debug.print("6502: STX Found!\n", .{});
                             break :RMW;
                         } else if (self.instruction == 0x8A) {
                             self.xToAccumulator();
-                            std.debug.print("6502: TXA Found!\n", .{});
+                            //std.debug.print("6502: TXA Found!\n", .{});
                             break :RMW;
                         } else if (self.instruction == 0x9A) {
                             self.xToStackPointer();
-                            std.debug.print("6502: TXS Found!\n", .{});
+                            //std.debug.print("6502: TXS Found!\n", .{});
                             break :RMW;
                         }
                     },
                     0xA0, 0xB0 => {
                         if (self.instruction == 0xB2) {
-                            std.debug.print("6502: No Valid Instruction 'STP' Found!\n", .{});
+                            //std.debug.print("6502: No Valid Instruction 'STP' Found!\n", .{});
                             break :RMW;
                         } else if (self.instruction == 0xAA) {
                             self.accumulatorToX();
-                            std.debug.print("6502: TAX Found!\n", .{});
+                            //std.debug.print("6502: TAX Found!\n", .{});
                             break :RMW;
                         } else if (self.instruction == 0xBA) {
                             self.stackPointerToX();
-                            std.debug.print("6502: TSX Found!\n", .{});
+                            //std.debug.print("6502: TSX Found!\n", .{});
                             break :RMW;
                         } else {
                             self.loadXRegister();
-                            std.debug.print("6502: LDX Found!\n", .{});
+                            //std.debug.print("6502: LDX Found!\n", .{});
                             break :RMW;
                         }
                     },
                     0xC0, 0xD0 => {
                         if (self.instruction == 0xE2) {
-                            std.debug.print("6502: No Valid Instruction 'STP' Found!\n", .{});
+                            //std.debug.print("6502: No Valid Instruction 'STP' Found!\n", .{});
                             break :RMW;
                         } else if (self.instruction == 0xC2 or self.instruction == 0xDA) {
                             self.nop();
-                            std.debug.print("6502: NOP Found!\n", .{});
+                            //std.debug.print("6502: NOP Found!\n", .{});
                             break :RMW;
                         } else if (self.instruction == 0xCA) {
                             self.decrementX();
-                            std.debug.print("6502: DEX found!\n", .{});
+                            //std.debug.print("6502: DEX found!\n", .{});
                         } else {
                             self.decrement();
-                            std.debug.print("6502: DEC Found!\n", .{});
+                            //std.debug.print("6502: DEC Found!\n", .{});
                             break :RMW;
                         }
                     },
                     0xE0, 0xF0 => {
                         if (self.instruction == 0xF2) {
-                            std.debug.print("6502: No Valid Instruction 'STP' Found!\n", .{});
+                            //std.debug.print("6502: No Valid Instruction 'STP' Found!\n", .{});
                             break :RMW;
                         } else if (self.instruction == 0xE2 or self.instruction == 0xEA or self.instruction == 0xFA) {
                             self.nop();
-                            std.debug.print("6502: NOP Found!\n", .{});
+                            //std.debug.print("6502: NOP Found!\n", .{});
                             break :RMW;
                         } else {
                             self.increment();
-                            std.debug.print("6502: INC Found!\n", .{});
+                            //std.debug.print("6502: INC Found!\n", .{});
                             break :RMW;
                         }
                     },
                     else => {
-                        std.debug.print("6502: No Valid Instruction Found!\n", .{});
+                        //std.debug.print("6502: No Valid Instruction Found!\n", .{});
                         break :RMW;
                     },
                 }
             },
             else => default: {
-                std.debug.print("6502: No Valid Instruction Found!\n", .{});
+                //std.debug.print("6502: No Valid Instruction Found!\n", .{});
                 break :default;
             },
         }

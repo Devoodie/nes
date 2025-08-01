@@ -42,7 +42,7 @@ pub const Ppu = struct {
 
     pub fn cycle(self: *Ppu, count: u16) void {
         self.wait_time = 187 * @as(u64, count);
-        std.debug.print("Ppu Wait Time: {d}!\n", .{self.wait_time});
+        //std.debug.print("Ppu Wait Time: {d}!\n", .{self.wait_time});
 
         //        while (std.time.nanoTimestamp() <= goal_time) {
         //           continue;
@@ -170,11 +170,11 @@ pub const Ppu = struct {
         } else {
             var low: u8 = data & 0b11111000;
             low >>= 3;
-            std.debug.print("The low comes out to: {X}!\n", .{low});
+            //         std.debug.print("The low comes out to: {X}!\n", .{low});
             self.t &= 0xFF00;
             self.t |= low;
             self.fine_x = @truncate(data & 0b00000111);
-            std.debug.print("The Fine x scroll is: {d}!\n", .{self.fine_x});
+            //         std.debug.print("The Fine x scroll is: {d}!\n", .{self.fine_x});
         }
         self.write_reg +%= 1;
     }
@@ -368,14 +368,14 @@ pub const Ppu = struct {
                 bitmap_x = ~bitmap_x & 0b111;
             }
             if (sprite.large[bitmap_y][bitmap_x] & 0b11 > 0 and background & 0b11 > 0 and sprite0 == 0) {
-                std.debug.print("Sprite 0 hit!\n", .{});
+                //              std.debug.print("Sprite 0 hit!\n", .{});
                 self.status |= 0x40;
             }
             if (attributes & 0x20 == 0x20) { //background has priority return backgrouj
-                std.debug.print("background returned!\n", .{});
+                //               std.debug.print("background returned!\n", .{});
                 return background;
             }
-            std.debug.print("X Coord: {d}, Y Coord: {d}\n", .{ bitmap_x, bitmap_y });
+            //            std.debug.print("X Coord: {d}, Y Coord: {d}\n", .{ bitmap_x, bitmap_y });
             return sprite.large[bitmap_y][bitmap_x];
         } else {
             if (attributes & 0x80 == 0x80) {
@@ -385,14 +385,14 @@ pub const Ppu = struct {
                 bitmap_x = ~bitmap_x & 0b111;
             }
             if (sprite.small[bitmap_y][bitmap_x] & 0b11 > 0 and background & 0b11 > 0 and sprite0 == 0) {
-                std.debug.print("Sprite 0 hit!\n", .{});
+                //             std.debug.print("Sprite 0 hit!\n", .{});
                 self.status |= 0x40;
             }
             if (attributes & 0x20 == 0x20) { //background has priority return backgrouj
-                std.debug.print("background returned!\n", .{});
+                //            std.debug.print("background returned!\n", .{});
                 return background;
             }
-            std.debug.print("X Coord: {d}, Y Coord: {d}\n", .{ bitmap_x, bitmap_y });
+            //std.debug.print("X Coord: {d}, Y Coord: {d}\n", .{ bitmap_x, bitmap_y });
             return sprite.small[bitmap_y][bitmap_x];
         }
     }
@@ -423,8 +423,8 @@ pub const Ppu = struct {
         const coarse_x_bit1 = coarse_x & 0b1;
         const coarse_y_bit1 = coarse_y & 0b1;
 
-        std.debug.print("Nametable Address!: 0x{X}\n", .{self.v});
-        std.debug.print("VRAM Address!: 0x{X}\n", .{self.t});
+        //      std.debug.print("Nametable Address!: 0x{X}\n", .{self.v});
+        //      std.debug.print("VRAM Address!: 0x{X}\n", .{self.t});
 
         // extract attribute shifts
         const attr_shifts = @as(u3, @truncate(coarse_x_bit1 * 2 + coarse_y_bit1 * 4));
@@ -521,20 +521,20 @@ pub const Ppu = struct {
         if (self.v & 0x7000 != 0x7000) {
             //fine y increment
             self.v +%= 0x1000;
-            std.debug.print("fine y increment!\n", .{});
+            //std.debug.print("fine y increment!\n", .{});
         } else {
             //coarse y increment
             self.v &= 0x0FFF;
             if (coarse_y == 29) {
                 coarse_y = 0;
                 self.v ^= 0x800;
-                std.debug.print("Verticle Flip!\n", .{});
+                //   std.debug.print("Verticle Flip!\n", .{});
             } else if (coarse_y == 31) {
                 coarse_y = 0;
-                std.debug.print("Coarse Y Reset!\n", .{});
+                //  std.debug.print("Coarse Y Reset!\n", .{});
             } else {
                 coarse_y += 1;
-                std.debug.print("Coarse Y Increment!\n", .{});
+                // std.debug.print("Coarse Y Increment!\n", .{});
             }
             self.v = (self.v & 0x7C1F) | (coarse_y << 5);
         }
@@ -544,9 +544,6 @@ pub const Ppu = struct {
     }
 
     pub fn drawBitmap(self: *Ppu) void {
-        //aquire lock
-        //       self.mutex.lock();
-        //std.debug.print("YOU'RE IN IT BUDDY!\n\n", .{});
         if (self.scanline == 261) {
             self.drawScanLine();
             self.scanline = 0;
@@ -558,13 +555,13 @@ pub const Ppu = struct {
             //handle post render scanline
             if (self.scanline == 241) {
                 //                std.debug.print("Bitmap: {any}\n", .{self.bitmap});
-                std.debug.print("Lock Released!\n\n", .{});
+                //                std.debug.print("Lock Released!\n\n", .{});
                 //                    self.mutex.unlock();
                 self.status |= 0x80;
                 if (self.control & 0x80 == 0x80) self.nmi = 1;
             }
             self.scanline += 1;
-            std.debug.print("PPU Status: 0x{X}!\n\n", .{self.status});
+            //           std.debug.print("PPU Status: 0x{X}!\n\n", .{self.status});
         } else {
             //handle rendering
             self.fillSprites();
@@ -574,7 +571,7 @@ pub const Ppu = struct {
             self.scanline += 1;
         }
 
-        std.debug.print("Scanline: {d}, Status: 0x{X}, NMI Status: {d}, Control Register: 0x{X}!\n\n", .{ self.scanline, self.status, self.nmi, self.control });
+        //std.debug.print("Scanline: {d}, Status: 0x{X}, NMI Status: {d}, Control Register: 0x{X}!\n\n", .{ self.scanline, self.status, self.nmi, self.control });
     }
 
     pub fn operate(self: *Ppu) void {

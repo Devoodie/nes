@@ -11,7 +11,7 @@ pub fn draw(ppu: *picture_unit.Ppu) !void {
 
     var screen: [184320]u8 = std.mem.zeroes([184320]u8);
     const image: rl.Image = .{ .data = &screen, .format = .uncompressed_r8g8b8, .mipmaps = 1, .height = 240, .width = 256 };
-    const bitmap = rl.loadTextureFromImage(image);
+    const bitmap = try rl.loadTextureFromImage(image);
 
     while (true) {
         if (ppu.status & 0x80 == 0x80) {

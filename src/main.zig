@@ -85,12 +85,13 @@ pub fn main() !void {
 
         var display_thread = try std.Thread.spawn(.{}, display.draw, .{&nes.Ppu});
         defer display_thread.join();
-        masterClock(nes, &cpu_timer);
+        try masterClock(nes, &cpu_timer);
     }
     try nes.Mapper.deinit(allocator);
 }
 
-pub fn masterClock(nes: *components.Nes, cpu_timer: *std.time.Timer) void {
+pub fn masterClock(nes: *components.Nes, cpu_timer: *std.time.Timer) !void {
+    var timer = try std.time.Timer.start();
     while (true) {
         if (nes.Cpu.wait_time < cpu_timer.read()) {
             cpu_timer.reset();
@@ -98,9 +99,11 @@ pub fn masterClock(nes: *components.Nes, cpu_timer: *std.time.Timer) void {
             nes.Cpu.operate();
         }
         if (nes.Cpu.cycles >= 114) {
+            timer.reset();
             nes.Ppu.operate();
+            const time = timer.read();
+            std.debug.print("PPU Scanline Time: {d} ns\n", .{time});
             nes.Cpu.cycles -= 114;
-            //            std.debug.print("Bitmap: {any}\n", .{nes.Ppu.bitmap});
         }
     }
 }
